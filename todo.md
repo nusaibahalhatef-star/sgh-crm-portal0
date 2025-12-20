@@ -17,10 +17,13 @@
 - [x] إنشاء صفحة رئيسية جديدة
 - [x] إنشاء Navbar موحد
 - [x] إنشاء Footer موحد
-- [ ] إنشاء صفحة فردية للطبيب (/doctors/:slug)
+- [x] إضافة حقول slug, experience, languages, consultationFee إلى جدول doctors
+- [x] إضافة getBySlug procedure في doctors router
+- [x] إنشاء صفحة فردية للطبيب (DoctorDetailPage.tsx)
 - [ ] إنشاء صفحة فردية للعرض (/offers/:slug)
 - [ ] إنشاء صفحة فردية للمخيم (/camps/:slug)
 - [ ] إضافة slug routing في App.tsx
+- [ ] إضافة حقل slug لجداول offers و camps
 
 ### المرحلة 2: صفحات القوائم والهوية
 - [ ] تطوير صفحة قائمة الأطباء مع بطاقات جذابة

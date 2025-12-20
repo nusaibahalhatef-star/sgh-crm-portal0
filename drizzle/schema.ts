@@ -105,9 +105,13 @@ export type InsertSetting = typeof settings.$inferInsert;
 export const doctors = mysqlTable("doctors", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
   specialty: varchar("specialty", { length: 255 }).notNull(),
   image: varchar("image", { length: 500 }),
   bio: text("bio"),
+  experience: varchar("experience", { length: 255 }),
+  languages: varchar("languages", { length: 255 }),
+  consultationFee: varchar("consultationFee", { length: 100 }),
   available: mysqlEnum("available", ["yes", "no"]).default("yes").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

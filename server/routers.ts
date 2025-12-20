@@ -306,6 +306,13 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return getDoctorById(input.id);
       }),
+
+    getBySlug: publicProcedure
+      .input(z.object({ slug: z.string() }))
+      .query(async ({ input }) => {
+        const doctors = await getAllDoctors();
+        return doctors.find(d => d.slug === input.slug);
+      }),
   }),
 
   // Appointments router
