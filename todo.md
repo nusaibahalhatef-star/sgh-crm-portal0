@@ -20,10 +20,10 @@
 - [x] إضافة حقول slug, experience, languages, consultationFee إلى جدول doctors
 - [x] إضافة getBySlug procedure في doctors router
 - [x] إنشاء صفحة فردية للطبيب (DoctorDetailPage.tsx)
-- [ ] إنشاء صفحة فردية للعرض (/offers/:slug)
-- [ ] إنشاء صفحة فردية للمخيم (/camps/:slug)
-- [ ] إضافة slug routing في App.tsx
-- [ ] إضافة حقل slug لجداول offers و camps
+- [x] إنشاء صفحة فردية للعرض (OfferDetailPage.tsx)
+- [x] إنشاء صفحة فردية للمخيم (CampDetailPage.tsx)
+- [x] إضافة slug routing في App.tsx
+- [x] التحقق من وجود حقل slug في جداول offers و camps
 
 ### المرحلة 2: صفحات القوائم والهوية
 - [ ] تطوير صفحة قائمة الأطباء مع بطاقات جذابة

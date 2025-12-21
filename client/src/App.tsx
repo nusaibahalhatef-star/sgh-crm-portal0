@@ -12,8 +12,11 @@ import AdminDashboard from "./pages/AdminDashboard";
 import DoctorAppointments from "./pages/DoctorAppointments";
 import Unauthorized from "./pages/Unauthorized";
 import AccessRequest from "./pages/AccessRequest";
-import OffersPage from "./pages/OffersPage";
-import CampsPage from "./pages/CampsPage";
+import OffersListPage from "./pages/OffersListPage";
+import CampsListPage from "./pages/CampsListPage";
+import DoctorDetailPage from "./pages/DoctorDetailPage";
+import OfferDetailPage from "./pages/OfferDetailPage";
+import CampDetailPage from "./pages/CampDetailPage";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -22,8 +25,11 @@ function Router() {
       <Route path={"/"} component={HomePage} />
       <Route path="/campaign/:slug" component={CampaignLanding} />
       <Route path={"/doctors"} component={DoctorAppointments} />
-      <Route path={"/offers"} component={OffersPage} />
-      <Route path={"/camps"} component={CampsPage} />
+      <Route path={"/doctors/:slug"} component={DoctorDetailPage} />
+      <Route path={"/offers"} component={OffersListPage} />
+      <Route path={"/offers/:slug"} component={OfferDetailPage} />
+      <Route path={"/camps"} component={CampsListPage} />
+      <Route path={"/camps/:slug"} component={CampDetailPage} />
       <Route path={"/thank-you"} component={ThankYou} />
       <Route path={"/unauthorized"} component={Unauthorized} />
       <Route path={"/access-request"} component={AccessRequest} />

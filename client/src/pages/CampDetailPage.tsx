@@ -1,0 +1,256 @@
+import { useEffect, useState } from "react";
+import { useParams, useLocation } from "wouter";
+import { trpc } from "@/lib/trpc";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ArrowRight, Phone, Mail, Calendar, MapPin, Loader2, Heart } from "lucide-react";
+import { toast } from "sonner";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+
+export default function CampDetailPage() {
+  const params = useParams();
+  const [, setLocation] = useLocation();
+  const slug = params.slug as string;
+
+  const { data: camp, isLoading } = trpc.camps.getBySlug.useQuery({ slug });
+  const submitLead = trpc.leads.submit.useMutation();
+
+  const [formData, setFormData] = useState({
+    fullName: "",
+    phone: "",
+    email: "",
+  });
+
+  useEffect(() => {
+    if (!isLoading && !camp) {
+      toast.error("المخيم غير موجود");
+      setLocation("/camps");
+    }
+  }, [camp, isLoading, setLocation]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.fullName || !formData.phone) {
+      toast.error("الرجاء إدخال الاسم ورقم الهاتف");
+      return;
+    }
+
+    try {
+      await submitLead.mutateAsync({
+        campaignSlug: slug,
+        fullName: formData.fullName,
+        phone: formData.phone,
+        email: formData.email || undefined,
+      });
+
+      toast.success("تم تسجيلك بنجاح! سنتواصل معك قريباً");
+      setFormData({ fullName: "", phone: "", email: "" });
+    } catch (error) {
+      toast.error("حدث خطأ أثناء التسجيل");
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
+        <Loader2 className="w-12 h-12 animate-spin text-green-600" />
+      </div>
+    );
+  }
+
+  if (!camp) {
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+      <Navbar />
+
+      {/* Hero Section */}
+      <section className="relative bg-gradient-to-br from-green-600 to-blue-600 text-white py-20">
+        <div className="container mx-auto px-4">
+          <Button
+            variant="ghost"
+            className="text-white hover:bg-white/20 mb-6"
+            onClick={() => setLocation("/camps")}
+          >
+            <ArrowRight className="ml-2 h-4 w-4 rotate-180" />
+            العودة إلى المخيمات
+          </Button>
+
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <Heart className="h-8 w-8 text-red-400 fill-red-400" />
+                <span className="text-xl font-semibold">مخيم طبي خيري</span>
+              </div>
+
+              <h1 className="text-4xl md:text-5xl font-bold mb-6">
+                {camp.name}
+              </h1>
+
+              <p className="text-xl text-white/90 leading-relaxed mb-6">
+                {camp.description}
+              </p>
+
+              {camp.startDate && camp.endDate && (
+                <div className="flex items-center gap-2 text-white/90 mb-4">
+                  <Calendar className="h-5 w-5" />
+                  <span>
+                    من {new Date(camp.startDate).toLocaleDateString("ar-EG")} إلى{" "}
+                    {new Date(camp.endDate).toLocaleDateString("ar-EG")}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {camp.imageUrl && (
+              <div className="rounded-2xl overflow-hidden shadow-2xl">
+                <img
+                  src={camp.imageUrl}
+                  alt={camp.name}
+                  className="w-full h-auto object-cover"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* About Camp Section */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
+            عن المخيم
+          </h2>
+          <div className="prose prose-lg max-w-none text-right">
+            <p className="text-gray-700 leading-relaxed text-lg">
+              يأتي هذا المخيم الطبي الخيري ضمن مبادرات المستشفى السعودي الألماني في إطار
+              المسؤولية المجتمعية، حيث نسعى لتقديم خدمات طبية عالية الجودة للمحتاجين
+              والمستحقين بأسعار رمزية أو مجاناً.
+            </p>
+            <p className="text-gray-700 leading-relaxed text-lg mt-4">
+              يشرف على المخيم نخبة من أفضل الأطباء والجراحين المتخصصين، مع توفير أحدث
+              الأجهزة والتقنيات الطبية لضمان أفضل النتائج.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Registration Form Section */}
+      <section className="py-16">
+        <div className="container mx-auto px-4 max-w-2xl">
+          <Card className="shadow-xl border-t-4 border-green-600">
+            <CardContent className="p-8">
+              <div className="text-center mb-8">
+                <Heart className="h-16 w-16 text-red-500 fill-red-500 mx-auto mb-4" />
+                <h2 className="text-3xl font-bold text-gray-900 mb-3">
+                  سجل الآن في المخيم
+                </h2>
+                <p className="text-gray-600">
+                  املأ النموذج وسنتواصل معك لتأكيد التسجيل
+                </p>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <Label htmlFor="fullName" className="text-right block mb-2">
+                    الاسم الكامل <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="fullName"
+                    value={formData.fullName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, fullName: e.target.value })
+                    }
+                    placeholder="أدخل اسمك الكامل"
+                    required
+                    className="text-right"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="phone" className="text-right block mb-2">
+                    رقم الهاتف <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) =>
+                        setFormData({ ...formData, phone: e.target.value })
+                      }
+                      placeholder="مثال: 0500000000"
+                      required
+                      className="text-right pr-12"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="email" className="text-right block mb-2">
+                    البريد الإلكتروني (اختياري)
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
+                      placeholder="example@email.com"
+                      className="text-right pr-12"
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white py-6 text-lg"
+                  disabled={submitLead.isPending}
+                >
+                  {submitLead.isPending ? (
+                    <>
+                      <Loader2 className="ml-2 h-5 w-5 animate-spin" />
+                      جاري التسجيل...
+                    </>
+                  ) : (
+                    <>
+                      <Heart className="ml-2 h-5 w-5" />
+                      تسجيل في المخيم
+                    </>
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section className="bg-gradient-to-br from-green-600 to-blue-600 text-white py-12">
+        <div className="container mx-auto px-4 text-center">
+          <h3 className="text-2xl font-bold mb-4">للاستفسارات والمزيد من المعلومات</h3>
+          <p className="text-xl mb-6">اتصل بنا على الرقم المجاني</p>
+          <a
+            href="tel:8000018"
+            className="inline-flex items-center gap-2 bg-white text-green-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition-colors"
+          >
+            <Phone className="h-6 w-6" />
+            8000018
+          </a>
+        </div>
+      </section>
+
+      <Footer />
+    </div>
+  );
+}
