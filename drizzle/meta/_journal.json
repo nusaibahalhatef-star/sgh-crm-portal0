@@ -57,6 +57,13 @@
       "when": 1766190555754,
       "tag": "0007_furry_prism",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1766363129718,
+      "tag": "0008_aromatic_hitman",
+      "breakpoints": true
     }
   ]
 }
