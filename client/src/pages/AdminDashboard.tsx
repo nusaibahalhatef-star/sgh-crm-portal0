@@ -71,7 +71,7 @@ export default function AdminDashboard() {
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState("");
   const [statusNotes, setStatusNotes] = useState("");
-  const [activeTab, setActiveTab] = useState<"leads" | "requests" | "appointments" | "offers" | "camps">("leads");
+  const [activeTab, setActiveTab] = useState<"leads" | "requests" | "appointments" | "offers" | "camps" | "offerLeads" | "campRegistrations">("leads");
 
   const { data: accessRequests, refetch: refetchRequests } = trpc.accessRequests.pending.useQuery();
   
