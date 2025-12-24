@@ -1,4 +1,6 @@
 import { useState, useMemo } from "react";
+import OfferLeadsManagement from "@/components/OfferLeadsManagement";
+import CampRegistrationsManagement from "@/components/CampRegistrationsManagement";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -71,7 +73,7 @@ export default function AdminDashboard() {
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState("");
   const [statusNotes, setStatusNotes] = useState("");
-  const [activeTab, setActiveTab] = useState<"leads" | "requests" | "appointments" | "offers" | "camps" | "offerLeads" | "campRegistrations">("leads");
+  const [activeTab, setActiveTab] = useState<"leads" | "requests" | "appointments" | "offerLeads" | "campRegistrations" | "offers" | "camps">("leads");
 
   const { data: accessRequests, refetch: refetchRequests } = trpc.accessRequests.pending.useQuery();
   
@@ -363,18 +365,32 @@ export default function AdminDashboard() {
             مواعيد الأطباء
           </Button>
           <Button
+            variant={activeTab === "offerLeads" ? "default" : "outline"}
+            onClick={() => setActiveTab("offerLeads")}
+          >
+            <TrendingUp className="w-4 h-4 ml-2" />
+            حجوزات العروض
+          </Button>
+          <Button
+            variant={activeTab === "campRegistrations" ? "default" : "outline"}
+            onClick={() => setActiveTab("campRegistrations")}
+          >
+            <Calendar className="w-4 h-4 ml-2" />
+            تسجيلات المخيمات
+          </Button>
+          <Button
             variant={activeTab === "offers" ? "default" : "outline"}
             onClick={() => setActiveTab("offers")}
           >
             <TrendingUp className="w-4 h-4 ml-2" />
-            العروض الطبية
+            إدارة العروض
           </Button>
           <Button
             variant={activeTab === "camps" ? "default" : "outline"}
             onClick={() => setActiveTab("camps")}
           >
             <Calendar className="w-4 h-4 ml-2" />
-            المخيمات الطبية
+            إدارة المخيمات
           </Button>
         </div>
 
@@ -766,6 +782,16 @@ export default function AdminDashboard() {
             )}
           </CardContent>
         </Card>
+        )}
+
+        {/* Offer Leads Management */}
+        {activeTab === "offerLeads" && (
+        <OfferLeadsManagement />
+        )}
+
+        {/* Camp Registrations Management */}
+        {activeTab === "campRegistrations" && (
+        <CampRegistrationsManagement />
         )}
 
         {/* Offers Management */}
