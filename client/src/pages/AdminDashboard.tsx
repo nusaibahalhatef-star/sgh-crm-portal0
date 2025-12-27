@@ -46,6 +46,7 @@ import {
   Loader2,
   Eye,
   Download,
+  BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
 import { exportToExcel, formatLeadsForExport, formatAppointmentsForExport } from "@/lib/exportToExcel";
@@ -255,6 +256,15 @@ export default function AdminDashboard() {
                 <p className="text-sm font-semibold">{user.name}</p>
                 <p className="text-xs text-muted-foreground">{user.email}</p>
               </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setLocation("/reports/social-media")}
+                className="bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100 border-purple-200"
+              >
+                <BarChart3 className="w-4 h-4 ml-2" />
+                تقارير السوشيال ميديا
+              </Button>
               <ManualRegistrationForm />
               <Button variant="outline" size="sm" onClick={handleLogout}>
                 <LogOut className="w-4 h-4 ml-2" />

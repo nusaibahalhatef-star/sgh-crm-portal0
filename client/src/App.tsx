@@ -17,6 +17,7 @@ import CampsListPage from "./pages/CampsListPage";
 import DoctorDetailPage from "./pages/DoctorDetailPage";
 import OfferDetailPage from "./pages/OfferDetailPage";
 import CampDetailPage from "./pages/CampDetailPage";
+import SocialMediaReports from "./pages/SocialMediaReports";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -35,6 +36,7 @@ function Router() {
       <Route path={"/access-request"} component={AccessRequest} />
       <Route path={"/dashboard/*"} component={AdminDashboard} />
       <Route path={"/admin"} component={AdminDashboard} />
+      <Route path={"/reports/social-media"} component={SocialMediaReports} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

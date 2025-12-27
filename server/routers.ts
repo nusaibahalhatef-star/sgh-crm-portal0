@@ -37,6 +37,7 @@ import { campRegistrationsRouter } from "./routers/campRegistrations";
 import { sendNewLeadNotification, sendNewAppointmentEmail } from "./email";
 import { trackLead, trackCompleteRegistration } from "./facebookConversion";
 import { sendWelcomeMessage, sendBookingConfirmation, sendCustomMessage } from "./whatsapp";
+import { sendNewLeadTelegram, sendNewAppointmentTelegram } from "./telegram";
 
 export const appRouter = router({
   system: systemRouter,
@@ -88,13 +89,13 @@ export const appRouter = router({
           bookingConfirmationSent: false,
         });
 
-         // Track Facebook Conversion API - Lead
-        await trackLead({
-          email: input.email,
-          phone: input.phone,
-          firstName: input.fullName.split(' ')[0],
-          contentName: campaign.name,
-        });
+         // Track Facebook Conversion API - Lead (DISABLED to avoid account restrictions)
+        // await trackLead({
+        //   email: input.email,
+        //   phone: input.phone,
+        //   firstName: input.fullName.split(' ')[0],
+        //   contentName: campaign.name,
+        // });
 
         // Send notification to owner
         await notifyOwner({
@@ -103,6 +104,14 @@ export const appRouter = router({
 الاسم: ${input.fullName}
 الهاتف: ${input.phone}
 البريد: ${input.email || "غير متوفر"}`,
+        });
+
+        // Send Telegram notification
+        await sendNewLeadTelegram({
+          fullName: input.fullName,
+          phone: input.phone,
+          email: input.email,
+          source: input.utmSource || "direct",
         });
 
         // Send email notification
@@ -126,13 +135,13 @@ export const appRouter = router({
           });
         }
 
-        // Track Facebook Conversion API - CompleteRegistration
-        await trackCompleteRegistration({
-          email: input.email,
-          phone: input.phone,
-          firstName: input.fullName.split(' ')[0],
-          contentName: campaign.name,
-        });
+        // Track Facebook Conversion API - CompleteRegistration (DISABLED to avoid account restrictions)
+        // await trackCompleteRegistration({
+        //   email: input.email,
+        //   phone: input.phone,
+        //   firstName: input.fullName.split(' ')[0],
+        //   contentName: campaign.name,
+        // });
 
         return { success: true };
       }),
@@ -383,6 +392,16 @@ export const appRouter = router({
         await notifyOwner({
           title: "حجز موعد جديد",
           content: `تم حجز موعد جديد من ${input.fullName} مع ${doctor?.name || "غير محدد"}`,
+        });
+
+        // Send Telegram notification
+        await sendNewAppointmentTelegram({
+          fullName: input.fullName,
+          phone: input.phone,
+          email: input.email,
+          doctorName: doctor?.name || "غير محدد",
+          preferredDate: input.preferredDate,
+          preferredTime: input.preferredTime,
         });
 
         return appointment;

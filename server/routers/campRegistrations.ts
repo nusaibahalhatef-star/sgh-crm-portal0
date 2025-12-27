@@ -3,6 +3,7 @@ import { eq, desc } from "drizzle-orm";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { getDb } from "../db";
 import { campRegistrations } from "../../drizzle/schema";
+import { sendNewCampRegistrationTelegram } from "../telegram";
 
 export const campRegistrationsRouter = router({
   // Submit a new camp registration (public)
@@ -34,6 +35,21 @@ export const campRegistrationsRouter = router({
         source: input.source || "website",
         status: "pending",
       });
+
+      // Get camp details for notification
+      const { camps } = await import("../../drizzle/schema");
+      const [camp] = await db.select().from(camps).where(eq(camps.id, input.campId)).limit(1);
+
+      // Send Telegram notification
+      if (camp) {
+        await sendNewCampRegistrationTelegram({
+          fullName: input.fullName,
+          phone: input.phone,
+          email: input.email,
+          campTitle: camp.name,
+          age: input.age,
+        });
+      }
 
       return { success: true, id: registration.insertId };
     }),

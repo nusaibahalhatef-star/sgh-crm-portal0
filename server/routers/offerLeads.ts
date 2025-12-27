@@ -3,6 +3,7 @@ import { eq, desc } from "drizzle-orm";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { getDb } from "../db";
 import { offerLeads } from "../../drizzle/schema";
+import { sendNewOfferLeadTelegram } from "../telegram";
 
 export const offerLeadsRouter = router({
   // Submit a new offer lead (public)
@@ -30,6 +31,20 @@ export const offerLeadsRouter = router({
         source: input.source || "website",
         status: "new",
       });
+
+      // Get offer details for notification
+      const { offers } = await import("../../drizzle/schema");
+      const [offer] = await db.select().from(offers).where(eq(offers.id, input.offerId)).limit(1);
+
+      // Send Telegram notification
+      if (offer) {
+        await sendNewOfferLeadTelegram({
+          fullName: input.fullName,
+          phone: input.phone,
+          email: input.email,
+          offerTitle: offer.title,
+        });
+      }
 
       return { success: true, id: lead.insertId };
     }),

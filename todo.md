@@ -63,3 +63,9 @@
 - [x] إضافة أزرار WhatsApp في جميع السجلات (leads, appointments, offerLeads, campRegistrations)
 - [x] إنشاء نموذج تسجيل يدوي للحجوزات الهاتفية
 - [x] إضافة تصدير Excel لجميع أنواع الحجوزات
+
+### المرحلة 5: إشعارات Telegram وتقارير السوشيال ميديا ✅ مكتمل
+- [x] إيقاف إرسال البيانات إلى Meta (Facebook Conversion API)
+- [x] إضافة إشعارات Telegram للحجوزات الجديدة (@abood22828)
+- [x] إنشاء صفحة تقارير شاملة لأداء Instagram و Facebook
+- [x] إضافة زر التقارير في header لوحة التحكم
