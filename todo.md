@@ -69,3 +69,10 @@
 - [x] إضافة إشعارات Telegram للحجوزات الجديدة (@abood22828)
 - [x] إنشاء صفحة تقارير شاملة لأداء Instagram و Facebook
 - [x] إضافة زر التقارير في header لوحة التحكم
+
+### المرحلة 6: ربط تقارير حقيقية من Meta Graph API ✅ مكتمل
+- [x] إنشاء Meta Graph API helper للتواصل مع Instagram و Facebook
+- [x] إضافة tRPC procedures لجلب البيانات (Instagram Insights, Facebook Page Insights)
+- [x] تحديث صفحة التقارير لاستخدام البيانات الحقيقية بدلاً من الأمثلة
+- [x] إضافة loading states و error handling
+- [x] زر تحديث البيانات يدوياً

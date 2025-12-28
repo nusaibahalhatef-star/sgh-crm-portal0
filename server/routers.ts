@@ -38,6 +38,7 @@ import { sendNewLeadNotification, sendNewAppointmentEmail } from "./email";
 import { trackLead, trackCompleteRegistration } from "./facebookConversion";
 import { sendWelcomeMessage, sendBookingConfirmation, sendCustomMessage } from "./whatsapp";
 import { sendNewLeadTelegram, sendNewAppointmentTelegram } from "./telegram";
+import { getCombinedSocialMediaStats } from "./metaGraphAPI";
 
 export const appRouter = router({
   system: systemRouter,
@@ -433,6 +434,14 @@ export const appRouter = router({
 
   // Camp registrations management
   campRegistrations: campRegistrationsRouter,
+
+  // Social Media Insights
+  socialMedia: router({
+    getStats: protectedProcedure.query(async () => {
+      const stats = await getCombinedSocialMediaStats();
+      return stats;
+    }),
+  }),
 
   accessRequests: router({
     list: protectedProcedure.query(async () => {
