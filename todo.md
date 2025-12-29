@@ -76,3 +76,10 @@
 - [x] تحديث صفحة التقارير لاستخدام البيانات الحقيقية بدلاً من الأمثلة
 - [x] إضافة loading states و error handling
 - [x] زر تحديث البيانات يدوياً
+
+### إصلاح عاجل: نماذج التسجيل ✅ مكتمل
+- [x] فحص نموذج تسجيل العروض (OfferDetailPage)
+- [x] فحص نموذج تسجيل المخيمات (CampDetailPage)
+- [x] إصلاح مشكلة إرسال النماذج
+- [x] تحديث OfferDetailPage لاستخدام offerLeads.submit
+- [x] تحديث CampDetailPage لاستخدام campRegistrations.submit

@@ -16,7 +16,7 @@ export default function CampDetailPage() {
   const slug = params.slug as string;
 
   const { data: camp, isLoading } = trpc.camps.getBySlug.useQuery({ slug });
-  const submitLead = trpc.leads.submit.useMutation();
+  const submitRegistration = trpc.campRegistrations.submit.useMutation();
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -39,9 +39,11 @@ export default function CampDetailPage() {
       return;
     }
 
+    if (!camp) return;
+
     try {
-      await submitLead.mutateAsync({
-        campaignSlug: slug,
+      await submitRegistration.mutateAsync({
+        campId: camp.id,
         fullName: formData.fullName,
         phone: formData.phone,
         email: formData.email || undefined,
@@ -215,9 +217,9 @@ export default function CampDetailPage() {
                 <Button
                   type="submit"
                   className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white py-6 text-lg"
-                  disabled={submitLead.isPending}
+                  disabled={submitRegistration.isPending}
                 >
-                  {submitLead.isPending ? (
+                  {submitRegistration.isPending ? (
                     <>
                       <Loader2 className="ml-2 h-5 w-5 animate-spin" />
                       جاري التسجيل...

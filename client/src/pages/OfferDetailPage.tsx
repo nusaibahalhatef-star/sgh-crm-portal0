@@ -17,7 +17,7 @@ export default function OfferDetailPage() {
   const slug = params.slug as string;
 
   const { data: offer, isLoading } = trpc.offers.getBySlug.useQuery({ slug });
-  const submitLead = trpc.leads.submit.useMutation();
+  const submitLead = trpc.offerLeads.submit.useMutation();
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -40,9 +40,11 @@ export default function OfferDetailPage() {
       return;
     }
 
+    if (!offer) return;
+
     try {
       await submitLead.mutateAsync({
-        campaignSlug: slug,
+        offerId: offer.id,
         fullName: formData.fullName,
         phone: formData.phone,
         email: formData.email || undefined,
