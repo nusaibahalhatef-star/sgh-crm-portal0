@@ -16,7 +16,10 @@ export default function OfferDetailPage() {
   const [, setLocation] = useLocation();
   const slug = params.slug as string;
 
-  const { data: offer, isLoading } = trpc.offers.getBySlug.useQuery({ slug });
+  const { data: offer, isLoading } = trpc.offers.getBySlug.useQuery(
+    { slug },
+    { enabled: !!slug && slug !== ":slug" }
+  );
   const submitLead = trpc.offerLeads.submit.useMutation();
 
   const [formData, setFormData] = useState({

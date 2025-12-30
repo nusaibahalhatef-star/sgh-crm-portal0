@@ -88,3 +88,8 @@
 - [x] إصلاح nested `<a>` tags في Navbar - Logo
 - [x] إصلاح nested `<a>` tags في Navbar - Desktop Navigation
 - [x] إصلاح nested `<a>` tags في Navbar - Mobile Navigation
+
+### إصلاح عاجل: getBySlug Query Errors ✅ مكتمل
+- [x] إصلاح DoctorDetailPage - إضافة enabled condition
+- [x] إصلاح OfferDetailPage - إضافة enabled condition
+- [x] إصلاح CampDetailPage - إضافة enabled condition

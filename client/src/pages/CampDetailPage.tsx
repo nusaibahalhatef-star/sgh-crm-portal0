@@ -15,7 +15,10 @@ export default function CampDetailPage() {
   const [, setLocation] = useLocation();
   const slug = params.slug as string;
 
-  const { data: camp, isLoading } = trpc.camps.getBySlug.useQuery({ slug });
+  const { data: camp, isLoading } = trpc.camps.getBySlug.useQuery(
+    { slug },
+    { enabled: !!slug && slug !== ":slug" }
+  );
   const submitRegistration = trpc.campRegistrations.submit.useMutation();
 
   const [formData, setFormData] = useState({

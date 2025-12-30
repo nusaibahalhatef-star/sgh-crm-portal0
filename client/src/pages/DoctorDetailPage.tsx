@@ -20,7 +20,10 @@ export default function DoctorDetailPage() {
   const [, params] = useRoute("/doctors/:slug");
   const slug = params?.slug || "";
 
-  const { data: doctor, isLoading } = trpc.doctors.getBySlug.useQuery({ slug });
+  const { data: doctor, isLoading } = trpc.doctors.getBySlug.useQuery(
+    { slug },
+    { enabled: !!slug && slug !== ":slug" }
+  );
   const submitAppointment = trpc.appointments.submit.useMutation();
 
   const [formData, setFormData] = useState({
