@@ -34,6 +34,7 @@ import { offersRouter } from "./routers/offers";
 import { campsRouter } from "./routers/camps";
 import { offerLeadsRouter } from "./routers/offerLeads";
 import { campRegistrationsRouter } from "./routers/campRegistrations";
+import { doctorsRouter } from "./routers/doctors";
 import { sendNewLeadNotification, sendNewAppointmentEmail } from "./email";
 import { trackLead, trackCompleteRegistration } from "./facebookConversion";
 import { sendWelcomeMessage, sendBookingConfirmation, sendCustomMessage } from "./whatsapp";
@@ -308,24 +309,7 @@ export const appRouter = router({
   }),
 
   // Doctors router
-  doctors: router({
-    list: publicProcedure.query(async () => {
-      return getAllDoctors();
-    }),
-
-    getById: publicProcedure
-      .input(z.object({ id: z.number() }))
-      .query(async ({ input }) => {
-        return getDoctorById(input.id);
-      }),
-
-    getBySlug: publicProcedure
-      .input(z.object({ slug: z.string() }))
-      .query(async ({ input }) => {
-        const doctors = await getAllDoctors();
-        return doctors.find(d => d.slug === input.slug);
-      }),
-  }),
+  doctors: doctorsRouter,
 
   // Appointments router
   appointments: router({

@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import OfferLeadsManagement from "@/components/OfferLeadsManagement";
 import CampRegistrationsManagement from "@/components/CampRegistrationsManagement";
 import ManualRegistrationForm from "@/components/ManualRegistrationForm";
+import DoctorsManagement from "@/components/DoctorsManagement";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -77,7 +78,7 @@ export default function AdminDashboard() {
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState("");
   const [statusNotes, setStatusNotes] = useState("");
-  const [activeTab, setActiveTab] = useState<"leads" | "requests" | "appointments" | "offerLeads" | "campRegistrations" | "offers" | "camps">("leads");
+  const [activeTab, setActiveTab] = useState<"leads" | "requests" | "appointments" | "offerLeads" | "campRegistrations" | "offers" | "camps" | "doctors">("leads");
 
   const { data: accessRequests, refetch: refetchRequests } = trpc.accessRequests.pending.useQuery();
   
@@ -405,6 +406,13 @@ export default function AdminDashboard() {
           >
             <Calendar className="w-4 h-4 ml-2" />
             إدارة المخيمات
+          </Button>
+          <Button
+            variant={activeTab === "doctors" ? "default" : "outline"}
+            onClick={() => setActiveTab("doctors")}
+          >
+            <Users className="w-4 h-4 ml-2" />
+            إدارة الأطباء
           </Button>
         </div>
 
@@ -873,6 +881,11 @@ export default function AdminDashboard() {
         {/* Camps Management */}
         {activeTab === "camps" && (
         <CampsManagement />
+        )}
+
+        {/* Doctors Management */}
+        {activeTab === "doctors" && (
+        <DoctorsManagement />
         )}
       </main>
 

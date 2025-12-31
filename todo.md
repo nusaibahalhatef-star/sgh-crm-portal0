@@ -100,3 +100,13 @@
 - [x] إضافة فلترة حسب المخيم في CampRegistrationsManagement
 - [x] إصلاح offerLeads.list router - إضافة JOIN مع offers table
 - [x] إضافة فلترة حسب العرض في OfferLeadsManagement
+
+### تحسين صفحة الأطباء وإدارتهم ✅ مكتمل
+- [x] إنشاء doctors router منفصل مع CRUD procedures
+- [x] إضافة create, update, delete, toggleAvailability procedures
+- [x] إنشاء DoctorsManagement component مع CRUD كامل
+- [x] إضافة بطاقات إحصائيات (إجمالي، متاح، غير متاح)
+- [x] إضافة بحث وفلترة للأطباء
+- [x] إضافة نموذج إضافة/تعديل طبيب مع auto-generate slug
+- [x] إضافة dialog تأكيد الحذف
+- [x] إضافة tab "إدارة الأطباء" في AdminDashboard
