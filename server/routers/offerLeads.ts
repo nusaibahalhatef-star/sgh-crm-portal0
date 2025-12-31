@@ -54,9 +54,24 @@ export const offerLeadsRouter = router({
     const db = await getDb();
     if (!db) return [];
 
+    const { offers } = await import("../../drizzle/schema");
+    
     const results = await db
-      .select()
+      .select({
+        id: offerLeads.id,
+        offerId: offerLeads.offerId,
+        offerTitle: offers.title,
+        fullName: offerLeads.fullName,
+        phone: offerLeads.phone,
+        email: offerLeads.email,
+        notes: offerLeads.notes,
+        source: offerLeads.source,
+        status: offerLeads.status,
+        createdAt: offerLeads.createdAt,
+        updatedAt: offerLeads.updatedAt,
+      })
       .from(offerLeads)
+      .leftJoin(offers, eq(offers.id, offerLeads.offerId))
       .orderBy(desc(offerLeads.createdAt));
 
     return results;

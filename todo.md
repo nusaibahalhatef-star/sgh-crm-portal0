@@ -93,3 +93,10 @@
 - [x] إصلاح DoctorDetailPage - إضافة enabled condition
 - [x] إصلاح OfferDetailPage - إضافة enabled condition
 - [x] إصلاح CampDetailPage - إضافة enabled condition
+
+### إصلاح وتحسين تسجيلات المخيمات ✅ مكتمل
+- [x] إصلاح campRegistrations.list router - إضافة JOIN مع camps table
+- [x] إصلاح عرض اسم المخيم في CampRegistrationsManagement (campTitle → campName)
+- [x] إضافة فلترة حسب المخيم في CampRegistrationsManagement
+- [x] إصلاح offerLeads.list router - إضافة JOIN مع offers table
+- [x] إضافة فلترة حسب العرض في OfferLeadsManagement

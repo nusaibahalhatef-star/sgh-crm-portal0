@@ -62,6 +62,7 @@ const statusColors = {
 
 export default function OfferLeadsManagement() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedOffer, setSelectedOffer] = useState<string>("all");
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState("");
@@ -82,18 +83,39 @@ export default function OfferLeadsManagement() {
     },
   });
 
+  // Get unique offers for filter
+  const uniqueOffers = useMemo(() => {
+    if (!offerLeads) return [];
+    const offers = offerLeads
+      .filter((lead: any) => lead.offerTitle)
+      .map((lead: any) => ({ id: lead.offerId, title: lead.offerTitle }));
+    const unique = Array.from(new Map(offers.map((o: any) => [o.id, o])).values());
+    return unique;
+  }, [offerLeads]);
+
   const filteredLeads = useMemo(() => {
     if (!offerLeads) return [];
-    if (!searchTerm) return offerLeads;
     
-    const term = searchTerm.toLowerCase();
-    return offerLeads.filter(
-      (lead: any) =>
-        lead.fullName.toLowerCase().includes(term) ||
-        lead.phone.includes(term) ||
-        (lead.email && lead.email.toLowerCase().includes(term))
-    );
-  }, [offerLeads, searchTerm]);
+    let filtered = offerLeads;
+    
+    // Filter by offer
+    if (selectedOffer !== "all") {
+      filtered = filtered.filter((lead: any) => lead.offerId === parseInt(selectedOffer));
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (lead: any) =>
+          lead.fullName.toLowerCase().includes(term) ||
+          lead.phone.includes(term) ||
+          (lead.email && lead.email.toLowerCase().includes(term))
+      );
+    }
+    
+    return filtered;
+  }, [offerLeads, searchTerm, selectedOffer]);
 
   const handleStatusUpdate = () => {
     if (!selectedLead || !newStatus) return;
@@ -208,6 +230,19 @@ export default function OfferLeadsManagement() {
                 className="pr-10"
               />
             </div>
+            <Select value={selectedOffer} onValueChange={setSelectedOffer}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="فلترة حسب العرض" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">جميع العروض</SelectItem>
+                {uniqueOffers.map((offer: any) => (
+                  <SelectItem key={offer.id} value={offer.id.toString()}>
+                    {offer.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Table */}

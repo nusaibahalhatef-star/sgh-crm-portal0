@@ -61,6 +61,7 @@ const statusColors = {
 
 export default function CampRegistrationsManagement() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCamp, setSelectedCamp] = useState<string>("all");
   const [selectedRegistration, setSelectedRegistration] = useState<any>(null);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState("");
@@ -81,18 +82,39 @@ export default function CampRegistrationsManagement() {
     },
   });
 
+  // Get unique camps for filter
+  const uniqueCamps = useMemo(() => {
+    if (!registrations) return [];
+    const camps = registrations
+      .filter((reg: any) => reg.campName)
+      .map((reg: any) => ({ id: reg.campId, name: reg.campName }));
+    const unique = Array.from(new Map(camps.map((c: any) => [c.id, c])).values());
+    return unique;
+  }, [registrations]);
+
   const filteredRegistrations = useMemo(() => {
     if (!registrations) return [];
-    if (!searchTerm) return registrations;
     
-    const term = searchTerm.toLowerCase();
-    return registrations.filter(
-      (reg: any) =>
-        reg.fullName.toLowerCase().includes(term) ||
-        reg.phone.includes(term) ||
-        (reg.email && reg.email.toLowerCase().includes(term))
-    );
-  }, [registrations, searchTerm]);
+    let filtered = registrations;
+    
+    // Filter by camp
+    if (selectedCamp !== "all") {
+      filtered = filtered.filter((reg: any) => reg.campId === parseInt(selectedCamp));
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (reg: any) =>
+          reg.fullName.toLowerCase().includes(term) ||
+          reg.phone.includes(term) ||
+          (reg.email && reg.email.toLowerCase().includes(term))
+      );
+    }
+    
+    return filtered;
+  }, [registrations, searchTerm, selectedCamp]);
 
   const handleStatusUpdate = () => {
     if (!selectedRegistration || !newStatus) return;
@@ -196,6 +218,19 @@ export default function CampRegistrationsManagement() {
                 className="pr-10"
               />
             </div>
+            <Select value={selectedCamp} onValueChange={setSelectedCamp}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="فلترة حسب المخيم" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">جميع المخيمات</SelectItem>
+                {uniqueCamps.map((camp: any) => (
+                  <SelectItem key={camp.id} value={camp.id.toString()}>
+                    {camp.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Table */}
@@ -254,7 +289,7 @@ export default function CampRegistrationsManagement() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Tent className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{reg.campTitle || "غير محدد"}</span>
+                          <span className="text-sm">{reg.campName || "غير محدد"}</span>
                         </div>
                       </TableCell>
                       <TableCell>

@@ -59,9 +59,26 @@ export const campRegistrationsRouter = router({
     const db = await getDb();
     if (!db) return [];
 
+    const { camps } = await import("../../drizzle/schema");
+    
     const results = await db
-      .select()
+      .select({
+        id: campRegistrations.id,
+        campId: campRegistrations.campId,
+        campName: camps.name,
+        fullName: campRegistrations.fullName,
+        phone: campRegistrations.phone,
+        email: campRegistrations.email,
+        age: campRegistrations.age,
+        medicalCondition: campRegistrations.medicalCondition,
+        notes: campRegistrations.notes,
+        source: campRegistrations.source,
+        status: campRegistrations.status,
+        createdAt: campRegistrations.createdAt,
+        updatedAt: campRegistrations.updatedAt,
+      })
       .from(campRegistrations)
+      .leftJoin(camps, eq(camps.id, campRegistrations.campId))
       .orderBy(desc(campRegistrations.createdAt));
 
     return results;
