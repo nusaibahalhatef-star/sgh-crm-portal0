@@ -9,6 +9,7 @@ import { ArrowRight, Phone, Mail, Calendar, MapPin, Loader2, Heart } from "lucid
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 
 export default function CampDetailPage() {
   const params = useParams();
@@ -59,6 +60,15 @@ export default function CampDetailPage() {
     }
   };
 
+  // SEO meta tags
+  const seoTitle = camp 
+    ? `${camp.name} | المستشفى السعودي الألماني`
+    : "المخيمات الطبية | المستشفى السعودي الألماني";
+  
+  const seoDescription = camp
+    ? `${(camp.description || camp.name).substring(0, 150)}... سجل الآن في مخيمنا الطبي المجاني. اتصل: 8000018`
+    : "مخيمات طبية مجانية لخدمة المجتمع في المستشفى السعودي الألماني";
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
@@ -72,7 +82,15 @@ export default function CampDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+    <>
+      <SEO 
+        title={seoTitle}
+        description={seoDescription}
+        image={camp.imageUrl || "/assets/logo-color.png"}
+        type="article"
+        keywords={`${camp.name}, مخيم طبي, مجاني, صنعاء, المستشفى السعودي الألماني`}
+      />
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
       <Navbar />
 
       {/* Hero Section */}
@@ -257,5 +275,6 @@ export default function CampDetailPage() {
 
       <Footer />
     </div>
+    </>
   );
 }

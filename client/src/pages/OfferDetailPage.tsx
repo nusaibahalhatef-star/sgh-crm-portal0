@@ -10,6 +10,7 @@ import { ArrowRight, Phone, Mail, Calendar, CheckCircle2, Loader2 } from "lucide
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 
 export default function OfferDetailPage() {
   const params = useParams();
@@ -60,6 +61,15 @@ export default function OfferDetailPage() {
     }
   };
 
+  // SEO meta tags
+  const seoTitle = offer 
+    ? `${offer.title} | المستشفى السعودي الألماني`
+    : "العروض الطبية | المستشفى السعودي الألماني";
+  
+  const seoDescription = offer
+    ? `${(offer.description || offer.title).substring(0, 150)}... احجز الآن واستفد من عرضنا الخاص. اتصل: 8000018`
+    : "عروض طبية مميزة بأسعار تنافسية في المستشفى السعودي الألماني";
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
@@ -73,7 +83,15 @@ export default function OfferDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+    <>
+      <SEO 
+        title={seoTitle}
+        description={seoDescription}
+        image={offer.imageUrl || "/assets/logo-color.png"}
+        type="article"
+        keywords={`${offer.title}, عرض طبي, صنعاء, المستشفى السعودي الألماني`}
+      />
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
       <Navbar />
 
       {/* Hero Section */}
@@ -231,5 +249,6 @@ export default function OfferDetailPage() {
 
       <Footer />
     </div>
+    </>
   );
 }

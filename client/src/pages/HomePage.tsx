@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 import { APP_LOGO, APP_TITLE } from "@/const";
 import { Link } from "wouter";
 
@@ -47,7 +48,14 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-white">
+    <>
+      <SEO 
+        title="المستشفى السعودي الألماني - صنعاء | احجز موعدك الآن"
+        description="احجز موعدك مع أفضل الأطباء في المستشفى السعودي الألماني بصنعاء. خدمات طبية متميزة، عروض خاصة، ومخيمات صحية مجانية. اتصل الآن: 8000018"
+        image="/assets/logo-color.png"
+        keywords="المستشفى السعودي الألماني, صنعاء, حجز موعد, أطباء, عروض طبية, مخيمات صحية, استشارات طبية, 8000018"
+      />
+      <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-white">
       <Navbar />
 
       {/* Hero Section */}
@@ -208,5 +216,6 @@ export default function HomePage() {
 
       <Footer />
     </div>
+    </>
   );
 }

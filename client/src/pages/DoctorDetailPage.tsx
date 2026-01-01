@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -74,6 +75,15 @@ export default function DoctorDetailPage() {
     }
   };
 
+  // SEO meta tags
+  const seoTitle = doctor 
+    ? `${doctor.name} - ${doctor.specialty} | المستشفى السعودي الألماني`
+    : "الأطباء | المستشفى السعودي الألماني";
+  
+  const seoDescription = doctor
+    ? `احجز موعدك مع ${doctor.name}، ${doctor.specialty} في المستشفى السعودي الألماني. ${doctor.bio || 'خدمات طبية متميزة ورعاية شاملة'}. اتصل الآن: 8000018`
+    : "احجز موعدك مع أفضل الأطباء في المستشفى السعودي الألماني";
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-white">
@@ -107,7 +117,15 @@ export default function DoctorDetailPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-white">
+    <>
+      <SEO 
+        title={seoTitle}
+        description={seoDescription}
+        image={doctor.image || "/assets/logo-color.png"}
+        type="profile"
+        keywords={`${doctor.name}, ${doctor.specialty}, طبيب, استشاري, صنعاء, حجز موعد`}
+      />
+      <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-white">
       <Navbar />
 
       {/* Back Button */}
@@ -380,5 +398,6 @@ export default function DoctorDetailPage() {
 
       <Footer />
     </div>
+    </>
   );
 }
