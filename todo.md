@@ -118,3 +118,9 @@
 - [x] إضافة meta tags ديناميكية لصفحات العروض (OfferDetailPage)
 - [x] إضافة meta tags ديناميكية لصفحات المخيمات (CampDetailPage)
 - [x] دعم Twitter Cards و WhatsApp preview
+
+### إصلاح Open Graph Meta Tags ✅ مكتمل
+- [x] إضافة meta tags ثابتة في index.html
+- [x] إضافة og:image, og:title, og:description, og:url
+- [x] إضافة Twitter Card meta tags
+- [x] إضافة SEO meta tags (description, keywords, author)
