@@ -10,6 +10,7 @@ import CampaignLanding from "./pages/CampaignLanding";
 import ThankYou from "./pages/ThankYou";
 import AdminDashboard from "./pages/AdminDashboard";
 import DoctorAppointments from "./pages/DoctorAppointments";
+import Doctors from "./pages/Doctors";
 import Unauthorized from "./pages/Unauthorized";
 import AccessRequest from "./pages/AccessRequest";
 import OffersListPage from "./pages/OffersListPage";
@@ -25,7 +26,8 @@ function Router() {
     <Switch>
       <Route path={"/"} component={HomePage} />
       <Route path="/campaign/:slug" component={CampaignLanding} />
-      <Route path={"/doctors"} component={DoctorAppointments} />
+      <Route path={"/doctors"} component={Doctors} />
+      <Route path={"/book-appointment"} component={DoctorAppointments} />
       <Route path={"/doctors/:slug"} component={DoctorDetailPage} />
       <Route path={"/offers"} component={OffersListPage} />
       <Route path={"/offers/:slug"} component={OfferDetailPage} />

@@ -64,6 +64,13 @@
       "when": 1766363129718,
       "tag": "0008_aromatic_hitman",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1767373617898,
+      "tag": "0009_regular_risque",
+      "breakpoints": true
     }
   ]
 }

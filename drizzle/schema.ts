@@ -112,6 +112,8 @@ export const doctors = mysqlTable("doctors", {
   experience: varchar("experience", { length: 255 }),
   languages: varchar("languages", { length: 255 }),
   consultationFee: varchar("consultationFee", { length: 100 }),
+  procedures: text("procedures"), // JSON array of available procedures
+  isVisiting: boolean("isVisiting").default(false).notNull(), // Visiting doctor flag
   available: mysqlEnum("available", ["yes", "no"]).default("yes").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -130,9 +132,13 @@ export const appointments = mysqlTable("appointments", {
   fullName: varchar("fullName", { length: 255 }).notNull(),
   phone: varchar("phone", { length: 20 }).notNull(),
   email: varchar("email", { length: 320 }),
+  age: int("age"), // Patient age
+  procedure: varchar("procedure", { length: 255 }), // Selected procedure
   preferredDate: varchar("preferredDate", { length: 50 }),
   preferredTime: varchar("preferredTime", { length: 50 }),
-  notes: text("notes"),
+  notes: text("notes"), // Patient notes
+  additionalNotes: text("additionalNotes"), // Additional patient notes
+  staffNotes: text("staffNotes"), // Staff notes (admin only)
   status: mysqlEnum("status", ["pending", "confirmed", "cancelled", "completed"]).default("pending").notNull(),
   utmSource: varchar("utmSource", { length: 100 }),
   utmMedium: varchar("utmMedium", { length: 100 }),
@@ -145,7 +151,9 @@ export const appointments = mysqlTable("appointments", {
 export type Appointment = typeof appointments.$inferSelect;
 export type InsertAppointment = typeof appointments.$inferInsert;
 
-// Access requests table for new user authorization
+/**
+ * Access Requests table - stores access requests
+ */
 export const accessRequests = mysqlTable("accessRequests", {
   id: int("id").autoincrement().primaryKey(),
   openId: varchar("openId", { length: 64 }),
