@@ -1,0 +1,8 @@
+{
+  "query": "ALTER TABLE appointments \nADD COLUMN age INT NULL AFTER email,\nADD COLUMN `procedure` TEXT NULL AFTER age,\nADD COLUMN additionalNotes TEXT NULL AFTER preferredTime,\nADD COLUMN staffNotes TEXT NULL AFTER additionalNotes;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2xtgvXGdr7mxJSP.root --database HgGpRPs4xs9xrzjfX4xmFY --execute ALTER TABLE appointments \nADD COLUMN age INT NULL AFTER email,\nADD COLUMN `procedure` TEXT NULL AFTER age,\nADD COLUMN additionalNotes TEXT NULL AFTER preferredTime,\nADD COLUMN staffNotes TEXT NULL AFTER additionalNotes;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'age' in 'appointments'"
+  ]
+}

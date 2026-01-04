@@ -69,10 +69,22 @@ export const appRouter = router({
         utmContent: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        // Get campaign by slug
-        const campaign = await getCampaignBySlug(input.campaignSlug);
+        // Get or create campaign by slug
+        let campaign = await getCampaignBySlug(input.campaignSlug);
         if (!campaign) {
-          throw new Error("Campaign not found");
+          // Auto-create campaign for appointments
+          await createCampaign({
+            name: `حجز موعد - ${input.campaignSlug}`,
+            slug: input.campaignSlug,
+            description: `حجز موعد تلقائي`,
+            isActive: true,
+            whatsappEnabled: false,
+          });
+          campaign = await getCampaignBySlug(input.campaignSlug);
+        }
+        
+        if (!campaign) {
+          throw new Error("Failed to create or retrieve campaign");
         }
 
         // Create lead
@@ -331,10 +343,22 @@ export const appRouter = router({
         utmContent: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        // Get campaign by slug
-        const campaign = await getCampaignBySlug(input.campaignSlug);
+        // Get or create campaign by slug
+        let campaign = await getCampaignBySlug(input.campaignSlug);
         if (!campaign) {
-          throw new Error("Campaign not found");
+          // Auto-create campaign for appointments
+          await createCampaign({
+            name: `حجز موعد - ${input.campaignSlug}`,
+            slug: input.campaignSlug,
+            description: `حجز موعد تلقائي`,
+            isActive: true,
+            whatsappEnabled: false,
+          });
+          campaign = await getCampaignBySlug(input.campaignSlug);
+        }
+        
+        if (!campaign) {
+          throw new Error("Failed to create or retrieve campaign");
         }
 
         // Create appointment

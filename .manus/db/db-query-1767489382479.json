@@ -1,0 +1,20 @@
+{
+  "query": "SELECT id, slug, name FROM campaigns LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2xtgvXGdr7mxJSP.root --database HgGpRPs4xs9xrzjfX4xmFY --execute SELECT id, slug, name FROM campaigns LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "slug": "medical-camp-charity",
+      "name": "المخيم الطبي الخيري"
+    },
+    {
+      "id": "30001",
+      "slug": "doctor-appointments",
+      "name": "حجز مواعيد الأطباء"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tslug\tname\n1\tmedical-camp-charity\tالمخيم الطبي الخيري\n30001\tdoctor-appointments\tحجز مواعيد الأطباء\n",
+  "stderr": "",
+  "execution_time_ms": 48
+}
