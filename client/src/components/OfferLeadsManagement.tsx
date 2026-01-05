@@ -43,6 +43,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { exportToExcel, formatOfferLeadsForExport } from "@/lib/exportToExcel";
+import OfferLeadCard from "@/components/OfferLeadCard";
+import CardSkeleton from "@/components/CardSkeleton";
 
 const statusLabels = {
   new: "جديد",
@@ -245,8 +247,45 @@ export default function OfferLeadsManagement() {
             </Select>
           </div>
 
-          {/* Table */}
-          <div className="border rounded-lg">
+          {/* Mobile Cards View */}
+          <div className="md:hidden">
+            {isLoading ? (
+              <>
+                <CardSkeleton />
+                <CardSkeleton />
+                <CardSkeleton />
+              </>
+            ) : filteredLeads.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center text-muted-foreground">
+                  لا توجد حجوزات متاحة
+                </CardContent>
+              </Card>
+            ) : (
+              filteredLeads.map((lead: any) => (
+                <OfferLeadCard
+                  key={lead.id}
+                  lead={{
+                    id: lead.id,
+                    fullName: lead.fullName,
+                    phone: lead.phone,
+                    email: lead.email,
+                    status: lead.status,
+                    offerName: lead.offerTitle,
+                    createdAt: lead.createdAt,
+                  }}
+                  onEdit={() => {
+                    setSelectedLead(lead);
+                    setNewStatus(lead.status);
+                    setStatusDialogOpen(true);
+                  }}
+                />
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block border rounded-lg">
             <Table>
               <TableHeader>
                 <TableRow>

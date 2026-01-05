@@ -68,10 +68,10 @@ export default function LeadCard({ lead, onUpdateStatus, onWhatsApp }: LeadCardP
             size="sm"
             variant="outline"
             className="flex-1"
-            onClick={() => onUpdateStatus(lead)}
+            onClick={() => window.location.href = `tel:${lead.phone}`}
           >
-            <Eye className="w-4 h-4 ml-1" />
-            تحديث
+            <Phone className="w-4 h-4 ml-1" />
+            اتصال
           </Button>
           <Button
             size="sm"
@@ -81,6 +81,15 @@ export default function LeadCard({ lead, onUpdateStatus, onWhatsApp }: LeadCardP
           >
             <MessageSquare className="w-4 h-4 ml-1" />
             واتساب
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1"
+            onClick={() => onUpdateStatus(lead)}
+          >
+            <Eye className="w-4 h-4 ml-1" />
+            تحديث
           </Button>
         </div>
       </CardContent>

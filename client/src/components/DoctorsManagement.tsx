@@ -39,6 +39,7 @@ import {
   Trash2,
   Loader2,
   Stethoscope,
+  Plane,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -64,6 +65,19 @@ export default function DoctorsManagement() {
   });
 
   const { data: doctors, isLoading, refetch } = trpc.doctors.list.useQuery();
+
+  const doctorStats = useMemo(() => {
+    if (!doctors) return { total: 0, available: 0, unavailable: 0, visiting: 0, visitingAvailable: 0, visitingUnavailable: 0 };
+    const visiting = doctors.filter(d => d.isVisiting === 'yes');
+    return {
+      total: doctors.length,
+      available: doctors.filter(d => d.available === 'yes').length,
+      unavailable: doctors.filter(d => d.available === 'no').length,
+      visiting: visiting.length,
+      visitingAvailable: visiting.filter(d => d.available === 'yes').length,
+      visitingUnavailable: visiting.filter(d => d.available === 'no').length,
+    };
+  }, [doctors]);
 
   const createMutation = trpc.doctors.create.useMutation({
     onSuccess: () => {
@@ -256,6 +270,44 @@ export default function DoctorsManagement() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Visiting Doctors Stats */}
+      {doctorStats.visiting > 0 && (
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="border-purple-200 bg-purple-50/50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">أطباء زائرون</CardTitle>
+              <Plane className="h-4 w-4 text-purple-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-700">{doctorStats.visiting}</div>
+              <p className="text-xs text-muted-foreground">إجمالي الأطباء الزائرين</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-green-200 bg-green-50/50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">زائرون متاحون</CardTitle>
+              <UserCheck className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-700">{doctorStats.visitingAvailable}</div>
+              <p className="text-xs text-muted-foreground">أطباء زائرون متاحون للحجز</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-red-200 bg-red-50/50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">زائرون غير متاحين</CardTitle>
+              <UserX className="h-4 w-4 text-red-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-700">{doctorStats.visitingUnavailable}</div>
+              <p className="text-xs text-muted-foreground">أطباء زائرون غير متاحين</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Main Content */}
       <Card>

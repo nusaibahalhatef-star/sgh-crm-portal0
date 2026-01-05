@@ -44,6 +44,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { exportToExcel, formatCampRegistrationsForExport } from "@/lib/exportToExcel";
+import CampRegistrationCard from "@/components/CampRegistrationCard";
+import CardSkeleton from "@/components/CardSkeleton";
 
 const statusLabels = {
   pending: "قيد الانتظار",
@@ -233,8 +235,46 @@ export default function CampRegistrationsManagement() {
             </Select>
           </div>
 
-          {/* Table */}
-          <div className="border rounded-lg">
+          {/* Mobile Cards View */}
+          <div className="md:hidden">
+            {isLoading ? (
+              <>
+                <CardSkeleton />
+                <CardSkeleton />
+                <CardSkeleton />
+              </>
+            ) : filteredRegistrations.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center text-muted-foreground">
+                  لا توجد تسجيلات متاحة
+                </CardContent>
+              </Card>
+            ) : (
+              filteredRegistrations.map((reg: any) => (
+                <CampRegistrationCard
+                  key={reg.id}
+                  registration={{
+                    id: reg.id,
+                    fullName: reg.fullName,
+                    phone: reg.phone,
+                    email: reg.email,
+                    age: reg.age,
+                    status: reg.status,
+                    campName: reg.campName,
+                    createdAt: reg.createdAt,
+                  }}
+                  onEdit={() => {
+                    setSelectedRegistration(reg);
+                    setNewStatus(reg.status);
+                    setStatusDialogOpen(true);
+                  }}
+                />
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block border rounded-lg">
             <Table>
               <TableHeader>
                 <TableRow>
