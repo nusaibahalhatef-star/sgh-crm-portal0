@@ -3,6 +3,8 @@ import OfferLeadsManagement from "@/components/OfferLeadsManagement";
 import CampRegistrationsManagement from "@/components/CampRegistrationsManagement";
 import ManualRegistrationForm from "@/components/ManualRegistrationForm";
 import DoctorsManagement from "@/components/DoctorsManagement";
+import LeadCard from "@/components/LeadCard";
+import AppointmentCard from "@/components/AppointmentCard";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -253,8 +255,8 @@ export default function AdminDashboard() {
                 <p className="text-sm text-muted-foreground">إدارة حملات التسويق والعملاء</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="text-left">
+            <div className="flex items-center gap-2 md:gap-4">
+              <div className="text-left hidden md:block">
                 <p className="text-sm font-semibold">{user.name}</p>
                 <p className="text-xs text-muted-foreground">{user.email}</p>
               </div>
@@ -262,15 +264,18 @@ export default function AdminDashboard() {
                 variant="outline" 
                 size="sm"
                 onClick={() => setLocation("/reports/social-media")}
-                className="bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100 border-purple-200"
+                className="bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100 border-purple-200 hidden lg:flex"
               >
                 <BarChart3 className="w-4 h-4 ml-2" />
                 تقارير السوشيال ميديا
               </Button>
               <ManualRegistrationForm />
-              <Button variant="outline" size="sm" onClick={handleLogout}>
+              <Button variant="outline" size="sm" onClick={handleLogout} className="hidden md:flex">
                 <LogOut className="w-4 h-4 ml-2" />
                 تسجيل الخروج
+              </Button>
+              <Button variant="outline" size="icon" onClick={handleLogout} className="md:hidden">
+                <LogOut className="w-4 h-4" />
               </Button>
             </div>
           </div>
@@ -356,17 +361,20 @@ export default function AdminDashboard() {
           <Button
             variant={activeTab === "leads" ? "default" : "outline"}
             onClick={() => setActiveTab("leads")}
+            className="whitespace-nowrap"
           >
             <Users className="w-4 h-4 ml-2" />
-            العملاء المسجلين
+            <span className="hidden sm:inline">العملاء المسجلين</span>
+            <span className="sm:hidden">العملاء</span>
           </Button>
           <Button
             variant={activeTab === "requests" ? "default" : "outline"}
             onClick={() => setActiveTab("requests")}
-            className="relative"
+            className="relative whitespace-nowrap"
           >
             <UserCheck className="w-4 h-4 ml-2" />
-            طلبات التصريح
+            <span className="hidden sm:inline">طلبات التصريح</span>
+            <span className="sm:hidden">الطلبات</span>
             {accessRequests && accessRequests.length > 0 && (
               <Badge className="absolute -top-2 -left-2 bg-red-500">
                 {accessRequests.length}
@@ -376,27 +384,34 @@ export default function AdminDashboard() {
           <Button
             variant={activeTab === "appointments" ? "default" : "outline"}
             onClick={() => setActiveTab("appointments")}
+            className="whitespace-nowrap"
           >
             <Calendar className="w-4 h-4 ml-2" />
-            مواعيد الأطباء
+            <span className="hidden sm:inline">مواعيد الأطباء</span>
+            <span className="sm:hidden">المواعيد</span>
           </Button>
           <Button
             variant={activeTab === "offerLeads" ? "default" : "outline"}
             onClick={() => setActiveTab("offerLeads")}
+            className="whitespace-nowrap"
           >
             <TrendingUp className="w-4 h-4 ml-2" />
-            حجوزات العروض
+            <span className="hidden sm:inline">حجوزات العروض</span>
+            <span className="sm:hidden">العروض</span>
           </Button>
           <Button
             variant={activeTab === "campRegistrations" ? "default" : "outline"}
             onClick={() => setActiveTab("campRegistrations")}
+            className="whitespace-nowrap"
           >
             <Calendar className="w-4 h-4 ml-2" />
-            تسجيلات المخيمات
+            <span className="hidden sm:inline">تسجيلات المخيمات</span>
+            <span className="sm:hidden">المخيمات</span>
           </Button>
           <Button
             variant={activeTab === "offers" ? "default" : "outline"}
             onClick={() => setActiveTab("offers")}
+            className="whitespace-nowrap hidden md:flex"
           >
             <TrendingUp className="w-4 h-4 ml-2" />
             إدارة العروض
@@ -404,6 +419,7 @@ export default function AdminDashboard() {
           <Button
             variant={activeTab === "camps" ? "default" : "outline"}
             onClick={() => setActiveTab("camps")}
+            className="whitespace-nowrap hidden md:flex"
           >
             <Calendar className="w-4 h-4 ml-2" />
             إدارة المخيمات
@@ -426,16 +442,17 @@ export default function AdminDashboard() {
                 <CardTitle>قائمة العملاء المسجلين</CardTitle>
                 <CardDescription>إدارة ومتابعة جميع العملاء المسجلين في الحملات</CardDescription>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="بحث بالاسم، الهاتف، أو البريد..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pr-10 w-80"
-                  />
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 mt-4 sm:mt-0">
+                <div className="flex-1 max-w-md">
+                  <div className="relative">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="بحث..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pr-10 h-9 md:h-10"
+                    />
+                  </div>
                 </div>
                 <Button
                   variant="outline"
@@ -449,9 +466,11 @@ export default function AdminDashboard() {
                     exportToExcel(formattedData, `leads-${new Date().toISOString().split('T')[0]}`, 'العملاء');
                     toast.success("تم تصدير البيانات بنجاح");
                   }}
+                  className="w-full sm:w-auto"
                 >
                   <Download className="w-4 h-4 ml-1" />
-                  تصدير Excel
+                  <span className="hidden sm:inline">تصدير Excel</span>
+                  <span className="sm:hidden">تصدير</span>
                 </Button>
               </div>
             </div>
@@ -469,88 +488,108 @@ export default function AdminDashboard() {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto -mx-4 md:mx-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-right">الاسم</TableHead>
-                      <TableHead className="text-right">الهاتف</TableHead>
-                      <TableHead className="text-right hidden md:table-cell">البريد الإلكتروني</TableHead>
-                      <TableHead className="text-right">الحالة</TableHead>
-                      <TableHead className="text-right hidden lg:table-cell">تاريخ التسجيل</TableHead>
-                      <TableHead className="text-right">الإجراءات</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredLeads.map((lead) => (
-                      <TableRow key={lead.id}>
-                        <TableCell className="font-medium">{lead.fullName}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Phone className="w-4 h-4 text-muted-foreground" />
-                            <span dir="ltr">{lead.phone}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {lead.email ? (
-                            <div className="flex items-center gap-2">
-                              <Mail className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-sm">{lead.email}</span>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">غير متوفر</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={`${statusColors[lead.status as keyof typeof statusColors]} text-white`}>
-                            {statusLabels[lead.status as keyof typeof statusLabels]}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="hidden lg:table-cell">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Calendar className="w-4 h-4" />
-                            {new Date(lead.createdAt).toLocaleDateString("ar-YE", {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            })}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="w-full sm:w-auto"
-                              onClick={() => {
-                                setSelectedLead(lead);
-                                setNewStatus(lead.status);
-                                setStatusDialogOpen(true);
-                              }}
-                            >
-                              <Eye className="w-4 h-4 ml-1" />
-                              <span className="hidden sm:inline">تحديث الحالة</span>
-                              <span className="sm:hidden">تحديث</span>
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-green-600 hover:text-green-700 hover:bg-green-50 w-full sm:w-auto"
-                              onClick={() => {
-                                const message = `مرحباً ${lead.fullName}،\n\nشكراً لتسجيلك في منصتنا. نود التواصل معك.\n\nالمستشفى السعودي الألماني - صنعاء`;
-                                window.open(`https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
-                              }}
-                            >
-                              <MessageSquare className="w-4 h-4 ml-1" />
-                              واتساب
-                            </Button>
-                          </div>
-                        </TableCell>
+              <>
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-3 px-1">
+                  {filteredLeads.map((lead) => (
+                    <LeadCard
+                      key={lead.id}
+                      lead={lead}
+                      onUpdateStatus={(lead) => {
+                        setSelectedLead(lead);
+                        setNewStatus(lead.status);
+                        setStatusDialogOpen(true);
+                      }}
+                      onWhatsApp={(lead) => {
+                        const message = `مرحباً ${lead.fullName}،\n\nشكراً لتسجيلك في منصتنا. نود التواصل معك.\n\nالمستشفى السعودي الألماني - صنعاء`;
+                        window.open(`https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-right">الاسم</TableHead>
+                        <TableHead className="text-right">الهاتف</TableHead>
+                        <TableHead className="text-right">البريد الإلكتروني</TableHead>
+                        <TableHead className="text-right">الحالة</TableHead>
+                        <TableHead className="text-right">تاريخ التسجيل</TableHead>
+                        <TableHead className="text-right">الإجراءات</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredLeads.map((lead) => (
+                        <TableRow key={lead.id}>
+                          <TableCell className="font-medium">{lead.fullName}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Phone className="w-4 h-4 text-muted-foreground" />
+                              <span dir="ltr">{lead.phone}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {lead.email ? (
+                              <div className="flex items-center gap-2">
+                                <Mail className="w-4 h-4 text-muted-foreground" />
+                                <span className="text-sm">{lead.email}</span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">غير متوفر</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={`${statusColors[lead.status as keyof typeof statusColors]} text-white`}>
+                              {statusLabels[lead.status as keyof typeof statusLabels]}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Calendar className="w-4 h-4" />
+                              {new Date(lead.createdAt).toLocaleDateString("ar-YE", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedLead(lead);
+                                  setNewStatus(lead.status);
+                                  setStatusDialogOpen(true);
+                                }}
+                              >
+                                <Eye className="w-4 h-4 ml-1" />
+                                تحديث الحالة
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                onClick={() => {
+                                  const message = `مرحباً ${lead.fullName}،\n\nشكراً لتسجيلك في منصتنا. نود التواصل معك.\n\nالمستشفى السعودي الألماني - صنعاء`;
+                                  window.open(`https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+                                }}
+                              >
+                                <MessageSquare className="w-4 h-4 ml-1" />
+                                واتساب
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -757,110 +796,125 @@ export default function AdminDashboard() {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto -mx-4 md:mx-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-right">اسم المريض</TableHead>
-                      <TableHead className="text-right">الهاتف</TableHead>
-                      <TableHead className="text-right hidden md:table-cell">العمر</TableHead>
-                      <TableHead className="text-right">الطبيب</TableHead>
-                      <TableHead className="text-right hidden lg:table-cell">الإجراء</TableHead>
-                      <TableHead className="text-right hidden lg:table-cell">التاريخ المفضل</TableHead>
-                      <TableHead className="text-right">الحالة</TableHead>
-                      <TableHead className="text-right">الإجراءات</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredAppointments.map((appointment) => (
-                      <TableRow key={appointment.id}>
-                        <TableCell className="font-medium">{appointment.fullName}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Phone className="w-4 h-4 text-muted-foreground" />
-                            <span dir="ltr">{appointment.phone}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {appointment.age ? (
-                            <span className="font-medium">{appointment.age} سنة</span>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">غير محدد</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{appointment.doctorName || `طبيب #${appointment.doctorId}`}</p>
-                            {appointment.doctorSpecialty && (
-                              <p className="text-xs text-muted-foreground">{appointment.doctorSpecialty}</p>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden lg:table-cell">
-                          {appointment.procedure ? (
-                            <span className="text-sm">{appointment.procedure}</span>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">غير محدد</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="hidden lg:table-cell">
-                          {appointment.preferredDate || <span className="text-muted-foreground text-sm">غير محدد</span>}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            className={
-                              appointment.status === "pending"
-                                ? "bg-yellow-500"
-                                : appointment.status === "confirmed"
-                                ? "bg-green-500"
-                                : appointment.status === "cancelled"
-                                ? "bg-red-500"
-                                : "bg-gray-500"
-                            }
-                          >
-                            {appointment.status === "pending" && "قيد الانتظار"}
-                            {appointment.status === "confirmed" && "مؤكد"}
-                            {appointment.status === "cancelled" && "ملغي"}
-                            {appointment.status === "completed" && "مكتمل"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {new Date(appointment.createdAt).toLocaleDateString('ar-YE')}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedAppointment(appointment);
-                                setNewAppointmentStatus(appointment.status);
-                                setAppointmentStatusDialogOpen(true);
-                              }}
-                            >
-                              <Eye className="w-4 h-4 ml-1" />
-                              تحديث الحالة
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                              onClick={() => {
-                                const doctorName = appointment.doctorName || `طبيب #${appointment.doctorId}`;
-                                const message = `مرحباً ${appointment.fullName}،\n\nشكراً لحجز موعدك مع ${doctorName}. نود التواصل معك لتأكيد الموعد.\n\nالمستشفى السعودي الألماني - صنعاء`;
-                                window.open(`https://wa.me/${appointment.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
-                              }}
-                            >
-                              <MessageSquare className="w-4 h-4 ml-1" />
-                              واتساب
-                            </Button>
-                          </div>
-                        </TableCell>
+              <>
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-3 px-1">
+                  {filteredAppointments.map((appointment) => (
+                    <AppointmentCard
+                      key={appointment.id}
+                      appointment={appointment}
+                      onViewDetails={(appointment) => {
+                        setSelectedAppointment(appointment);
+                        setNewAppointmentStatus(appointment.status);
+                        setAppointmentStatusDialogOpen(true);
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-right">اسم المريض</TableHead>
+                        <TableHead className="text-right">الهاتف</TableHead>
+                        <TableHead className="text-right">العمر</TableHead>
+                        <TableHead className="text-right">الطبيب</TableHead>
+                        <TableHead className="text-right">الإجراء</TableHead>
+                        <TableHead className="text-right">التاريخ المفضل</TableHead>
+                        <TableHead className="text-right">الحالة</TableHead>
+                        <TableHead className="text-right">الإجراءات</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredAppointments.map((appointment) => (
+                        <TableRow key={appointment.id}>
+                          <TableCell className="font-medium">{appointment.fullName}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Phone className="w-4 h-4 text-muted-foreground" />
+                              <span dir="ltr">{appointment.phone}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {appointment.age ? (
+                              <span className="font-medium">{appointment.age} سنة</span>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">غير محدد</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{appointment.doctorName || `طبيب #${appointment.doctorId}`}</p>
+                              {appointment.doctorSpecialty && (
+                                <p className="text-xs text-muted-foreground">{appointment.doctorSpecialty}</p>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {appointment.procedure ? (
+                              <span className="text-sm">{appointment.procedure}</span>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">غير محدد</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {appointment.preferredDate || <span className="text-muted-foreground text-sm">غير محدد</span>}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              className={
+                                appointment.status === "pending"
+                                  ? "bg-yellow-500"
+                                  : appointment.status === "confirmed"
+                                  ? "bg-green-500"
+                                  : appointment.status === "cancelled"
+                                  ? "bg-red-500"
+                                  : "bg-gray-500"
+                              }
+                            >
+                              {appointment.status === "pending" && "قيد الانتظار"}
+                              {appointment.status === "confirmed" && "مؤكد"}
+                              {appointment.status === "cancelled" && "ملغي"}
+                              {appointment.status === "completed" && "مكتمل"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedAppointment(appointment);
+                                  setNewAppointmentStatus(appointment.status);
+                                  setAppointmentStatusDialogOpen(true);
+                                }}
+                              >
+                                <Eye className="w-4 h-4 ml-1" />
+                                تحديث الحالة
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                onClick={() => {
+                                  const doctorName = appointment.doctorName || `طبيب #${appointment.doctorId}`;
+                                  const message = `مرحباً ${appointment.fullName}،\n\nشكراً لحجز موعدك مع ${doctorName}. نود التواصل معك لتأكيد الموعد.\n\nالمستشفى السعودي الألماني - صنعاء`;
+                                  window.open(`https://wa.me/${appointment.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+                                }}
+                              >
+                                <MessageSquare className="w-4 h-4 ml-1" />
+                                واتساب
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
