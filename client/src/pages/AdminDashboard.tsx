@@ -277,15 +277,15 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <main className="container py-8">
+      <main className="container py-4 md:py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-6 md:mb-8">
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 md:pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">إجمالي العملاء</p>
-                  <p className="text-3xl font-bold text-primary">{stats?.total || 0}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground mb-1">إجمالي العملاء</p>
+                  <p className="text-xl md:text-2xl font-bold">{leads?.length || 0}</p>
                 </div>
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
                   <Users className="w-6 h-6 text-primary" />
@@ -299,7 +299,7 @@ export default function AdminDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">جديد</p>
-                  <p className="text-3xl font-bold text-blue-600">{stats?.new || 0}</p>
+                  <p className="text-xl md:text-2xl lg:text-3xl font-bold text-blue-600">{stats?.new || 0}</p>
                 </div>
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 text-blue-600" />
@@ -313,7 +313,7 @@ export default function AdminDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">تم التواصل</p>
-                  <p className="text-3xl font-bold text-yellow-600">{stats?.contacted || 0}</p>
+                  <p className="text-xl md:text-2xl lg:text-3xl font-bold text-yellow-600">{stats?.contacted || 0}</p>
                 </div>
                 <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
                   <Phone className="w-6 h-6 text-yellow-600" />
@@ -327,7 +327,7 @@ export default function AdminDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">تم الحجز</p>
-                  <p className="text-3xl font-bold text-green-600">{stats?.booked || 0}</p>
+                  <p className="text-xl md:text-2xl lg:text-3xl font-bold text-green-600">{stats?.booked || 0}</p>
                 </div>
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                   <UserCheck className="w-6 h-6 text-green-600" />
@@ -341,7 +341,7 @@ export default function AdminDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">غير مهتم</p>
-                  <p className="text-3xl font-bold text-red-600">{stats?.notInterested || 0}</p>
+                  <p className="text-xl md:text-2xl lg:text-3xl font-bold text-red-600">{stats?.notInterested || 0}</p>
                 </div>
                 <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
                   <UserX className="w-6 h-6 text-red-600" />
@@ -352,7 +352,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-4 md:mb-6 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
           <Button
             variant={activeTab === "leads" ? "default" : "outline"}
             onClick={() => setActiveTab("leads")}
@@ -463,21 +463,21 @@ export default function AdminDashboard() {
               </div>
             ) : filteredLeads.length === 0 ? (
               <div className="text-center py-12">
-                <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                <Users className="w-6 h-6 md:w-8 md:h-8 text-muted-foreground mx-auto mb-4" />
                 <p className="text-lg font-semibold text-muted-foreground">
                   {searchTerm ? "لا توجد نتائج للبحث" : "لا يوجد عملاء مسجلين بعد"}
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto -mx-4 md:mx-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-right">الاسم</TableHead>
                       <TableHead className="text-right">الهاتف</TableHead>
-                      <TableHead className="text-right">البريد الإلكتروني</TableHead>
+                      <TableHead className="text-right hidden md:table-cell">البريد الإلكتروني</TableHead>
                       <TableHead className="text-right">الحالة</TableHead>
-                      <TableHead className="text-right">تاريخ التسجيل</TableHead>
+                      <TableHead className="text-right hidden lg:table-cell">تاريخ التسجيل</TableHead>
                       <TableHead className="text-right">الإجراءات</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -491,7 +491,7 @@ export default function AdminDashboard() {
                             <span dir="ltr">{lead.phone}</span>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden md:table-cell">
                           {lead.email ? (
                             <div className="flex items-center gap-2">
                               <Mail className="w-4 h-4 text-muted-foreground" />
@@ -506,7 +506,7 @@ export default function AdminDashboard() {
                             {statusLabels[lead.status as keyof typeof statusLabels]}
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden lg:table-cell">
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Calendar className="w-4 h-4" />
                             {new Date(lead.createdAt).toLocaleDateString("ar-YE", {
@@ -517,10 +517,11 @@ export default function AdminDashboard() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                             <Button
                               size="sm"
                               variant="outline"
+                              className="w-full sm:w-auto"
                               onClick={() => {
                                 setSelectedLead(lead);
                                 setNewStatus(lead.status);
@@ -528,12 +529,13 @@ export default function AdminDashboard() {
                               }}
                             >
                               <Eye className="w-4 h-4 ml-1" />
-                              تحديث الحالة
+                              <span className="hidden sm:inline">تحديث الحالة</span>
+                              <span className="sm:hidden">تحديث</span>
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
-                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50 w-full sm:w-auto"
                               onClick={() => {
                                 const message = `مرحباً ${lead.fullName}،\n\nشكراً لتسجيلك في منصتنا. نود التواصل معك.\n\nالمستشفى السعودي الألماني - صنعاء`;
                                 window.open(`https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
@@ -685,13 +687,13 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">إجمالي المواعيد</p>
-                      <p className="text-3xl font-bold text-primary">{appointmentStats.total}</p>
+                      <p className="text-xl md:text-2xl lg:text-3xl font-bold text-primary">{appointmentStats.total}</p>
                     </div>
                     <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
                       <Calendar className="w-6 h-6 text-primary" />
@@ -705,7 +707,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">قيد الانتظار</p>
-                      <p className="text-3xl font-bold text-yellow-600">{appointmentStats.pending}</p>
+                      <p className="text-xl md:text-2xl lg:text-3xl font-bold text-yellow-600">{appointmentStats.pending}</p>
                     </div>
                     <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
                       <Calendar className="w-6 h-6 text-yellow-600" />
@@ -719,7 +721,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">مؤكد</p>
-                      <p className="text-3xl font-bold text-green-600">{appointmentStats.confirmed}</p>
+                      <p className="text-xl md:text-2xl lg:text-3xl font-bold text-green-600">{appointmentStats.confirmed}</p>
                     </div>
                     <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                       <Calendar className="w-6 h-6 text-green-600" />
@@ -733,7 +735,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">ملغي</p>
-                      <p className="text-3xl font-bold text-red-600">{appointmentStats.cancelled}</p>
+                      <p className="text-xl md:text-2xl lg:text-3xl font-bold text-red-600">{appointmentStats.cancelled}</p>
                     </div>
                     <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
                       <Calendar className="w-6 h-6 text-red-600" />
@@ -755,16 +757,16 @@ export default function AdminDashboard() {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto -mx-4 md:mx-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-right">اسم المريض</TableHead>
                       <TableHead className="text-right">الهاتف</TableHead>
-                      <TableHead className="text-right">العمر</TableHead>
+                      <TableHead className="text-right hidden md:table-cell">العمر</TableHead>
                       <TableHead className="text-right">الطبيب</TableHead>
-                      <TableHead className="text-right">الإجراء</TableHead>
-                      <TableHead className="text-right">التاريخ المفضل</TableHead>
+                      <TableHead className="text-right hidden lg:table-cell">الإجراء</TableHead>
+                      <TableHead className="text-right hidden lg:table-cell">التاريخ المفضل</TableHead>
                       <TableHead className="text-right">الحالة</TableHead>
                       <TableHead className="text-right">الإجراءات</TableHead>
                     </TableRow>
@@ -779,7 +781,7 @@ export default function AdminDashboard() {
                             <span dir="ltr">{appointment.phone}</span>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden md:table-cell">
                           {appointment.age ? (
                             <span className="font-medium">{appointment.age} سنة</span>
                           ) : (
@@ -794,14 +796,14 @@ export default function AdminDashboard() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden lg:table-cell">
                           {appointment.procedure ? (
                             <span className="text-sm">{appointment.procedure}</span>
                           ) : (
                             <span className="text-muted-foreground text-sm">غير محدد</span>
                           )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden lg:table-cell">
                           {appointment.preferredDate || <span className="text-muted-foreground text-sm">غير محدد</span>}
                         </TableCell>
                         <TableCell>
@@ -892,7 +894,7 @@ export default function AdminDashboard() {
 
       {/* Status Update Dialog */}
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]" dir="rtl">
+        <DialogContent className="max-w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto" dir="rtl">
           <DialogHeader>
             <DialogTitle>تحديث حالة العميل</DialogTitle>
             <DialogDescription>
@@ -972,7 +974,7 @@ export default function AdminDashboard() {
 
       {/* Appointment Status Update Dialog */}
       <Dialog open={appointmentStatusDialogOpen} onOpenChange={setAppointmentStatusDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]" dir="rtl">
+        <DialogContent className="max-w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto" dir="rtl">
           <DialogHeader>
             <DialogTitle>تحديث حالة الموعد</DialogTitle>
             <DialogDescription>
@@ -1249,7 +1251,7 @@ function OffersManagement() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="sm:max-w-[600px]" dir="rtl">
+        <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto" dir="rtl">
           <DialogHeader>
             <DialogTitle>{editingOffer ? "تعديل العرض" : "إضافة عرض جديد"}</DialogTitle>
             <DialogDescription>
@@ -1526,7 +1528,7 @@ function CampsManagement() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="sm:max-w-[600px]" dir="rtl">
+        <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto" dir="rtl">
           <DialogHeader>
             <DialogTitle>{editingCamp ? "تعديل المخيم" : "إضافة مخيم جديد"}</DialogTitle>
             <DialogDescription>
