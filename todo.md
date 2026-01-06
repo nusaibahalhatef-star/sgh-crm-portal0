@@ -283,3 +283,8 @@
 - [x] تحديث Service Worker لدعم offline caching أفضل
 - [x] إضافة route /offline في App.tsx
 - [x] عرض حالة الاتصال (online/offline) في الصفحة
+
+### إصلاح Vite WebSocket HMR ✅ مكتمل
+- [x] تحديث vite.config.ts لإصلاح WebSocket connection في sandbox
+- [x] إضافة server.hmr configuration (protocol: wss, clientPort: 443)
+- [x] إعادة تشغيل dev server وتطبيق الإعدادات الجديدة
