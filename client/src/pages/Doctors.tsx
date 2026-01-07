@@ -53,7 +53,7 @@ export default function Doctors() {
         description="تعرف على أطبائنا المتميزين في مختلف التخصصات. احجز موعدك الآن مع أفضل الأطباء في صنعاء."
         image={APP_LOGO}
       />
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50" dir="rtl">
         <Navbar />
 
         {/* Hero Section */}
@@ -63,10 +63,10 @@ export default function Doctors() {
               <Stethoscope className="w-5 h-5" />
               <span className="text-sm font-medium">أطباء متخصصون</span>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold text-gray-900 mb-4">
               أطباؤنا المتميزون
             </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4">
               فريق طبي متكامل من أفضل الأطباء في مختلف التخصصات
             </p>
           </div>
@@ -84,7 +84,7 @@ export default function Doctors() {
                       placeholder="ابحث عن طبيب أو تخصص..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pr-10"
+                      className="pr-10 text-right"
                     />
                   </div>
                   <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
@@ -135,26 +135,26 @@ export default function Doctors() {
                           </div>
                         )}
                       </div>
-                      <CardTitle className="text-xl text-gray-900 group-hover:text-emerald-600 transition-colors">
+                      <CardTitle className="text-lg sm:text-xl text-gray-900 group-hover:text-emerald-600 transition-colors">
                         {doctor.name}
                       </CardTitle>
-                      <CardDescription className="text-base">
+                      <CardDescription className="text-sm sm:text-base">
                         {doctor.specialty}
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="text-center space-y-3">
                       {doctor.experience && (
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 text-right">
                           <span className="font-semibold">الخبرة:</span> {doctor.experience}
                         </p>
                       )}
                       {doctor.languages && (
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 text-right">
                           <span className="font-semibold">اللغات:</span> {doctor.languages}
                         </p>
                       )}
                       {doctor.consultationFee && (
-                        <p className="text-sm text-emerald-600 font-semibold">
+                        <p className="text-sm text-emerald-600 font-semibold text-center">
                           رسوم الاستشارة: {doctor.consultationFee}
                         </p>
                       )}

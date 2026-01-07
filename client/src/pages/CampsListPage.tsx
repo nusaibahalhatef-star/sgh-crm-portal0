@@ -19,7 +19,7 @@ export default function CampsListPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50" dir="rtl">
       <Navbar />
 
       {/* Hero Section */}
@@ -27,10 +27,10 @@ export default function CampsListPage() {
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <Heart className="h-16 w-16 mx-auto mb-6 fill-red-400 text-red-400" />
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4">
               المخيمات الطبية الخيرية
             </h1>
-            <p className="text-xl text-white/90">
+            <p className="text-base sm:text-lg md:text-xl text-white/90 px-4">
               مبادراتنا الإنسانية في إطار المسؤولية المجتمعية لخدمة المحتاجين
             </p>
           </div>
@@ -41,10 +41,10 @@ export default function CampsListPage() {
       <section className="py-12 bg-white">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
               عن المخيمات الطبية الخيرية
             </h2>
-            <p className="text-lg text-gray-700 leading-relaxed">
+            <p className="text-base sm:text-lg text-gray-700 leading-relaxed text-right">
               يأتي تنظيم المخيمات الطبية الخيرية ضمن مبادرات المستشفى السعودي الألماني
               في إطار المسؤولية المجتمعية، حيث نسعى لتقديم خدمات طبية عالية الجودة
               للمحتاجين والمستحقين بأسعار رمزية أو مجاناً. يشرف على المخيمات نخبة من

@@ -110,10 +110,10 @@ export default function DoctorAppointments() {
                 <Stethoscope className="w-5 h-5" />
                 <span className="font-semibold">احجز موعدك الآن</span>
               </div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
                 احجز موعدك مع أفضل الأطباء
               </h1>
-              <p className="text-xl text-gray-600 mb-8">
+              <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-8 px-4">
                 فريق طبي متميز من الاستشاريين والأخصائيين في مختلف التخصصات
               </p>
             </div>
@@ -123,14 +123,14 @@ export default function DoctorAppointments() {
         {/* Doctors Grid */}
         <section className="py-12 bg-white">
           <div className="container">
-            <h2 className="text-3xl font-bold text-center mb-12">أطباؤنا المتميزون</h2>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-8 sm:mb-12">أطباؤنا المتميزون</h2>
             
             {doctorsLoading ? (
               <div className="flex justify-center items-center py-20">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-6">
                 {doctors?.map((doctor: any) => (
                   <Card 
                     key={doctor.id} 
@@ -149,8 +149,8 @@ export default function DoctorAppointments() {
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <h3 className="font-bold text-sm mb-1 text-center">{doctor.name}</h3>
-                      <p className="text-xs text-muted-foreground text-center">{doctor.specialty}</p>
+                      <h3 className="font-bold text-xs sm:text-sm mb-1 text-center line-clamp-2">{doctor.name}</h3>
+                      <p className="text-xs text-muted-foreground text-center line-clamp-1">{doctor.specialty}</p>
                     </CardContent>
                   </Card>
                 ))}
@@ -165,8 +165,8 @@ export default function DoctorAppointments() {
             <div className="max-w-2xl mx-auto">
               <Card className="shadow-xl">
                 <CardHeader className="text-center">
-                  <CardTitle className="text-2xl md:text-3xl">نموذج حجز الموعد</CardTitle>
-                  <CardDescription className="text-base">
+                  <CardTitle className="text-xl sm:text-2xl md:text-3xl">نموذج حجز الموعد</CardTitle>
+                  <CardDescription className="text-sm sm:text-base">
                     املأ البيانات التالية وسنتواصل معك لتأكيد الموعد
                   </CardDescription>
                 </CardHeader>

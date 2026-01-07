@@ -19,7 +19,7 @@ export default function OffersListPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50" dir="rtl">
       <Navbar />
 
       {/* Hero Section */}
@@ -27,10 +27,10 @@ export default function OffersListPage() {
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <Gift className="h-16 w-16 mx-auto mb-6" />
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4">
               عروضنا الطبية المميزة
             </h1>
-            <p className="text-xl text-white/90">
+            <p className="text-base sm:text-lg md:text-xl text-white/90 px-4">
               استفد من عروضنا الخاصة على مختلف الخدمات الطبية بأسعار تنافسية
             </p>
           </div>

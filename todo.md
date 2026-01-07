@@ -296,3 +296,27 @@
 - [x] تحديث اسم ووصف التطبيق ليكون عام (منصة الحجز)
 - [x] إضافة auto-redirect في HomePage: إذا admin مسجل دخول → /dashboard
 - [x] إضافة loading state أثناء فحص المصادقة
+
+### تحسين تجربة الجوال وإصلاح RTL 🔄 جاري العمل
+
+#### المرحلة 1: إصلاح RTL والصفحة الرئيسية ✅
+- [x] إضافة dir="rtl" في HomePage, Doctors, Offers, Camps
+- [x] إصلاح محاذاة النصوص العربية (text-right)
+- [x] عكس اتجاه الأيقونات (mr → ml + rotate-180)
+- [x] تحسين HomePage: أحجام responsive (text-2xl sm:text-3xl md:text-5xl)
+- [x] تحسين Hero section وService Cards
+
+#### المرحلة 2: صفحات الأطباء ✅
+- [x] تحسين Doctors.tsx: RTL + responsive text sizes
+- [x] تحسين Doctor Cards: text-right للخبرة واللغات
+- [x] تحسين Search input: text-right
+
+#### المرحلة 3: العروض والمخيمات ✅
+- [x] تحسين OffersListPage: RTL + responsive (text-2xl sm:text-3xl md:text-5xl)
+- [x] تحسين CampsListPage: RTL + responsive + text-right للفقرات
+
+#### المرحلة 4: نماذج الحجز ✅
+- [x] تحسين DoctorAppointments: responsive text (text-2xl sm:text-3xl md:text-4xl)
+- [x] تحسين Doctors Grid: grid-cols-2 sm:grid-cols-3 md:grid-cols-4
+- [x] تحسين Doctor Cards: line-clamp للأسماء الطويلة
+- [x] تحسين Form: text-xl sm:text-2xl md:text-3xl

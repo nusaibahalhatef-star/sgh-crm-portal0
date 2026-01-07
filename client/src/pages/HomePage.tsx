@@ -10,25 +10,9 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import { APP_LOGO, APP_TITLE } from "@/const";
-import { Link, useLocation } from "wouter";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { useEffect } from "react";
+import { Link } from "wouter";
 
 export default function HomePage() {
-  const { isAuthenticated, user, loading } = useAuth();
-  const [, setLocation] = useLocation();
-
-  // Auto-redirect authenticated admins to dashboard
-  useEffect(() => {
-    if (!loading && isAuthenticated && user?.role === 'admin') {
-      setLocation('/dashboard');
-    }
-  }, [loading, isAuthenticated, user, setLocation]);
-
-  // Show nothing while checking auth or redirecting
-  if (loading || (isAuthenticated && user?.role === 'admin')) {
-    return null;
-  }
 
   const services = [
     {
@@ -72,7 +56,7 @@ export default function HomePage() {
         image="/assets/logo-color.png"
         keywords="المستشفى السعودي الألماني, صنعاء, حجز موعد, أطباء, عروض طبية, مخيمات صحية, استشارات طبية, 8000018"
       />
-      <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-white">
+      <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-white" dir="rtl">
       <Navbar />
 
       {/* Hero Section */}
@@ -84,14 +68,14 @@ export default function HomePage() {
               alt={APP_TITLE}
               className="h-20 w-auto mx-auto mb-6 brightness-0 invert"
             />
-            <h1 className="text-3xl md:text-5xl font-bold mb-4">{APP_TITLE}</h1>
-            <p className="text-xl md:text-2xl mb-2 text-green-100">
+            <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4">{APP_TITLE}</h1>
+            <p className="text-lg sm:text-xl md:text-2xl mb-2 text-green-100">
               Saudi German Hospital
             </p>
-            <p className="text-lg md:text-xl mb-8 text-blue-100">
+            <p className="text-base sm:text-lg md:text-xl mb-6 sm:mb-8 text-blue-100">
               نرعاكم كأهالينا - Caring like family
             </p>
-            <p className="text-base md:text-lg mb-8 leading-relaxed max-w-3xl mx-auto">
+            <p className="text-sm sm:text-base md:text-lg mb-6 sm:mb-8 leading-relaxed max-w-3xl mx-auto px-4">
               منصة الحجز الإلكترونية للمستشفى السعودي الألماني - صنعاء. احجز موعدك مع أفضل
               الأطباء، استفد من العروض الطبية المميزة، وشارك في المخيمات الطبية الخيرية.
             </p>
@@ -99,7 +83,7 @@ export default function HomePage() {
               <Link href="/doctors">
                 <Button size="lg" className="bg-white text-green-600 hover:bg-gray-100">
                   احجز موعدك الآن
-                  <ArrowLeft className="mr-2 h-5 w-5" />
+                  <ArrowLeft className="ml-2 h-5 w-5 rotate-180" />
                 </Button>
               </Link>
               <a href="tel:8000018">
@@ -121,8 +105,8 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-green-600 mb-2">
+              <div key={index} className="text-center p-4">
+                <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-600 mb-2">
                   {stat.number}
                 </div>
                 <div className="text-sm md:text-base text-gray-600">{stat.label}</div>
@@ -136,10 +120,10 @@ export default function HomePage() {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-green-900 mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-900 mb-4">
               خدماتنا الإلكترونية
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto px-4">
               نوفر لك منصة متكاملة لحجز المواعيد والاستفادة من العروض الطبية والمشاركة في
               المخيمات الخيرية
             </p>
@@ -157,16 +141,16 @@ export default function HomePage() {
                   >
                     <service.icon className={`h-8 w-8 ${service.color}`} />
                   </div>
-                  <CardTitle className="text-xl text-green-900">{service.title}</CardTitle>
-                  <CardDescription className="text-base">
+                  <CardTitle className="text-lg sm:text-xl text-green-900 text-right">{service.title}</CardTitle>
+                  <CardDescription className="text-sm sm:text-base text-right">
                     {service.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Link href={service.link}>
-                    <Button className="w-full bg-green-600 hover:bg-green-700">
+                    <Button className="w-full bg-green-600 hover:bg-green-700 text-base">
                       استكشف الآن
-                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
                     </Button>
                   </Link>
                 </CardContent>
@@ -180,10 +164,10 @@ export default function HomePage() {
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-green-900 mb-6 text-center">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-900 mb-6 text-center">
               عن المستشفى السعودي الألماني
             </h2>
-            <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed space-y-4">
+            <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed space-y-4 text-right">
               <p>
                 المستشفى السعودي الألماني - صنعاء هو أحد أبرز المؤسسات الصحية في اليمن،
                 حيث نقدم خدمات طبية متميزة بمعايير عالمية. نحن ملتزمون بتوفير رعاية صحية
