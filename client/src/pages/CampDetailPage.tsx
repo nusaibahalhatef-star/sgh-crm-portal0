@@ -82,7 +82,7 @@ export default function CampDetailPage() {
   }
 
   return (
-    <>
+    <div dir="rtl">
       <SEO 
         title={seoTitle}
         description={seoDescription}
@@ -274,7 +274,7 @@ export default function CampDetailPage() {
       </section>
 
       <Footer />
+      </div>
     </div>
-    </>
   );
 }

@@ -129,7 +129,7 @@ export default function DoctorDetailPage() {
   }
 
   return (
-    <>
+    <div dir="rtl">
       <SEO 
         title={seoTitle}
         description={seoDescription}
@@ -451,7 +451,7 @@ export default function DoctorDetailPage() {
       </section>
 
       <Footer />
+      </div>
     </div>
-    </>
   );
 }

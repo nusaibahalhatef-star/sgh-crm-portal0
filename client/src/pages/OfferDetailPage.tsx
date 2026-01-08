@@ -83,7 +83,7 @@ export default function OfferDetailPage() {
   }
 
   return (
-    <>
+    <div dir="rtl">
       <SEO 
         title={seoTitle}
         description={seoDescription}
@@ -248,7 +248,7 @@ export default function OfferDetailPage() {
       </section>
 
       <Footer />
+      </div>
     </div>
-    </>
   );
 }

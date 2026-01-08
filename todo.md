@@ -382,3 +382,27 @@
 - [ ] تصغير صور الأطباء
 - [ ] تحسين spacing وpadding
 - [ ] تطبيق في Doctors.tsx و DoctorAppointments.tsx
+
+## تحسينات نهائية 🔄 جاري العمل
+
+### 1. تحسين RTL للصفحات الفردية ✅
+- [x] DoctorDetailPage: dir="rtl"
+- [x] OfferDetailPage: dir="rtl"
+- [x] CampDetailPage: dir="rtl"
+
+### 2. تصغير stat cards للجوال ✅
+- [x] OfferLeadsManagement: grid-cols-2 على الجوال
+- [x] CampRegistrationsManagement: grid-cols-2 على الجوال
+- [x] DoctorsManagement: grid-cols-2 على الجوال
+
+### 3. تكبير صور الأطباء ✅
+- [x] زيادة أحجام الصور: w-24 sm:w-28 md:w-32
+
+### 4. إضافة زر offline ✅
+- [x] إضافة زر WifiOff في header لوحة التحكم
+
+### 5. إنشاء صفحة الإعدادات ✅
+- [x] إنشاء SettingsPage.tsx مع تصميم "قيد التطوير"
+- [x] إضافة زر Settings icon في header لوحة التحكم
+- [x] إضافة route /settings في App.tsx
+- [x] عرض الميزات القادمة في الصفحة

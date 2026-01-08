@@ -48,6 +48,8 @@ import {
   MessageSquare,
   Loader2,
   Eye,
+  WifiOff,
+  Settings,
   Download,
   BarChart3,
 } from "lucide-react";
@@ -380,6 +382,28 @@ export default function AdminDashboard() {
                 <BarChart3 className="w-4 h-4 ml-2" />
                 <span className="hidden 2xl:inline">تقارير السوشيال ميديا</span>
                 <span className="xl:inline 2xl:hidden">تقارير</span>
+              </Button>
+              
+              {/* Settings Button */}
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => setLocation("/settings")}
+                className="h-9 w-9"
+                title="الإعدادات"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+              
+              {/* Offline Page Button */}
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => setLocation("/offline")}
+                className="h-9 w-9"
+                title="صفحة Offline"
+              >
+                <WifiOff className="w-4 h-4" />
               </Button>
               
               {/* Manual Registration */}

@@ -21,6 +21,7 @@ import CampDetailPage from "./pages/CampDetailPage";
 import SocialMediaReports from "./pages/SocialMediaReports";
 import VisitingDoctors from "./pages/VisitingDoctors";
 import OfflinePage from "./pages/OfflinePage";
+import SettingsPage from "./pages/SettingsPage";
 import PWAManager from "./components/PWAManager";
 
 function Router() {
@@ -44,6 +45,7 @@ function Router() {
       <Route path={"/admin"} component={AdminDashboard} />
       <Route path={"/reports/social-media"} component={SocialMediaReports} />
       <Route path={"/offline"} component={OfflinePage} />
+      <Route path={"/settings"} component={SettingsPage} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
