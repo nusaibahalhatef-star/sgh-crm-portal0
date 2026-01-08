@@ -406,3 +406,33 @@
 - [x] إضافة زر Settings icon في header لوحة التحكم
 - [x] إضافة route /settings في App.tsx
 - [x] عرض الميزات القادمة في الصفحة
+
+## إعادة هيكلة لوحة التحكم 🔄 جاري العمل
+
+### 1. إنشاء Navigation Sidebar ✅
+- [x] إنشاء DashboardSidebar component
+- [x] إضافة 7 أقسام رئيسية مع أيقونات
+- [x] Desktop: collapsible sidebar (w-64 / w-20)
+- [x] Mobile: bottom navigation (4 أقسام رئيسية)
+
+### 2. إنشاء صفحة الإدارة ✅
+- [x] إنشاء ManagementPage.tsx مع Sidebar
+- [x] نقل 3 components (العروض، المخيمات، الأطباء)
+- [x] إضافة Tabs component للتنقل
+- [x] إضافة route /dashboard/management
+
+### 3. إنشاء الصفحات "قيد التطوير" ✅
+- [x] إنشاء UnderDevelopmentPage template
+- [x] PublishingPage.tsx (5 ميزات قادمة)
+- [x] WhatsAppPage.tsx (5 ميزات قادمة)
+- [x] MessagesPage.tsx (5 ميزات قادمة)
+- [x] ReportsPage.tsx (5 ميزات قادمة)
+- [x] AnalyticsPage.tsx (5 ميزات قادمة)
+- [x] إضافة routes في App.tsx
+
+### 4. تحسين لوحة التحكم الرئيسية ✅
+- [x] إضافة DashboardSidebar في AdminDashboard
+- [x] نقل زر ManualRegistrationForm بجانب تبويب العملاء
+- [x] إزالة 3 تبويبات إدارة (العروض، المخيمات، الأطباء)
+- [x] إزالة 3 components من AdminDashboard
+- [x] تحديث layout: flex + sidebar + main content

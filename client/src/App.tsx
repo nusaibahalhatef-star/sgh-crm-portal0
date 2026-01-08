@@ -22,6 +22,12 @@ import SocialMediaReports from "./pages/SocialMediaReports";
 import VisitingDoctors from "./pages/VisitingDoctors";
 import OfflinePage from "./pages/OfflinePage";
 import SettingsPage from "./pages/SettingsPage";
+import ManagementPage from "./pages/ManagementPage";
+import PublishingPage from "./pages/PublishingPage";
+import WhatsAppPage from "./pages/WhatsAppPage";
+import MessagesPage from "./pages/MessagesPage";
+import ReportsPage from "./pages/ReportsPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
 import PWAManager from "./components/PWAManager";
 
 function Router() {
@@ -41,7 +47,13 @@ function Router() {
       <Route path={"/thank-you"} component={ThankYou} />
       <Route path={"/unauthorized"} component={Unauthorized} />
       <Route path={"/access-request"} component={AccessRequest} />
-      <Route path={"/dashboard/*"} component={AdminDashboard} />
+      <Route path={"/dashboard"} component={AdminDashboard} />
+      <Route path={"/dashboard/management"} component={ManagementPage} />
+      <Route path={"/dashboard/publishing"} component={PublishingPage} />
+      <Route path={"/dashboard/whatsapp"} component={WhatsAppPage} />
+      <Route path={"/dashboard/messages"} component={MessagesPage} />
+      <Route path={"/dashboard/reports"} component={ReportsPage} />
+      <Route path={"/dashboard/analytics"} component={AnalyticsPage} />
       <Route path={"/admin"} component={AdminDashboard} />
       <Route path={"/reports/social-media"} component={SocialMediaReports} />
       <Route path={"/offline"} component={OfflinePage} />

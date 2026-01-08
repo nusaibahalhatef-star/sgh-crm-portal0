@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import OfferLeadsManagement from "@/components/OfferLeadsManagement";
 import CampRegistrationsManagement from "@/components/CampRegistrationsManagement";
 import ManualRegistrationForm from "@/components/ManualRegistrationForm";
+import DashboardSidebar from "@/components/DashboardSidebar";
 import DoctorsManagement from "@/components/DoctorsManagement";
 import LeadCard from "@/components/LeadCard";
 import AppointmentCard from "@/components/AppointmentCard";
@@ -83,7 +84,7 @@ export default function AdminDashboard() {
   const [newStatus, setNewStatus] = useState("");
   const [statusNotes, setStatusNotes] = useState("");
   const [leadsDateFilter, setLeadsDateFilter] = useState("all");
-  const [activeTab, setActiveTab] = useState<"leads" | "requests" | "appointments" | "offerLeads" | "campRegistrations" | "offers" | "camps" | "doctors">("leads");
+  const [activeTab, setActiveTab] = useState<"leads" | "requests" | "appointments" | "offerLeads" | "campRegistrations">("leads");
 
   const { data: accessRequests, refetch: refetchRequests } = trpc.accessRequests.pending.useQuery();
   
@@ -346,7 +347,12 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex" dir="rtl">
+      {/* Sidebar */}
+      <DashboardSidebar currentPath="/dashboard" />
+      
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col lg:pb-0 pb-20">
       {/* Header */}
       <header className="bg-white shadow-sm border-b sticky top-0 z-50">
         <div className="container py-3 md:py-4">
@@ -508,15 +514,20 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-4 md:mb-6 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
-          <Button
-            variant={activeTab === "leads" ? "default" : "outline"}
-            onClick={() => setActiveTab("leads")}
-            className="whitespace-nowrap"
-          >
-            <Users className="w-4 h-4 ml-2" />
-            <span className="hidden sm:inline">العملاء المسجلين</span>
-            <span className="sm:hidden">العملاء</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={activeTab === "leads" ? "default" : "outline"}
+              onClick={() => setActiveTab("leads")}
+              className="whitespace-nowrap"
+            >
+              <Users className="w-4 h-4 ml-2" />
+              <span className="hidden sm:inline">العملاء المسجلين</span>
+              <span className="sm:hidden">العملاء</span>
+            </Button>
+            {activeTab === "leads" && (
+              <ManualRegistrationForm />
+            )}
+          </div>
           <Button
             variant={activeTab === "requests" ? "default" : "outline"}
             onClick={() => setActiveTab("requests")}
@@ -558,29 +569,7 @@ export default function AdminDashboard() {
             <span className="hidden sm:inline">تسجيلات المخيمات</span>
             <span className="sm:hidden">المخيمات</span>
           </Button>
-          <Button
-            variant={activeTab === "offers" ? "default" : "outline"}
-            onClick={() => setActiveTab("offers")}
-            className="whitespace-nowrap hidden md:flex"
-          >
-            <TrendingUp className="w-4 h-4 ml-2" />
-            إدارة العروض
-          </Button>
-          <Button
-            variant={activeTab === "camps" ? "default" : "outline"}
-            onClick={() => setActiveTab("camps")}
-            className="whitespace-nowrap hidden md:flex"
-          >
-            <Calendar className="w-4 h-4 ml-2" />
-            إدارة المخيمات
-          </Button>
-          <Button
-            variant={activeTab === "doctors" ? "default" : "outline"}
-            onClick={() => setActiveTab("doctors")}
-          >
-            <Users className="w-4 h-4 ml-2" />
-            إدارة الأطباء
-          </Button>
+
         </div>
 
         {/* Leads Table */}
@@ -1126,20 +1115,7 @@ export default function AdminDashboard() {
         <CampRegistrationsManagement />
         )}
 
-        {/* Offers Management */}
-        {activeTab === "offers" && (
-        <OffersManagement />
-        )}
 
-        {/* Camps Management */}
-        {activeTab === "camps" && (
-        <CampsManagement />
-        )}
-
-        {/* Doctors Management */}
-        {activeTab === "doctors" && (
-        <DoctorsManagement />
-        )}
       </main>
 
       {/* Status Update Dialog */}
@@ -1333,6 +1309,7 @@ export default function AdminDashboard() {
           )}
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }
