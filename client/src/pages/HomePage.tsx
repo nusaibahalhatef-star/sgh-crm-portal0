@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
+import InstallPWAButton from "@/components/InstallPWAButton";
 import { APP_LOGO, APP_TITLE } from "@/const";
 import { Link } from "wouter";
 
@@ -215,6 +216,7 @@ export default function HomePage() {
         </div>
       </section>
 
+      <InstallPWAButton />
       <Footer />
     </div>
     </>

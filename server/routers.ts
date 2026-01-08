@@ -165,6 +165,12 @@ export const appRouter = router({
       return getAllLeads();
     }),
 
+    // Unified list from all sources
+    unifiedList: protectedProcedure.query(async () => {
+      const { getAllUnifiedLeads } = await import('./db');
+      return getAllUnifiedLeads();
+    }),
+
     getById: protectedProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {

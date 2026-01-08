@@ -327,3 +327,28 @@
 - [x] تغيير PRECACHE_URLS: /dashboard → /
 - [x] activate event يحذف old caches تلقائياً
 - [x] manifest.json صحيح: start_url="/", scope="/"
+
+## إكمال تحسينات الجوال وتوحيد العملاء 🔄 جاري العمل
+
+### المرحلة 1: زر تثبيت PWA ✅ مكتمل
+- [x] إنشاء InstallPWAButton component متكامل
+- [x] إضافة beforeinstallprompt event handling
+- [x] إضافة الزر في HomePage, Doctors, Offers, Camps
+- [x] تصميم زر عائم مع أيقونة Download
+- [x] إخفاء الزر بعد التثبيت أو إذا لم يكن متاح
+
+### المرحلة 2: تحسين باقي الصفحات
+- [ ] تحسين DoctorDetailPage: RTL + responsive
+- [ ] تحسين OfferDetailPage: RTL + responsive
+- [ ] تحسين CampDetailPage: RTL + responsive
+- [ ] تحسين VisitingDoctors: RTL + responsive
+- [ ] تحسين Navbar للجوال (hamburger menu)
+- [ ] تحسين Footer للجوال
+
+### المرحلة 3: توحيد تبويب العملاء ✅ مكتمل
+- [x] إنشاء getAllUnifiedLeads في db.ts (يدمج: appointments + offerLeads + campRegistrations)
+- [x] إضافة unifiedList endpoint في leads router
+- [x] تحديث AdminDashboard لاستخدام trpc.leads.unifiedList
+- [x] إضافة عمود "نوع التسجيل" في الجدول
+- [x] إضافة badges ملونة: أزرق (موعد طبيب) + بنفسجي (عرض) + أخضر (مخيم)
+- [ ] إضافة فلترة حسب نوع التسجيل (اختياري)

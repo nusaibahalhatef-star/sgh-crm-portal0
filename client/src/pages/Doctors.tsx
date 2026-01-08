@@ -15,6 +15,7 @@ import { trpc } from "@/lib/trpc";
 import { Loader2, Search, Stethoscope, Calendar } from "lucide-react";
 import { APP_LOGO } from "@/const";
 import SEO from "@/components/SEO";
+import InstallPWAButton from "@/components/InstallPWAButton";
 
 export default function Doctors() {
   const [, setLocation] = useLocation();
@@ -181,6 +182,7 @@ export default function Doctors() {
             )}
           </div>
         </section>
+        <InstallPWAButton />
       </div>
     </>
   );

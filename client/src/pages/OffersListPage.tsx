@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, Search, Gift, Calendar, ArrowLeft } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import InstallPWAButton from "@/components/InstallPWAButton";
 
 export default function OffersListPage() {
   const [, setLocation] = useLocation();
@@ -137,6 +138,7 @@ export default function OffersListPage() {
         </div>
       </section>
 
+      <InstallPWAButton />
       <Footer />
     </div>
   );

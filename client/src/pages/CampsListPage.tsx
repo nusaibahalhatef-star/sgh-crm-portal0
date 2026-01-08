@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, Search, Heart, Calendar, ArrowLeft } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import InstallPWAButton from "@/components/InstallPWAButton";
 
 export default function CampsListPage() {
   const [, setLocation] = useLocation();
@@ -156,6 +157,7 @@ export default function CampsListPage() {
         </div>
       </section>
 
+      <InstallPWAButton />
       <Footer />
     </div>
   );

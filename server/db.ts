@@ -417,3 +417,105 @@ export async function updateAppointmentStatus(id: number, status: string, staffN
     throw error;
   }
 }
+
+/**
+ * Get all unified leads from all sources
+ * Combines: appointments, offer leads, camp registrations, visiting doctor appointments
+ */
+export async function getAllUnifiedLeads() {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    // Get appointments
+    const appointmentsData = await db
+      .select({
+        id: appointments.id,
+        fullName: appointments.fullName,
+        phone: appointments.phone,
+        email: appointments.email,
+        notes: appointments.notes,
+        status: appointments.status,
+        createdAt: appointments.createdAt,
+        utmSource: appointments.utmSource,
+        utmMedium: appointments.utmMedium,
+        utmCampaign: appointments.utmCampaign,
+        doctorId: appointments.doctorId,
+      })
+      .from(appointments)
+      .orderBy(desc(appointments.createdAt));
+
+    // Get offer leads
+    const { offerLeads } = await import('../drizzle/schema');
+    const offerLeadsData = await db
+      .select({
+        id: offerLeads.id,
+        fullName: offerLeads.fullName,
+        phone: offerLeads.phone,
+        email: offerLeads.email,
+        notes: offerLeads.notes,
+        status: offerLeads.status,
+        createdAt: offerLeads.createdAt,
+        source: offerLeads.source,
+        offerId: offerLeads.offerId,
+      })
+      .from(offerLeads)
+      .orderBy(desc(offerLeads.createdAt));
+
+    // Get camp registrations
+    const { campRegistrations } = await import('../drizzle/schema');
+    const campRegistrationsData = await db
+      .select({
+        id: campRegistrations.id,
+        fullName: campRegistrations.fullName,
+        phone: campRegistrations.phone,
+        email: campRegistrations.email,
+        notes: campRegistrations.notes,
+        status: campRegistrations.status,
+        createdAt: campRegistrations.createdAt,
+        source: campRegistrations.source,
+        campId: campRegistrations.campId,
+      })
+      .from(campRegistrations)
+      .orderBy(desc(campRegistrations.createdAt));
+
+    // Note: visitingDoctorAppointments table doesn't exist yet in schema
+
+    // Combine all leads with type indicator
+    const unifiedLeads = [
+      ...appointmentsData.map((a: any) => ({
+        ...a,
+        type: 'appointment' as const,
+        typeLabel: 'موعد طبيب',
+        relatedId: a.doctorId,
+      })),
+      ...offerLeadsData.map((o: any) => ({
+        ...o,
+        type: 'offer' as const,
+        typeLabel: 'حجز عرض',
+        relatedId: o.offerId,
+        utmSource: o.source || '',
+        utmMedium: '',
+        utmCampaign: '',
+      })),
+      ...campRegistrationsData.map((c: any) => ({
+        ...c,
+        type: 'camp' as const,
+        typeLabel: 'تسجيل مخيم',
+        relatedId: c.campId,
+        utmSource: c.source || '',
+        utmMedium: '',
+        utmCampaign: '',
+      })),
+      // visitingDoctorAppointments will be added here when table is created
+    ];
+
+    // Sort by createdAt descending
+    unifiedLeads.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return unifiedLeads;
+  } catch (error) {
+    console.error('[Database] Error getting unified leads:', error);
+    return [];
+  }
+}

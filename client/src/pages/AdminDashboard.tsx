@@ -105,7 +105,7 @@ export default function AdminDashboard() {
     },
   });
 
-  const { data: leads, isLoading: leadsLoading, refetch: refetchLeads } = trpc.leads.list.useQuery();
+  const { data: unifiedLeads, isLoading: leadsLoading, refetch: refetchLeads } = trpc.leads.unifiedList.useQuery();
   const { data: stats } = trpc.leads.stats.useQuery();
   const { data: appointments, isLoading: appointmentsLoading, refetch: refetchAppointments } = trpc.appointments.list.useQuery();
   const { data: doctors = [] } = trpc.doctors.list.useQuery();
@@ -147,9 +147,9 @@ export default function AdminDashboard() {
   });
 
   const filteredLeads = useMemo(() => {
-    if (!leads) return [];
+    if (!unifiedLeads) return [];
     
-    let filtered = leads;
+    let filtered = unifiedLeads;
     
     // Filter by search term
     if (searchTerm) {
@@ -186,7 +186,7 @@ export default function AdminDashboard() {
     }
     
     return filtered;
-  }, [leads, searchTerm, leadsDateFilter]);
+  }, [unifiedLeads, searchTerm, leadsDateFilter]);
 
   const filteredAppointments = useMemo(() => {
     if (!appointments) return [];
@@ -378,7 +378,7 @@ export default function AdminDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs md:text-sm text-muted-foreground mb-1">إجمالي العملاء</p>
-                  <p className="text-xl md:text-2xl font-bold">{leads?.length || 0}</p>
+                  <p className="text-xl md:text-2xl font-bold">{unifiedLeads?.length || 0}</p>
                 </div>
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
                   <Users className="w-6 h-6 text-primary" />
@@ -615,6 +615,7 @@ export default function AdminDashboard() {
                         <TableHead className="text-right">الاسم</TableHead>
                         <TableHead className="text-right">الهاتف</TableHead>
                         <TableHead className="text-right">البريد الإلكتروني</TableHead>
+                        <TableHead className="text-right">نوع التسجيل</TableHead>
                         <TableHead className="text-right">الحالة</TableHead>
                         <TableHead className="text-right">تاريخ التسجيل</TableHead>
                         <TableHead className="text-right">الإجراءات</TableHead>
@@ -639,6 +640,16 @@ export default function AdminDashboard() {
                             ) : (
                               <span className="text-muted-foreground text-sm">غير متوفر</span>
                             )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={
+                              (lead as any).type === 'appointment' ? 'bg-blue-500 text-white' :
+                              (lead as any).type === 'offer' ? 'bg-purple-500 text-white' :
+                              (lead as any).type === 'camp' ? 'bg-green-500 text-white' :
+                              'bg-gray-500 text-white'
+                            }>
+                              {(lead as any).typeLabel || 'غير محدد'}
+                            </Badge>
                           </TableCell>
                           <TableCell>
                             <Badge className={`${statusColors[lead.status as keyof typeof statusColors]} text-white`}>
