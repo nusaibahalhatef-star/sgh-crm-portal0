@@ -295,12 +295,12 @@ export default function DoctorAppointments() {
                     >
                       {submitAppointment.isPending ? (
                         <>
-                          <Loader2 className="ml-2 h-5 w-5 animate-spin" />
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                           جاري الحجز...
                         </>
                       ) : (
                         <>
-                          <CheckCircle2 className="ml-2 h-5 w-5" />
+                          <CheckCircle2 className="mr-2 h-5 w-5" />
                           احجز موعدك الآن
                         </>
                       )}

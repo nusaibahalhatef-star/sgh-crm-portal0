@@ -125,12 +125,12 @@ export default function OfflinePage() {
           </CardHeader>
           <CardContent className="flex justify-center gap-4">
             <Button onClick={handleRefresh} size="lg">
-              <RefreshCw className="h-5 w-5 ml-2" />
+              <RefreshCw className="h-5 w-5 mr-2" />
               {isOnline ? 'تحديث الصفحة' : 'إعادة المحاولة'}
             </Button>
             {isOnline && (
               <Button onClick={() => window.location.href = '/dashboard'} variant="outline" size="lg">
-                <Calendar className="h-5 w-5 ml-2" />
+                <Calendar className="h-5 w-5 mr-2" />
                 العودة للوحة التحكم
               </Button>
             )}

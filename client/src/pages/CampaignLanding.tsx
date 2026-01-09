@@ -220,7 +220,7 @@ export default function CampaignLanding() {
                     >
                       {submitLead.isPending ? (
                         <>
-                          <Loader2 className="w-5 h-5 ml-2 animate-spin" />
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                           جاري التسجيل...
                         </>
                       ) : (

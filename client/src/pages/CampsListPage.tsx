@@ -137,7 +137,7 @@ export default function CampsListPage() {
                         }}
                       >
                         سجل في المخيم
-                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        <ArrowLeft className="mr-2 h-4 w-4 rotate-180" />
                       </Button>
                     </div>
                   </CardContent>

@@ -28,7 +28,7 @@ export default function SettingsPage() {
               variant="outline" 
               onClick={() => setLocation("/dashboard")}
             >
-              <ArrowRight className="ml-2 h-4 w-4" />
+              <ArrowRight className="mr-2 h-4 w-4" />
               العودة للوحة التحكم
             </Button>
           </div>
@@ -83,7 +83,7 @@ export default function SettingsPage() {
                 onClick={() => setLocation("/dashboard")}
                 className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
               >
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="mr-2 h-5 w-5" />
                 العودة للوحة التحكم
               </Button>
             </CardContent>

@@ -117,7 +117,7 @@ export default function DoctorDetailPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">لم يتم العثور على الطبيب</h2>
             <Link href="/doctors">
               <Button className="bg-green-600 hover:bg-green-700">
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="mr-2 h-4 w-4" />
                 العودة إلى قائمة الأطباء
               </Button>
             </Link>
@@ -423,12 +423,12 @@ export default function DoctorDetailPage() {
                   >
                     {submitAppointment.isPending ? (
                       <>
-                        <Loader2 className="ml-2 h-5 w-5 animate-spin" />
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                         جاري الإرسال...
                       </>
                     ) : (
                       <>
-                        <Calendar className="ml-2 h-5 w-5" />
+                        <Calendar className="mr-2 h-5 w-5" />
                         تأكيد الحجز
                       </>
                     )}

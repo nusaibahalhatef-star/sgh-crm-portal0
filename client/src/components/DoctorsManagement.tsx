@@ -318,7 +318,7 @@ export default function DoctorsManagement() {
               <CardDescription>إضافة وتعديل وحذف بيانات الأطباء</CardDescription>
             </div>
             <Button onClick={() => handleOpenDialog()}>
-              <Plus className="h-4 w-4 ml-2" />
+              <Plus className="h-4 w-4 mr-2" />
               إضافة طبيب جديد
             </Button>
           </div>
@@ -588,7 +588,7 @@ export default function DoctorsManagement() {
             >
               {createMutation.isPending || updateMutation.isPending ? (
                 <>
-                  <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   جاري الحفظ...
                 </>
               ) : editingDoctor ? (
@@ -621,7 +621,7 @@ export default function DoctorsManagement() {
             >
               {deleteMutation.isPending ? (
                 <>
-                  <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   جاري الحذف...
                 </>
               ) : (

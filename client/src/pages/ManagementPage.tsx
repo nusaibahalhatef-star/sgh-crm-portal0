@@ -76,7 +76,7 @@ export default function ManagementPage() {
                   onClick={() => setLocation("/dashboard")}
                   className="hidden sm:flex"
                 >
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  <ArrowRight className="w-4 h-4 mr-2" />
                   <span className="hidden md:inline">لوحة التحكم</span>
                 </Button>
                 
@@ -87,7 +87,7 @@ export default function ManagementPage() {
                   onClick={handleLogout} 
                   className="hidden sm:flex"
                 >
-                  <LogOut className="w-4 h-4 md:ml-2" />
+                  <LogOut className="w-4 h-4 md:mr-2" />
                   <span className="hidden md:inline">تسجيل الخروج</span>
                 </Button>
                 <Button 

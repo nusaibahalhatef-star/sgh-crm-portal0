@@ -57,7 +57,7 @@ export default function AccessRequest() {
             onClick={() => setLocation("/")}
             className="w-full bg-gradient-to-r from-[#0EA5E9] to-[#10B981] hover:from-[#0284C7] hover:to-[#059669]"
           >
-            <Home className="ml-2 h-4 w-4" />
+            <Home className="mr-2 h-4 w-4" />
             العودة إلى الصفحة الرئيسية
           </Button>
 

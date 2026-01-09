@@ -535,3 +535,70 @@
 - [x] فحص LSP (No errors ✅)
 - [x] فحص Dev server (running ✅)
 - [x] اختبار الشعار الجديد على الصفحة الرئيسية ✅
+
+### تحسين شامل لتوافق النصوص العربية 🔄 جاري العمل
+
+#### المرحلة 1: فحص وتحسين RTL في جميع الصفحات العامة
+- [ ] فحص HomePage
+- [ ] فحص Doctors pages (DoctorsListPage, DoctorDetailPage)
+- [ ] فحص Offers pages (OffersListPage, OfferDetailPage)
+- [ ] فحص Camps pages (CampsListPage, CampDetailPage)
+- [ ] فحص Navbar و Footer
+- [ ] إضافة dir="rtl" حيث لزم
+
+#### المرحلة 2: فحص وتحسين محاذاة النصوص والعناصر
+- [ ] فحص text-alignment في جميع الصفحات
+- [ ] تحسين flex justify-content و items-center
+- [ ] إصلاح spacing (mr/ml) للعربية
+- [ ] تحسين padding و margin للعناصر
+
+#### المرحلة 3: فحص وتحسين اتجاه الأيقونات والأسهم
+- [ ] عكس اتجاه الأسهم (ArrowLeft → ArrowRight)
+- [ ] تحسين rotate للأيقونات
+- [ ] إصلاح ChevronLeft/Right في الأزرار
+- [ ] تحسين أيقونات التنقل
+
+#### المرحلة 4: فحص وتحسين النماذج والحقول
+- [ ] فحص input fields و text-alignment
+- [ ] تحسين placeholder alignment
+- [ ] فحص label positioning
+- [ ] تحسين error messages alignment
+- [ ] فحص select و dropdown alignment
+
+#### المرحلة 5: اختبار شامل وحفظ checkpoint
+- [ ] اختبار جميع الصفحات
+- [ ] التأكد من عدم وجود مشاكل RTL
+- [ ] حفظ checkpoint نهائي
+
+### تحسين شامل لتوافق النصوص العربية ✅ مكتمل
+
+#### المرحلة 1: فحص وتحسين RTL في جميع الصفحات العامة ✅
+- [x] فحص HomePage (dir="rtl" موجود ✓)
+- [x] فحص Doctors pages (dir="rtl" موجود ✓)
+- [x] فحص Offers pages (dir="rtl" موجود ✓)
+- [x] فحص Camps pages (dir="rtl" موجود ✓)
+- [x] جميع الصفحات العامة تحتوي على dir="rtl"
+
+#### المرحلة 2: فحص وتحسين محاذاة النصوص والعناصر ✅
+- [x] فحص استخدام ml/mr في جميع الصفحات
+- [x] استبدال 49 استخدام لـ ml- بـ mr- في الصفحات العامة
+- [x] استبدال 6 استخدامات لـ ml- بـ mr- في مكونات لوحة التحكم
+- [x] التحقق: 0 استخدام متبقي لـ ml- ✓
+
+#### المرحلة 3: فحص وتحسين اتجاه الأيقونات والأسهم ✅
+- [x] فحص استخدام ArrowLeft بدون rotate-180
+- [x] إضافة rotate-180 لجميع ArrowLeft في CampsListPage
+- [x] إضافة rotate-180 لجميع ArrowLeft في OffersListPage
+- [x] جميع الأسهم الآن متوافقة مع RTL ✓
+
+#### المرحلة 4: فحص وتحسين النماذج والحقول ✅
+- [x] فحص text-alignment في نماذج الحجز
+- [x] جميع النماذج تستخدم text-right بشكل صحيح ✓
+- [x] Labels محاذاة من اليمين ✓
+- [x] Input fields محاذاة من اليمين ✓
+
+#### المرحلة 5: اختبار شامل ✅
+- [x] فحص حالة المشروع (TypeScript: 0 errors ✅)
+- [x] فحص LSP (No errors ✅)
+- [x] فحص Dev server (running ✅)
+- [x] اختبار الصفحة الرئيسية ✅

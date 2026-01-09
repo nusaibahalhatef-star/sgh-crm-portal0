@@ -167,7 +167,7 @@ export default function Doctors() {
                           setLocation(`/doctors/${doctor.slug}`);
                         }}
                       >
-                        <Calendar className="w-3 h-3 sm:w-4 sm:h-4 ml-2" />
+                        <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                         احجز موعد
                       </Button>
                     </CardContent>

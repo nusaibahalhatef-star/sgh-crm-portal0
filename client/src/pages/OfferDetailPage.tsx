@@ -102,7 +102,7 @@ export default function OfferDetailPage() {
             className="text-white hover:bg-white/20 mb-6"
             onClick={() => setLocation("/offers")}
           >
-            <ArrowRight className="ml-2 h-4 w-4 rotate-180" />
+            <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
             العودة إلى العروض
           </Button>
 
@@ -216,12 +216,12 @@ export default function OfferDetailPage() {
                 >
                   {submitLead.isPending ? (
                     <>
-                      <Loader2 className="ml-2 h-5 w-5 animate-spin" />
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       جاري الإرسال...
                     </>
                   ) : (
                     <>
-                      <CheckCircle2 className="ml-2 h-5 w-5" />
+                      <CheckCircle2 className="mr-2 h-5 w-5" />
                       إرسال الطلب
                     </>
                   )}

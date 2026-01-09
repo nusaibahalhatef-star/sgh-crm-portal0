@@ -84,7 +84,7 @@ export default function HomePage() {
               <Link href="/doctors">
                 <Button size="lg" className="bg-white text-green-600 hover:bg-gray-100">
                   احجز موعدك الآن
-                  <ArrowLeft className="ml-2 h-5 w-5 rotate-180" />
+                  <ArrowLeft className="mr-2 h-5 w-5 rotate-180" />
                 </Button>
               </Link>
               <a href="tel:8000018">
@@ -151,7 +151,7 @@ export default function HomePage() {
                   <Link href={service.link}>
                     <Button className="w-full bg-green-600 hover:bg-green-700 text-base">
                       استكشف الآن
-                      <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
+                      <ArrowLeft className="mr-2 h-4 w-4 rotate-180" />
                     </Button>
                   </Link>
                 </CardContent>

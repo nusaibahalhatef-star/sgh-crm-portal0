@@ -385,7 +385,7 @@ export default function AdminDashboard() {
                 onClick={() => setLocation("/reports/social-media")}
                 className="bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100 border-purple-200 hidden xl:flex"
               >
-                <BarChart3 className="w-4 h-4 ml-2" />
+                <BarChart3 className="w-4 h-4 mr-2" />
                 <span className="hidden 2xl:inline">تقارير السوشيال ميديا</span>
                 <span className="xl:inline 2xl:hidden">تقارير</span>
               </Button>
@@ -422,7 +422,7 @@ export default function AdminDashboard() {
                 onClick={handleLogout} 
                 className="hidden sm:flex"
               >
-                <LogOut className="w-4 h-4 md:ml-2" />
+                <LogOut className="w-4 h-4 md:mr-2" />
                 <span className="hidden md:inline">تسجيل الخروج</span>
               </Button>
               <Button 
@@ -520,7 +520,7 @@ export default function AdminDashboard() {
               onClick={() => setActiveTab("leads")}
               className="whitespace-nowrap"
             >
-              <Users className="w-4 h-4 ml-2" />
+              <Users className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">العملاء المسجلين</span>
               <span className="sm:hidden">العملاء</span>
             </Button>
@@ -531,7 +531,7 @@ export default function AdminDashboard() {
             onClick={() => setActiveTab("requests")}
             className="relative whitespace-nowrap"
           >
-            <UserCheck className="w-4 h-4 ml-2" />
+            <UserCheck className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">طلبات التصريح</span>
             <span className="sm:hidden">الطلبات</span>
             {accessRequests && accessRequests.length > 0 && (
@@ -545,7 +545,7 @@ export default function AdminDashboard() {
             onClick={() => setActiveTab("appointments")}
             className="whitespace-nowrap"
           >
-            <Calendar className="w-4 h-4 ml-2" />
+            <Calendar className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">مواعيد الأطباء</span>
             <span className="sm:hidden">المواعيد</span>
           </Button>
@@ -554,7 +554,7 @@ export default function AdminDashboard() {
             onClick={() => setActiveTab("offerLeads")}
             className="whitespace-nowrap"
           >
-            <TrendingUp className="w-4 h-4 ml-2" />
+            <TrendingUp className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">حجوزات العروض</span>
             <span className="sm:hidden">العروض</span>
           </Button>
@@ -563,7 +563,7 @@ export default function AdminDashboard() {
             onClick={() => setActiveTab("campRegistrations")}
             className="whitespace-nowrap"
           >
-            <Calendar className="w-4 h-4 ml-2" />
+            <Calendar className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">تسجيلات المخيمات</span>
             <span className="sm:hidden">المخيمات</span>
           </Button>
@@ -616,7 +616,7 @@ export default function AdminDashboard() {
                   }}
                   className="w-full sm:w-auto"
                 >
-                  <Download className="w-4 h-4 ml-1" />
+                  <Download className="w-4 h-4 mr-1" />
                   <span className="hidden sm:inline">تصدير Excel</span>
                   <span className="sm:hidden">تصدير</span>
                 </Button>
@@ -726,7 +726,7 @@ export default function AdminDashboard() {
                                   setStatusDialogOpen(true);
                                 }}
                               >
-                                <Eye className="w-4 h-4 ml-1" />
+                                <Eye className="w-4 h-4 mr-1" />
                                 تحديث الحالة
                               </Button>
                               <Button
@@ -738,7 +738,7 @@ export default function AdminDashboard() {
                                   window.open(`https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
                                 }}
                               >
-                                <MessageSquare className="w-4 h-4 ml-1" />
+                                <MessageSquare className="w-4 h-4 mr-1" />
                                 واتساب
                               </Button>
                             </div>
@@ -820,7 +820,7 @@ export default function AdminDashboard() {
                               onClick={() => approveMutation.mutate({ requestId: request.id })}
                               disabled={approveMutation.isPending || rejectMutation.isPending}
                             >
-                              <UserCheck className="w-4 h-4 ml-1" />
+                              <UserCheck className="w-4 h-4 mr-1" />
                               موافقة
                             </Button>
                             <Button
@@ -829,7 +829,7 @@ export default function AdminDashboard() {
                               onClick={() => rejectMutation.mutate({ requestId: request.id })}
                               disabled={approveMutation.isPending || rejectMutation.isPending}
                             >
-                              <UserX className="w-4 h-4 ml-1" />
+                              <UserX className="w-4 h-4 mr-1" />
                               رفض
                             </Button>
                           </div>
@@ -901,7 +901,7 @@ export default function AdminDashboard() {
                     toast.success("تم تصدير البيانات بنجاح");
                   }}
                 >
-                  <Download className="w-4 h-4 ml-1" />
+                  <Download className="w-4 h-4 mr-1" />
                   تصدير Excel
                 </Button>
               </div>
@@ -1074,7 +1074,7 @@ export default function AdminDashboard() {
                                   setAppointmentStatusDialogOpen(true);
                                 }}
                               >
-                                <Eye className="w-4 h-4 ml-1" />
+                                <Eye className="w-4 h-4 mr-1" />
                                 تحديث الحالة
                               </Button>
                               <Button
@@ -1087,7 +1087,7 @@ export default function AdminDashboard() {
                                   window.open(`https://wa.me/${appointment.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
                                 }}
                               >
-                                <MessageSquare className="w-4 h-4 ml-1" />
+                                <MessageSquare className="w-4 h-4 mr-1" />
                                 واتساب
                               </Button>
                             </div>
@@ -1183,7 +1183,7 @@ export default function AdminDashboard() {
                 >
                   {updateStatusMutation.isPending ? (
                     <>
-                      <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       جاري الحفظ...
                     </>
                   ) : (
@@ -1295,7 +1295,7 @@ export default function AdminDashboard() {
                 >
                   {updateAppointmentStatusMutation.isPending ? (
                     <>
-                      <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       جاري الحفظ...
                     </>
                   ) : (
@@ -1602,7 +1602,7 @@ function OffersManagement() {
               >
                 {(createMutation.isPending || updateMutation.isPending) ? (
                   <>
-                    <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     جاري الحفظ...
                   </>
                 ) : editingOffer ? "حفظ التغييرات" : "إضافة العرض"}
@@ -1906,7 +1906,7 @@ function CampsManagement() {
               >
                 {(createMutation.isPending || updateMutation.isPending) ? (
                   <>
-                    <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     جاري الحفظ...
                   </>
                 ) : editingCamp ? "حفظ التغييرات" : "إضافة المخيم"}

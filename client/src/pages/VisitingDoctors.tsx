@@ -224,7 +224,7 @@ export default function VisitingDoctors() {
                         </div>
 
                         <Button className="w-full bg-green-600 hover:bg-green-700 mt-4 group-hover:shadow-lg transition-all">
-                          <Calendar className="ml-2 h-4 w-4" />
+                          <Calendar className="mr-2 h-4 w-4" />
                           احجز موعد
                         </Button>
                       </CardContent>

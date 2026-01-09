@@ -101,7 +101,7 @@ export default function CampDetailPage() {
             className="text-white hover:bg-white/20 mb-6"
             onClick={() => setLocation("/camps")}
           >
-            <ArrowRight className="ml-2 h-4 w-4 rotate-180" />
+            <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
             العودة إلى المخيمات
           </Button>
 
@@ -242,12 +242,12 @@ export default function CampDetailPage() {
                 >
                   {submitRegistration.isPending ? (
                     <>
-                      <Loader2 className="ml-2 h-5 w-5 animate-spin" />
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       جاري التسجيل...
                     </>
                   ) : (
                     <>
-                      <Heart className="ml-2 h-5 w-5" />
+                      <Heart className="mr-2 h-5 w-5" />
                       تسجيل في المخيم
                     </>
                   )}

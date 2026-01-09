@@ -554,7 +554,7 @@ export default function ComponentsShowcase() {
                               { value: "remix", label: "Remix" },
                             ].find(fw => fw.value === selectedFramework)?.label
                           : "Select framework..."}
-                        <CalendarIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        <CalendarIcon className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-full p-0">

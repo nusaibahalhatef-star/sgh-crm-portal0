@@ -118,7 +118,7 @@ export default function OffersListPage() {
                         }}
                       >
                         اطلب العرض
-                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        <ArrowLeft className="mr-2 h-4 w-4 rotate-180" />
                       </Button>
                     </div>
                   </CardContent>

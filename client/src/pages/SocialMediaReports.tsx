@@ -70,7 +70,7 @@ export default function SocialMediaReports() {
             onClick={handleRefresh}
             disabled={isLoading}
           >
-            <RefreshCw className={`w-4 h-4 ml-2 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             تحديث البيانات
           </Button>
         </div>
@@ -248,7 +248,7 @@ export default function SocialMediaReports() {
                       className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
                       onClick={() => window.open('https://www.instagram.com/', '_blank')}
                     >
-                      <Instagram className="w-4 h-4 ml-2" />
+                      <Instagram className="w-4 h-4 mr-2" />
                       فتح Instagram
                     </Button>
                     <Button 
@@ -343,7 +343,7 @@ export default function SocialMediaReports() {
                       className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
                       onClick={() => window.open('https://www.facebook.com/', '_blank')}
                     >
-                      <Facebook className="w-4 h-4 ml-2" />
+                      <Facebook className="w-4 h-4 mr-2" />
                       فتح Facebook
                     </Button>
                     <Button 
