@@ -22,6 +22,9 @@ export default function CampsManagement() {
     isActive: true,
     startDate: "",
     endDate: "",
+    campOffers: "",
+    availableProcedures: "",
+    galleryImages: "",
   });
 
   const { data: camps, isLoading, refetch } = trpc.camps.getAll.useQuery();
@@ -69,6 +72,9 @@ export default function CampsManagement() {
       isActive: true,
       startDate: "",
       endDate: "",
+      campOffers: "",
+      availableProcedures: "",
+      galleryImages: "",
     });
   };
 
@@ -99,6 +105,9 @@ export default function CampsManagement() {
       isActive: camp.isActive,
       startDate: camp.startDate ? new Date(camp.startDate).toISOString().split('T')[0] : "",
       endDate: camp.endDate ? new Date(camp.endDate).toISOString().split('T')[0] : "",
+      campOffers: camp.campOffers || "",
+      availableProcedures: camp.availableProcedures || "",
+      galleryImages: camp.galleryImages || "",
     });
     setShowAddDialog(true);
   };
@@ -263,12 +272,43 @@ export default function CampsManagement() {
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-right block" htmlFor="imageUrl">رابط الصورة</Label>
+              <Label className="text-right block" htmlFor="imageUrl">رابط الصورة الرئيسية</Label>
               <Input className="text-right"
                 id="imageUrl"
                 value={formData.imageUrl}
                 onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                 placeholder="https://example.com/image.jpg"
+                dir="ltr"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-right block" htmlFor="campOffers">عروض المخيم</Label>
+              <Textarea className="text-right"
+                id="campOffers"
+                value={formData.campOffers}
+                onChange={(e) => setFormData({ ...formData, campOffers: e.target.value })}
+                placeholder="أدخل عروض المخيم (كل عرض في سطر جديد)"
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-right block" htmlFor="availableProcedures">الإجراءات المتاحة</Label>
+              <Textarea className="text-right"
+                id="availableProcedures"
+                value={formData.availableProcedures}
+                onChange={(e) => setFormData({ ...formData, availableProcedures: e.target.value })}
+                placeholder="أدخل الإجراءات المتاحة (كل إجراء في سطر جديد)"
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-right block" htmlFor="galleryImages">روابط الصور الإضافية</Label>
+              <Textarea className="text-right"
+                id="galleryImages"
+                value={formData.galleryImages}
+                onChange={(e) => setFormData({ ...formData, galleryImages: e.target.value })}
+                placeholder="أدخل روابط الصور (كل رابط في سطر جديد)"
+                rows={3}
                 dir="ltr"
               />
             </div>

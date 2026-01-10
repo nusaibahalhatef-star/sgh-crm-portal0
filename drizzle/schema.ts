@@ -204,6 +204,10 @@ export const camps = mysqlTable("camps", {
   startDate: timestamp("startDate"),
   endDate: timestamp("endDate"),
   isActive: boolean("isActive").default(true).notNull(),
+  // New fields for advanced camp management
+  campOffers: text("campOffers"), // JSON string of camp offers
+  availableProcedures: text("availableProcedures"), // JSON array of available procedures
+  galleryImages: text("galleryImages"), // JSON array of image URLs
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

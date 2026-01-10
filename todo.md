@@ -652,3 +652,14 @@
 - [x] نقل زر طلبات التصريح للشريط العلوي
 - [x] إضافة صفحة إدارة المحتوى
 - [x] إضافة فلترة حسب الحالة في جميع التبويبات
+
+### تطوير إدارة المخيمات المتقدمة ✅ مكتمل
+- [x] إضافة حقول جديدة في schema (campOffers, availableProcedures, galleryImages)
+- [x] تطبيق migration على قاعدة البيانات
+- [x] تحديث camps router لدعم الحقول الجديدة
+- [x] تحديث CampsManagement - إضافة textarea للعروض
+- [x] تحديث CampsManagement - إضافة textarea للإجراءات
+- [x] تحديث CampsManagement - إضافة textarea لروابط الصور
+- [x] تحديث CampDetailPage - عرض عروض المخيم
+- [x] تحديث CampDetailPage - عرض معرض الصور
+- [x] تحديث نموذج التسجيل - عرض الإجراءات من availableProcedures

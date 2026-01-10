@@ -25,6 +25,10 @@ const campInputSchema = z.object({
   startDate: z.date().optional(),
   endDate: z.date().optional(),
   isActive: z.boolean().default(true),
+  // New fields for advanced camp management
+  campOffers: z.string().optional(), // JSON string
+  availableProcedures: z.string().optional(), // JSON string
+  galleryImages: z.string().optional(), // JSON string
 });
 
 export const campsRouter = router({
@@ -139,6 +143,9 @@ export const campsRouter = router({
         startDate: input.startDate,
         endDate: input.endDate,
         isActive: input.isActive,
+        campOffers: input.campOffers,
+        availableProcedures: input.availableProcedures,
+        galleryImages: input.galleryImages,
       });
       
       return { success: true, slug };
@@ -189,6 +196,9 @@ export const campsRouter = router({
           startDate: data.startDate,
           endDate: data.endDate,
           isActive: data.isActive,
+          campOffers: data.campOffers,
+          availableProcedures: data.availableProcedures,
+          galleryImages: data.galleryImages,
         })
         .where(eq(camps.id, id));
       

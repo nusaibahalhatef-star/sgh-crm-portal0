@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -30,16 +30,20 @@ export default function CampDetailPage() {
     procedures: [] as string[],
   });
 
-  // Sample procedures list - should come from camp data in production
-  const availableProcedures = [
-    "فحص عام",
-    "فحص ضغط الدم",
-    "فحص السكري",
-    "فحص العيون",
-    "فحص الأسنان",
-    "استشارة طبية",
-    "تحاليل مخبرية",
-  ];
+  // Get available procedures from camp data
+  const availableProcedures = useMemo(() => {
+    if (!camp?.availableProcedures) return [];
+    try {
+      // Try to parse as JSON array first
+      const parsed = JSON.parse(camp.availableProcedures);
+      if (Array.isArray(parsed)) return parsed;
+      // If not JSON, split by newlines
+      return camp.availableProcedures.split('\n').filter(p => p.trim());
+    } catch {
+      // If parsing fails, split by newlines
+      return camp.availableProcedures.split('\n').filter(p => p.trim());
+    }
+  }, [camp]);
 
   useEffect(() => {
     if (!isLoading && !camp) {
@@ -184,6 +188,82 @@ export default function CampDetailPage() {
         </div>
       </section>
 
+      {/* Camp Offers Section */}
+      {camp.campOffers && (
+        <section className="py-16 bg-gradient-to-br from-green-50 to-blue-50">
+          <div className="container mx-auto px-4 max-w-4xl">
+            <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
+              عروض المخيم
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {camp.campOffers.split('\n').filter((offer: string) => offer.trim()).map((offer: string, index: number) => (
+                <div key={index} className="bg-white p-6 rounded-lg shadow-md border-r-4 border-green-600">
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0" />
+                    <p className="text-gray-700 text-right flex-1">{offer.trim()}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Gallery Section */}
+      {camp.galleryImages && (() => {
+        try {
+          const images = JSON.parse(camp.galleryImages);
+          if (Array.isArray(images) && images.length > 0) {
+            return (
+              <section className="py-16 bg-white">
+                <div className="container mx-auto px-4 max-w-6xl">
+                  <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
+                    معرض صور المخيم
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                    {images.map((imageUrl: string, index: number) => (
+                      <div key={index} className="rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+                        <img
+                          src={imageUrl}
+                          alt={`${camp.name} - صورة ${index + 1}`}
+                          className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            );
+          }
+        } catch {
+          // If parsing fails, try splitting by newlines
+          const images = camp.galleryImages.split('\n').filter((url: string) => url.trim());
+          if (images.length > 0) {
+            return (
+              <section className="py-16 bg-white">
+                <div className="container mx-auto px-4 max-w-6xl">
+                  <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
+                    معرض صور المخيم
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                    {images.map((imageUrl: string, index: number) => (
+                      <div key={index} className="rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+                        <img
+                          src={imageUrl.trim()}
+                          alt={`${camp.name} - صورة ${index + 1}`}
+                          className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            );
+          }
+        }
+        return null;
+      })()}
+
       {/* Registration Form Section */}
       <section className="py-16">
         <div className="container mx-auto px-4 max-w-2xl">
@@ -279,7 +359,7 @@ export default function CampDetailPage() {
                     الإجراءات المطلوبة (اختر واحد أو أكثر)
                   </Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {availableProcedures.map((procedure) => (
+                    {availableProcedures.map((procedure: string) => (
                       <label
                         key={procedure}
                         className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
