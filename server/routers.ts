@@ -44,6 +44,7 @@ import { trackLead, trackCompleteRegistration } from "./facebookConversion";
 import { sendWelcomeMessage, sendBookingConfirmation, sendCustomMessage } from "./whatsapp";
 import { sendNewLeadTelegram, sendNewAppointmentTelegram } from "./telegram";
 import { getCombinedSocialMediaStats } from "./metaGraphAPI";
+import { runDeactivationJobs } from "./cron/deactivateExpired";
 
 export const appRouter = router({
   system: systemRouter,
@@ -525,5 +526,14 @@ export const appRouter = router({
   
   // Users management (admin only)
   users: usersRouter,
+
+  // Cron jobs (admin only)
+  cron: router({
+    // Run deactivation jobs manually
+    runDeactivation: protectedProcedure.mutation(async () => {
+      const result = await runDeactivationJobs();
+      return result;
+    }),
+  }),
 });
 export type AppRouter = typeof appRouter;

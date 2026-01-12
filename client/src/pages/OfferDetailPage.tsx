@@ -55,7 +55,19 @@ export default function OfferDetailPage() {
       });
 
       toast.success("تم إرسال طلبك بنجاح! سنتواصل معك قريباً");
-      setFormData({ fullName: "", phone: "", email: "" });
+      
+      // Redirect to Thank You page with booking details
+      const params = new URLSearchParams({
+        type: 'offer',
+        name: formData.fullName,
+        phone: formData.phone,
+        ...(formData.email && { email: formData.email }),
+        ...(offer && { offer: offer.title }),
+      });
+      
+      setTimeout(() => {
+        setLocation(`/thank-you?${params.toString()}`);
+      }, 1500);
     } catch (error) {
       toast.error("حدث خطأ أثناء إرسال الطلب");
     }

@@ -4,7 +4,7 @@
  * Individual doctor page with profile and appointment booking
  */
 import { useState } from "react";
-import { useRoute, Link } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import { ArrowRight, Calendar, Phone, Award, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +40,7 @@ export default function DoctorDetailPage() {
   });
 
   const [submitted, setSubmitted] = useState(false);
+  const [, setLocation] = useLocation();
 
   // Parse procedures from doctor data (comma-separated string)
   const availableProcedures = doctor?.procedures 
@@ -71,17 +72,20 @@ export default function DoctorDetailPage() {
       setSubmitted(true);
       toast.success("تم إرسال طلب الحجز بنجاح! سنتواصل معك قريباً");
       
-      // Reset form
-      setFormData({
-        fullName: "",
-        phone: "",
-        email: "",
-        age: "",
-        procedure: "",
-        preferredDate: "",
-        preferredTime: "",
-        additionalNotes: "",
+      // Redirect to Thank You page with booking details
+      const params = new URLSearchParams({
+        type: 'appointment',
+        name: formData.fullName,
+        phone: formData.phone,
+        ...(formData.email && { email: formData.email }),
+        ...(doctor && { doctor: doctor.name }),
+        ...(formData.preferredDate && { date: formData.preferredDate }),
+        ...(formData.preferredTime && { time: formData.preferredTime }),
       });
+      
+      setTimeout(() => {
+        setLocation(`/thank-you?${params.toString()}`);
+      }, 1500);
     } catch (error) {
       toast.error("حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى");
     }

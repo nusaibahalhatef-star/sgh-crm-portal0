@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,18 +37,39 @@ export default function ManualRegistrationForm() {
   const [doctorId, setDoctorId] = useState("");
   const [preferredDate, setPreferredDate] = useState("");
   const [preferredTime, setPreferredTime] = useState("");
+  const [appointmentAge, setAppointmentAge] = useState("");
+  const [appointmentProcedure, setAppointmentProcedure] = useState("");
+  const [additionalNotes, setAdditionalNotes] = useState("");
   
   // Offer specific
   const [offerId, setOfferId] = useState("");
   
   // Camp specific
   const [campId, setCampId] = useState("");
-  const [age, setAge] = useState("");
+  const [campAge, setCampAge] = useState("");
+  const [campProcedure, setCampProcedure] = useState("");
   const [medicalCondition, setMedicalCondition] = useState("");
 
   const { data: doctors } = trpc.doctors.list.useQuery();
   const { data: offers } = trpc.offers.getAll.useQuery();
   const { data: camps } = trpc.camps.getAll.useQuery();
+
+  // Get selected doctor's procedures
+  const selectedDoctor = doctors?.find((d: any) => d.id.toString() === doctorId);
+  const doctorProcedures = selectedDoctor?.procedures ? selectedDoctor.procedures.split(',').map((p: string) => p.trim()).filter(Boolean) : [];
+
+  // Get selected camp's procedures
+  const selectedCamp = camps?.find((c: any) => c.id.toString() === campId);
+  const campProcedures = selectedCamp?.availableProcedures ? selectedCamp.availableProcedures.split(',').map((p: string) => p.trim()).filter(Boolean) : [];
+
+  // Reset procedure when doctor/camp changes
+  useEffect(() => {
+    setAppointmentProcedure("");
+  }, [doctorId]);
+
+  useEffect(() => {
+    setCampProcedure("");
+  }, [campId]);
 
   const createLeadMutation = trpc.leads.submit.useMutation({
     onSuccess: () => {
@@ -102,9 +123,13 @@ export default function ManualRegistrationForm() {
     setDoctorId("");
     setPreferredDate("");
     setPreferredTime("");
+    setAppointmentAge("");
+    setAppointmentProcedure("");
+    setAdditionalNotes("");
     setOfferId("");
     setCampId("");
-    setAge("");
+    setCampAge("");
+    setCampProcedure("");
     setMedicalCondition("");
   };
 
@@ -121,7 +146,7 @@ export default function ManualRegistrationForm() {
       phone,
       email: email || undefined,
       notes: notes || undefined,
-      source: "phone",
+      source: "phone" as const,
     };
 
     switch (registrationType) {
@@ -139,6 +164,9 @@ export default function ManualRegistrationForm() {
           doctorId: parseInt(doctorId),
           preferredDate: preferredDate || undefined,
           preferredTime: preferredTime || undefined,
+          age: appointmentAge ? parseInt(appointmentAge) : undefined,
+          procedure: appointmentProcedure || undefined,
+          additionalNotes: additionalNotes || undefined,
         });
         break;
       case "offer":
@@ -159,7 +187,8 @@ export default function ManualRegistrationForm() {
         createCampRegistrationMutation.mutate({
           ...baseData,
           campId: parseInt(campId),
-          age: age ? parseInt(age) : undefined,
+          age: campAge ? parseInt(campAge) : undefined,
+          procedures: campProcedure || undefined,
           medicalCondition: medicalCondition || undefined,
         });
         break;
@@ -207,7 +236,7 @@ export default function ManualRegistrationForm() {
           </div>
 
           {/* Basic Info */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="fullName">الاسم الكامل *</Label>
               <Input
@@ -215,6 +244,7 @@ export default function ManualRegistrationForm() {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="أدخل الاسم الكامل"
+                className="text-right"
                 required
               />
             </div>
@@ -225,6 +255,7 @@ export default function ManualRegistrationForm() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="مثال: 967xxxxxxxxx"
+                className="text-right"
                 required
               />
             </div>
@@ -238,6 +269,7 @@ export default function ManualRegistrationForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="example@email.com"
+              className="text-right"
             />
           </div>
 
@@ -259,7 +291,8 @@ export default function ManualRegistrationForm() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="preferredDate">التاريخ المفضل</Label>
                   <Input
@@ -278,6 +311,48 @@ export default function ManualRegistrationForm() {
                     onChange={(e) => setPreferredTime(e.target.value)}
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="appointmentAge">العمر</Label>
+                <Input
+                  id="appointmentAge"
+                  type="number"
+                  value={appointmentAge}
+                  onChange={(e) => setAppointmentAge(e.target.value)}
+                  placeholder="أدخل العمر"
+                  className="text-right"
+                />
+              </div>
+
+              {doctorProcedures.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="appointmentProcedure">الإجراء المطلوب</Label>
+                  <Select value={appointmentProcedure} onValueChange={setAppointmentProcedure}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر الإجراء" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {doctorProcedures.map((proc: string, idx: number) => (
+                        <SelectItem key={idx} value={proc}>
+                          {proc}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="additionalNotes">ملاحظات المريض الإضافية</Label>
+                <Textarea
+                  id="additionalNotes"
+                  value={additionalNotes}
+                  onChange={(e) => setAdditionalNotes(e.target.value)}
+                  placeholder="أي ملاحظات من المريض..."
+                  className="text-right"
+                  rows={2}
+                />
               </div>
             </>
           )}
@@ -319,16 +394,37 @@ export default function ManualRegistrationForm() {
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="age">العمر</Label>
+                <Label htmlFor="campAge">العمر</Label>
                 <Input
-                  id="age"
+                  id="campAge"
                   type="number"
-                  value={age}
-                  onChange={(e) => setAge(e.target.value)}
+                  value={campAge}
+                  onChange={(e) => setCampAge(e.target.value)}
                   placeholder="أدخل العمر"
+                  className="text-right"
                 />
               </div>
+
+              {campProcedures.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="campProcedure">الإجراء المطلوب</Label>
+                  <Select value={campProcedure} onValueChange={setCampProcedure}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر الإجراء" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {campProcedures.map((proc: string, idx: number) => (
+                        <SelectItem key={idx} value={proc}>
+                          {proc}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="medicalCondition">الحالة الطبية</Label>
                 <Textarea
@@ -336,6 +432,7 @@ export default function ManualRegistrationForm() {
                   value={medicalCondition}
                   onChange={(e) => setMedicalCondition(e.target.value)}
                   placeholder="أدخل الحالة الطبية إن وجدت"
+                  className="text-right"
                   rows={2}
                 />
               </div>
@@ -344,12 +441,13 @@ export default function ManualRegistrationForm() {
 
           {/* Notes */}
           <div className="space-y-2">
-            <Label htmlFor="notes">ملاحظات إضافية</Label>
+            <Label htmlFor="notes">ملاحظات الموظف</Label>
             <Textarea
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="أي ملاحظات إضافية..."
+              placeholder="أي ملاحظات من الموظف..."
+              className="text-right"
               rows={3}
             />
           </div>
@@ -370,7 +468,7 @@ export default function ManualRegistrationForm() {
             <Button type="submit" disabled={isPending}>
               {isPending ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
                   جاري الحفظ...
                 </>
               ) : (

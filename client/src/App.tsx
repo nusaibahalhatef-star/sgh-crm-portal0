@@ -30,7 +30,9 @@ import WhatsAppPage from "./pages/WhatsAppPage";
 import MessagesPage from "./pages/MessagesPage";
 import ReportsPage from "./pages/ReportsPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
+import CampStatsPage from "./pages/CampStatsPage";
 import PWAManager from "./components/PWAManager";
+import OfflineIndicator from "./components/OfflineIndicator";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -58,6 +60,7 @@ function Router() {
       <Route path={"/dashboard/messages"} component={MessagesPage} />
       <Route path={"/dashboard/reports"} component={ReportsPage} />
       <Route path={"/dashboard/analytics"} component={AnalyticsPage} />
+      <Route path={"/dashboard/camp-stats"} component={CampStatsPage} />
       <Route path={"/admin"} component={AdminDashboard} />
       <Route path={"/reports/social-media"} component={SocialMediaReports} />
       <Route path={"/offline"} component={OfflinePage} />
@@ -84,6 +87,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <PWAManager />
+          <OfflineIndicator />
           <Router />
         </TooltipProvider>
       </ThemeProvider>
