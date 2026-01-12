@@ -10,7 +10,8 @@ import {
   MessageCircle,
   ChevronLeft,
   ChevronRight,
-  FileEdit
+  FileEdit,
+  Users
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -36,6 +37,11 @@ const navItems: NavItem[] = [
     title: "إدارة المحتوى",
     href: "/dashboard/content",
     icon: FileEdit,
+  },
+  {
+    title: "إدارة المستخدمين",
+    href: "/dashboard/users",
+    icon: Users,
   },
   {
     title: "النشر",

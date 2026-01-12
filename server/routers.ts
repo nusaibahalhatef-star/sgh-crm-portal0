@@ -38,6 +38,7 @@ import { campsRouter } from "./routers/camps";
 import { offerLeadsRouter } from "./routers/offerLeads";
 import { campRegistrationsRouter } from "./routers/campRegistrations";
 import { doctorsRouter } from "./routers/doctors";
+import { usersRouter } from "./routers/users";
 import { sendNewLeadNotification, sendNewAppointmentEmail } from "./email";
 import { trackLead, trackCompleteRegistration } from "./facebookConversion";
 import { sendWelcomeMessage, sendBookingConfirmation, sendCustomMessage } from "./whatsapp";
@@ -520,7 +521,9 @@ export const appRouter = router({
         await rejectAccessRequest(input.requestId, ctx.user.id);
         return { success: true };
       }),
-  }),
+   }),
+  
+  // Users management (admin only)
+  users: usersRouter,
 });
-
 export type AppRouter = typeof appRouter;
