@@ -84,29 +84,7 @@ export default function AdminDashboard() {
   const [newStatus, setNewStatus] = useState("");
   const [statusNotes, setStatusNotes] = useState("");
   const [leadsDateFilter, setLeadsDateFilter] = useState("all");
-  const [activeTab, setActiveTab] = useState<"leads" | "requests" | "appointments" | "offerLeads" | "campRegistrations">("leads");
-
-  const { data: accessRequests, refetch: refetchRequests } = trpc.accessRequests.pending.useQuery();
-  
-  const approveMutation = trpc.accessRequests.approve.useMutation({
-    onSuccess: () => {
-      toast.success("تمت الموافقة على الطلب بنجاح");
-      refetchRequests();
-    },
-    onError: () => {
-      toast.error("حدث خطأ أثناء معالجة الطلب");
-    },
-  });
-
-  const rejectMutation = trpc.accessRequests.reject.useMutation({
-    onSuccess: () => {
-      toast.success("تم رفض الطلب");
-      refetchRequests();
-    },
-    onError: () => {
-      toast.error("حدث خطأ أثناء معالجة الطلب");
-    },
-  });
+  const [activeTab, setActiveTab] = useState<"leads" | "appointments" | "offerLeads" | "campRegistrations">("leads");
 
   const { data: unifiedLeads, isLoading: leadsLoading, refetch: refetchLeads } = trpc.leads.unifiedList.useQuery();
   const { data: stats } = trpc.leads.stats.useQuery();
@@ -416,21 +394,6 @@ export default function AdminDashboard() {
               </Button>
               
               {/* Access Requests Button */}
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => setActiveTab("requests")}
-                className="h-9 w-9 relative"
-                title="طلبات التصريح"
-              >
-                <UserCheck className="w-4 h-4" />
-                {accessRequests && accessRequests.length > 0 && (
-                  <Badge className="absolute -top-1 -left-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-red-500">
-                    {accessRequests.length}
-                  </Badge>
-                )}
-              </Button>
-              
               {/* Offline Page Button */}
               <Button 
                 variant="outline" 
@@ -544,23 +507,19 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-4 md:mb-6 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
-          <div className="flex items-center gap-2">
-            <Button
-              variant={activeTab === "leads" ? "default" : "outline"}
-              onClick={() => setActiveTab("leads")}
-              className="whitespace-nowrap"
-            >
-              <Users className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">العملاء المسجلين</span>
-              <span className="sm:hidden">العملاء</span>
-            </Button>
-
-          </div>
-
+          <Button
+            variant={activeTab === "leads" ? "default" : "outline"}
+            onClick={() => setActiveTab("leads")}
+            className="whitespace-nowrap flex-shrink-0"
+          >
+            <Users className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">العملاء المسجلين</span>
+            <span className="sm:hidden">العملاء</span>
+          </Button>
           <Button
             variant={activeTab === "appointments" ? "default" : "outline"}
             onClick={() => setActiveTab("appointments")}
-            className="whitespace-nowrap"
+            className="whitespace-nowrap flex-shrink-0"
           >
             <Calendar className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">مواعيد الأطباء</span>
@@ -569,7 +528,7 @@ export default function AdminDashboard() {
           <Button
             variant={activeTab === "offerLeads" ? "default" : "outline"}
             onClick={() => setActiveTab("offerLeads")}
-            className="whitespace-nowrap"
+            className="whitespace-nowrap flex-shrink-0"
           >
             <TrendingUp className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">حجوزات العروض</span>
@@ -578,7 +537,7 @@ export default function AdminDashboard() {
           <Button
             variant={activeTab === "campRegistrations" ? "default" : "outline"}
             onClick={() => setActiveTab("campRegistrations")}
-            className="whitespace-nowrap"
+            className="whitespace-nowrap flex-shrink-0"
           >
             <Calendar className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">تسجيلات المخيمات</span>
@@ -779,96 +738,6 @@ export default function AdminDashboard() {
                   </Table>
                 </div>
               </>
-            )}
-          </CardContent>
-        </Card>
-        )}
-
-        {/* Access Requests Table */}
-        {activeTab === "requests" && (
-        <Card>
-          <CardHeader>
-            <CardTitle>طلبات التصريح المعلقة</CardTitle>
-            <CardDescription>مراجعة والموافقة على طلبات الوصول الجديدة</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {!accessRequests || accessRequests.length === 0 ? (
-              <div className="text-center py-12">
-                <UserCheck className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <p className="text-lg font-semibold text-muted-foreground">
-                  لا توجد طلبات معلقة
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-right">الاسم</TableHead>
-                      <TableHead className="text-right">البريد الإلكتروني</TableHead>
-                      <TableHead className="text-right">الهاتف</TableHead>
-                      <TableHead className="text-right">السبب</TableHead>
-                      <TableHead className="text-right">تاريخ الطلب</TableHead>
-                      <TableHead className="text-right">الإجراءات</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {accessRequests.map((request) => (
-                      <TableRow key={request.id}>
-                        <TableCell className="font-medium">{request.name}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Mail className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-sm" dir="ltr">{request.email}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {request.phone ? (
-                            <div className="flex items-center gap-2">
-                              <Phone className="w-4 h-4 text-muted-foreground" />
-                              <span dir="ltr">{request.phone}</span>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">غير متوفر</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-muted-foreground">
-                            {request.reason || "غير محدد"}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-muted-foreground">
-                            {new Date(request.requestedAt).toLocaleDateString('ar-YE')}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="default"
-                              onClick={() => approveMutation.mutate({ requestId: request.id })}
-                              disabled={approveMutation.isPending || rejectMutation.isPending}
-                            >
-                              <UserCheck className="w-4 h-4 mr-1" />
-                              موافقة
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => rejectMutation.mutate({ requestId: request.id })}
-                              disabled={approveMutation.isPending || rejectMutation.isPending}
-                            >
-                              <UserX className="w-4 h-4 mr-1" />
-                              رفض
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
             )}
           </CardContent>
         </Card>
@@ -1176,13 +1045,21 @@ export default function AdminDashboard() {
           {selectedLead && (
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <h4 className="font-semibold">معلومات العميل:</h4>
-                <div className="bg-muted rounded-lg p-3 space-y-1">
+                <h4 className="font-semibold">معلومات التسجيل الكاملة:</h4>
+                <div className="bg-muted rounded-lg p-3 space-y-1.5">
                   <p className="text-sm"><span className="font-semibold">الاسم:</span> {selectedLead.fullName}</p>
-                  <p className="text-sm"><span className="font-semibold">الهاتف:</span> {selectedLead.phone}</p>
+                  <p className="text-sm"><span className="font-semibold">الهاتف:</span> <span dir="ltr">{selectedLead.phone}</span></p>
                   {selectedLead.email && (
-                    <p className="text-sm"><span className="font-semibold">البريد:</span> {selectedLead.email}</p>
+                    <p className="text-sm"><span className="font-semibold">البريد الإلكتروني:</span> {selectedLead.email}</p>
                   )}
+                  <p className="text-sm"><span className="font-semibold">نوع التسجيل:</span> {selectedLead.registrationType || 'غير محدد'}</p>
+                  {selectedLead.source && (
+                    <p className="text-sm"><span className="font-semibold">المصدر:</span> {selectedLead.source === 'web' ? 'موقع' : selectedLead.source === 'phone' ? 'هاتف' : selectedLead.source === 'manual' ? 'يدوي' : selectedLead.source}</p>
+                  )}
+                  {selectedLead.notes && (
+                    <p className="text-sm"><span className="font-semibold">ملاحظات:</span> {selectedLead.notes}</p>
+                  )}
+                  <p className="text-sm"><span className="font-semibold">تاريخ التسجيل:</span> {new Date(selectedLead.createdAt).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
               </div>
 

@@ -27,7 +27,10 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { UserPlus, Edit, Trash2, Power, Search } from "lucide-react";
+import { UserPlus, Edit, Trash2, Power, Search, ArrowRight, UserCheck, UserX, Mail, Phone } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import DashboardLayout from "@/components/DashboardLayout";
+import { useLocation } from "wouter";
 
 const roleLabels: Record<string, string> = {
   admin: "مسؤول",
@@ -46,7 +49,9 @@ const roleColors: Record<string, string> = {
 };
 
 export default function UsersManagementPage() {
+  const [, setLocation] = useLocation();
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [activeSection, setActiveSection] = useState<"users" | "requests">("users");
   const [editingUser, setEditingUser] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [formData, setFormData] = useState({
@@ -59,6 +64,27 @@ export default function UsersManagementPage() {
   });
 
   const { data: users, isLoading, refetch } = trpc.users.getAll.useQuery();
+  const { data: accessRequests, refetch: refetchRequests } = trpc.accessRequests.pending.useQuery();
+
+  const approveMutation = trpc.accessRequests.approve.useMutation({
+    onSuccess: () => {
+      toast.success("تمت الموافقة على الطلب بنجاح");
+      refetchRequests();
+    },
+    onError: () => {
+      toast.error("حدث خطأ أثناء معالجة الطلب");
+    },
+  });
+
+  const rejectMutation = trpc.accessRequests.reject.useMutation({
+    onSuccess: () => {
+      toast.success("تم رفض الطلب");
+      refetchRequests();
+    },
+    onError: () => {
+      toast.error("حدث خطأ أثناء معالجة الطلب");
+    },
+  });
 
   const createMutation = trpc.users.create.useMutation({
     onSuccess: () => {
@@ -163,19 +189,59 @@ export default function UsersManagementPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">جاري التحميل...</p>
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-gray-600">جاري التحميل...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
+    <DashboardLayout>
     <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          onClick={() => setLocation("/dashboard")}
+          className="mb-4 gap-2"
+        >
+          <ArrowRight className="w-4 h-4" />
+          عودة إلى لوحة التحكم
+        </Button>
+
+        {/* Section Tabs */}
+        <div className="flex gap-2 mb-6">
+          <Button
+            variant={activeSection === "users" ? "default" : "outline"}
+            onClick={() => setActiveSection("users")}
+            className="flex-1 sm:flex-none"
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            إدارة المستخدمين
+          </Button>
+          <Button
+            variant={activeSection === "requests" ? "default" : "outline"}
+            onClick={() => setActiveSection("requests")}
+            className="flex-1 sm:flex-none relative"
+          >
+            <UserCheck className="w-4 h-4 mr-2" />
+            طلبات التصريح
+            {accessRequests && accessRequests.length > 0 && (
+              <Badge className="mr-2 bg-red-500">
+                {accessRequests.length}
+              </Badge>
+            )}
+          </Button>
+        </div>
+
+        {/* Users Section */}
+        {activeSection === "users" && (
+        <>
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -414,7 +480,101 @@ export default function UsersManagementPage() {
             </div>
           </div>
         </div>
+        </>
+        )}
+
+        {/* Access Requests Section */}
+        {activeSection === "requests" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>طلبات التصريح المعلقة</CardTitle>
+            <CardDescription>مراجعة والموافقة على طلبات الوصول الجديدة</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!accessRequests || accessRequests.length === 0 ? (
+              <div className="text-center py-12">
+                <UserCheck className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                <p className="text-lg font-semibold text-muted-foreground">
+                  لا توجد طلبات معلقة
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-right">الاسم</TableHead>
+                      <TableHead className="text-right">البريد الإلكتروني</TableHead>
+                      <TableHead className="text-right">الهاتف</TableHead>
+                      <TableHead className="text-right">السبب</TableHead>
+                      <TableHead className="text-right">تاريخ الطلب</TableHead>
+                      <TableHead className="text-right">الإجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {accessRequests.map((request) => (
+                      <TableRow key={request.id}>
+                        <TableCell className="font-medium">{request.name}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm" dir="ltr">{request.email}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {request.phone ? (
+                            <div className="flex items-center gap-2">
+                              <Phone className="w-4 h-4 text-muted-foreground" />
+                              <span dir="ltr">{request.phone}</span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">غير متوفر</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-muted-foreground">
+                            {request.reason || "غير محدد"}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(request.requestedAt).toLocaleDateString('ar-YE')}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => approveMutation.mutate({ requestId: request.id })}
+                              disabled={approveMutation.isPending || rejectMutation.isPending}
+                            >
+                              <UserCheck className="w-4 h-4 mr-1" />
+                              موافقة
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => rejectMutation.mutate({ requestId: request.id })}
+                              disabled={approveMutation.isPending || rejectMutation.isPending}
+                            >
+                              <UserX className="w-4 h-4 mr-1" />
+                              رفض
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        )}
+
       </div>
     </div>
+    </DashboardLayout>
   );
 }
