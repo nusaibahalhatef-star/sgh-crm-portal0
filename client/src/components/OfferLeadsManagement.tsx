@@ -70,6 +70,7 @@ export default function OfferLeadsManagement({ onPendingCountChange }: { onPendi
   const [newStatus, setNewStatus] = useState("");
   const [dateFilter, setDateFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
 
   const { data: offerLeads, isLoading, refetch } = trpc.offerLeads.list.useQuery();
   const { data: stats } = trpc.offerLeads.stats.useQuery();
@@ -158,8 +159,13 @@ export default function OfferLeadsManagement({ onPendingCountChange }: { onPendi
       filtered = filtered.filter((lead: any) => lead.status === statusFilter);
     }
     
+    // Filter by source
+    if (sourceFilter && sourceFilter !== "all") {
+      filtered = filtered.filter((lead: any) => lead.source === sourceFilter);
+    }
+    
     return filtered;
-  }, [offerLeads, searchTerm, selectedOffer, dateFilter, statusFilter]);
+  }, [offerLeads, selectedOffer, searchTerm, dateFilter, statusFilter, sourceFilter]);
 
   const handleStatusUpdate = () => {
     if (!selectedLead || !newStatus) return;
@@ -311,6 +317,17 @@ export default function OfferLeadsManagement({ onPendingCountChange }: { onPendi
                 <SelectItem value="no_answer">لم يرد</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className="w-full sm:w-[160px] h-9 md:h-10">
+                <SelectValue placeholder="كل المصادر" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">كل المصادر</SelectItem>
+                <SelectItem value="website">موقع</SelectItem>
+                <SelectItem value="phone">هاتف</SelectItem>
+                <SelectItem value="manual">يدوي</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Mobile Cards View */}
@@ -374,7 +391,7 @@ export default function OfferLeadsManagement({ onPendingCountChange }: { onPendi
                   </TableRow>
                 ) : (
                   filteredLeads.map((lead: any) => (
-                    <TableRow key={lead.id}>
+                    <TableRow key={lead.id} className={lead.status === 'new' ? 'bg-red-50 hover:bg-red-100' : ''}>
                       <TableCell className="font-medium">{lead.fullName}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">

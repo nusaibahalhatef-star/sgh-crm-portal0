@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,7 +61,7 @@ const statusColors = {
   cancelled: "bg-red-500",
 };
 
-export default function CampRegistrationsManagement() {
+export default function CampRegistrationsManagement({ onPendingCountChange }: { onPendingCountChange?: (count: number) => void }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCamp, setSelectedCamp] = useState<string>("all");
   const [selectedRegistration, setSelectedRegistration] = useState<any>(null);
@@ -69,9 +69,22 @@ export default function CampRegistrationsManagement() {
   const [newStatus, setNewStatus] = useState("");
   const [dateFilter, setDateFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
 
   const { data: registrations, isLoading, refetch } = trpc.campRegistrations.list.useQuery();
   const { data: stats } = trpc.campRegistrations.stats.useQuery();
+  
+  // Count pending registrations (status = 'pending')
+  const pendingCount = useMemo(() => {
+    return registrations?.filter(r => r.status === 'pending').length || 0;
+  }, [registrations]);
+  
+  // Notify parent of pending count changes
+  useEffect(() => {
+    if (onPendingCountChange) {
+      onPendingCountChange(pendingCount);
+    }
+  }, [pendingCount, onPendingCountChange]);
 
   const updateStatusMutation = trpc.campRegistrations.updateStatus.useMutation({
     onSuccess: () => {
@@ -145,8 +158,13 @@ export default function CampRegistrationsManagement() {
       filtered = filtered.filter((reg: any) => reg.status === statusFilter);
     }
     
+    // Filter by source
+    if (sourceFilter && sourceFilter !== "all") {
+      filtered = filtered.filter((reg: any) => reg.source === sourceFilter);
+    }
+    
     return filtered;
-  }, [registrations, searchTerm, selectedCamp, dateFilter, statusFilter]);
+  }, [registrations, selectedCamp, searchTerm, dateFilter, statusFilter, sourceFilter]);
 
   const handleStatusUpdate = () => {
     if (!selectedRegistration || !newStatus) return;
@@ -286,6 +304,17 @@ export default function CampRegistrationsManagement() {
                 <SelectItem value="cancelled">ملغي</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className="w-full sm:w-[160px] h-9 md:h-10">
+                <SelectValue placeholder="كل المصادر" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">كل المصادر</SelectItem>
+                <SelectItem value="website">موقع</SelectItem>
+                <SelectItem value="phone">هاتف</SelectItem>
+                <SelectItem value="manual">يدوي</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Mobile Cards View */}
@@ -351,7 +380,7 @@ export default function CampRegistrationsManagement() {
                   </TableRow>
                 ) : (
                   filteredRegistrations.map((reg: any) => (
-                    <TableRow key={reg.id}>
+                    <TableRow key={reg.id} className={reg.status === 'new' ? 'bg-red-50 hover:bg-red-100' : ''}>
                       <TableCell className="font-medium">{reg.fullName}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">

@@ -92,15 +92,19 @@ export default function AdminDashboard() {
   const { data: doctors = [] } = trpc.doctors.list.useQuery();
   
   // Count pending (not updated) bookings
+  const [offerLeadsPendingCount, setOfferLeadsPendingCount] = useState(0);
+  const [campRegistrationsPendingCount, setCampRegistrationsPendingCount] = useState(0);
+  
   const pendingCounts = useMemo(() => {
     const leadsPending = unifiedLeads?.filter(l => l.status === 'pending').length || 0;
     const appointmentsPending = appointments?.filter(a => a.status === 'pending').length || 0;
-    // offerLeads and campRegistrations will be counted in their components
     return {
       leads: leadsPending,
       appointments: appointmentsPending,
+      offerLeads: offerLeadsPendingCount,
+      campRegistrations: campRegistrationsPendingCount,
     };
-  }, [unifiedLeads, appointments]);
+  }, [unifiedLeads, appointments, offerLeadsPendingCount, campRegistrationsPendingCount]);
   
   const [appointmentSearchTerm, setAppointmentSearchTerm] = useState("");
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
@@ -111,7 +115,9 @@ export default function AdminDashboard() {
   const [selectedDoctor, setSelectedDoctor] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
   const [appointmentStatusFilter, setAppointmentStatusFilter] = useState("all");
+  const [appointmentSourceFilter, setAppointmentSourceFilter] = useState("all");
   const [leadsStatusFilter, setLeadsStatusFilter] = useState("all");
+  const [leadsSourceFilter, setLeadsSourceFilter] = useState("all");
   const [offerLeadsStatusFilter, setOfferLeadsStatusFilter] = useState("all");
   const [campRegistrationsStatusFilter, setCampRegistrationsStatusFilter] = useState("all");
 
@@ -202,8 +208,13 @@ export default function AdminDashboard() {
       filtered = filtered.filter(lead => lead.status === leadsStatusFilter);
     }
     
+    // Filter by source
+    if (leadsSourceFilter && leadsSourceFilter !== "all") {
+      filtered = filtered.filter(lead => lead.source === leadsSourceFilter);
+    }
+    
     return filtered;
-  }, [unifiedLeads, searchTerm, leadsDateFilter, leadsStatusFilter]);
+  }, [unifiedLeads, searchTerm, leadsDateFilter, leadsStatusFilter, leadsSourceFilter]);
 
   const filteredAppointments = useMemo(() => {
     if (!appointments) return [];
@@ -251,11 +262,16 @@ export default function AdminDashboard() {
     
     // Filter by status
     if (appointmentStatusFilter && appointmentStatusFilter !== "all") {
-      filtered = filtered.filter(apt => apt.status === appointmentStatusFilter);
+      filtered = filtered.filter(appointment => appointment.status === appointmentStatusFilter);
+    }
+    
+    // Filter by source
+    if (appointmentSourceFilter && appointmentSourceFilter !== "all") {
+      filtered = filtered.filter(appointment => (appointment as any).source === appointmentSourceFilter);
     }
     
     return filtered;
-  }, [appointments, appointmentSearchTerm, selectedDoctor, dateFilter, appointmentStatusFilter]);
+  }, [appointments, appointmentSearchTerm, selectedDoctor, dateFilter, appointmentStatusFilter, appointmentSourceFilter]);
 
   const appointmentStats = useMemo(() => {
     if (!appointments) return { total: 0, pending: 0, confirmed: 0, cancelled: 0 };
@@ -549,20 +565,30 @@ export default function AdminDashboard() {
           <Button
             variant={activeTab === "offerLeads" ? "default" : "outline"}
             onClick={() => setActiveTab("offerLeads")}
-            className="whitespace-nowrap flex-shrink-0"
+            className="whitespace-nowrap flex-shrink-0 relative"
           >
             <TrendingUp className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">حجوزات العروض</span>
             <span className="sm:hidden">العروض</span>
+            {pendingCounts.offerLeads > 0 && (
+              <Badge className="absolute -top-2 -left-2 h-5 w-5 flex items-center justify-center p-0 text-xs bg-red-500">
+                {pendingCounts.offerLeads}
+              </Badge>
+            )}
           </Button>
           <Button
             variant={activeTab === "campRegistrations" ? "default" : "outline"}
             onClick={() => setActiveTab("campRegistrations")}
-            className="whitespace-nowrap flex-shrink-0"
+            className="whitespace-nowrap flex-shrink-0 relative"
           >
             <Calendar className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">تسجيلات المخيمات</span>
             <span className="sm:hidden">المخيمات</span>
+            {pendingCounts.campRegistrations > 0 && (
+              <Badge className="absolute -top-2 -left-2 h-5 w-5 flex items-center justify-center p-0 text-xs bg-red-500">
+                {pendingCounts.campRegistrations}
+              </Badge>
+            )}
           </Button>
 
         </div>
@@ -610,6 +636,17 @@ export default function AdminDashboard() {
                     <SelectItem value="booked">تم الحجز</SelectItem>
                     <SelectItem value="not_interested">غير مهتم</SelectItem>
                     <SelectItem value="no_answer">لم يرد</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={leadsSourceFilter} onValueChange={setLeadsSourceFilter}>
+                  <SelectTrigger className="w-full sm:w-[160px] h-9 md:h-10">
+                    <SelectValue placeholder="كل المصادر" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">كل المصادر</SelectItem>
+                    <SelectItem value="website">موقع</SelectItem>
+                    <SelectItem value="phone">هاتف</SelectItem>
+                    <SelectItem value="manual">يدوي</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button
@@ -818,6 +855,17 @@ export default function AdminDashboard() {
                     <SelectItem value="confirmed">مؤكد</SelectItem>
                     <SelectItem value="cancelled">ملغي</SelectItem>
                     <SelectItem value="completed">مكتمل</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={appointmentSourceFilter} onValueChange={setAppointmentSourceFilter}>
+                  <SelectTrigger className="w-full sm:w-[160px] h-9 md:h-10">
+                    <SelectValue placeholder="كل المصادر" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">كل المصادر</SelectItem>
+                    <SelectItem value="website">موقع</SelectItem>
+                    <SelectItem value="phone">هاتف</SelectItem>
+                    <SelectItem value="manual">يدوي</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button
@@ -1043,12 +1091,12 @@ export default function AdminDashboard() {
 
         {/* Offer Leads Management */}
         {activeTab === "offerLeads" && (
-        <OfferLeadsManagement />
+        <OfferLeadsManagement onPendingCountChange={setOfferLeadsPendingCount} />
         )}
 
         {/* Camp Registrations Management */}
         {activeTab === "campRegistrations" && (
-        <CampRegistrationsManagement />
+        <CampRegistrationsManagement onPendingCountChange={setCampRegistrationsPendingCount} />
         )}
 
 
