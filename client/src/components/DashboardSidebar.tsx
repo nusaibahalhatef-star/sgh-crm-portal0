@@ -11,7 +11,8 @@ import {
   ChevronLeft,
   ChevronRight,
   FileEdit,
-  Users
+  Users,
+  Calendar
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -24,9 +25,14 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
-    title: "لوحة التحكم",
+    title: "الصفحة الرئيسية",
     href: "/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    title: "إدارة الحجوزات",
+    href: "/dashboard/bookings",
+    icon: Calendar,
   },
   {
     title: "الإدارة",
