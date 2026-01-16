@@ -40,7 +40,9 @@ export default function AppointmentCard({ appointment, onViewDetails }: Appointm
   };
 
   return (
-    <Card className="mb-3 hover:shadow-md transition-shadow">
+    <Card className={`mb-3 hover:shadow-md transition-shadow ${
+      appointment.status === 'pending' ? 'bg-red-50 border-red-200' : ''
+    }`}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">

@@ -27,7 +27,9 @@ interface LeadCardProps {
 
 export default function LeadCard({ lead, onUpdateStatus, onWhatsApp }: LeadCardProps) {
   return (
-    <Card className="mb-3 hover:shadow-md transition-shadow">
+    <Card className={`mb-3 hover:shadow-md transition-shadow ${
+      lead.status === 'pending' || lead.status === 'new' ? 'bg-red-50 border-red-200' : ''
+    }`}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">

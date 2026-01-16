@@ -46,10 +46,13 @@ import {
   Download,
   ArrowRight,
   Plus,
+  Settings,
+  BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
 import { exportToExcel, formatLeadsForExport, formatAppointmentsForExport } from "@/lib/exportToExcel";
 import { useLocation } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 const statusLabels = {
   new: "جديد",
@@ -68,6 +71,7 @@ const statusColors = {
 };
 
 export default function BookingsManagementPage() {
+  const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLead, setSelectedLead] = useState<any>(null);
@@ -304,35 +308,56 @@ export default function BookingsManagementPage() {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto py-6 space-y-6" dir="rtl">
-        {/* Header */}
-        <div className="flex flex-col gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold">إدارة الحجوزات</h1>
-            <p className="text-muted-foreground mt-1 text-sm md:text-base">
-              إدارة جميع الحجوزات والتسجيلات
-            </p>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <Button
-              onClick={() => setLocation("/dashboard")}
-              variant="outline"
-              size="sm"
-              className="gap-2 w-full sm:w-auto"
-            >
-              <ArrowRight className="h-4 w-4" />
-              عودة إلى الصفحة الرئيسية
-            </Button>
-            <Button
-              onClick={() => setManualRegistrationOpen(true)}
-              className="gap-2 w-full sm:w-auto"
-            >
-              <Plus className="h-4 w-4" />
-              تسجيل يدوي
-            </Button>
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+        <div className="container py-3 md:py-4">
+          <div className="flex items-center justify-between gap-2">
+            {/* Logo and Title */}
+            <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
+              <img 
+                src="/assets/new-logo.png" 
+                alt="المستشفى السعودي الألماني" 
+                className="h-10 md:h-12 flex-shrink-0"
+              />
+              <div className="min-w-0">
+                <h1 className="text-base md:text-xl font-bold text-foreground truncate">إدارة الحجوزات</h1>
+                <p className="text-xs md:text-sm text-muted-foreground hidden sm:block truncate">إدارة جميع الحجوزات والتسجيلات</p>
+              </div>
+            </div>
+            
+            {/* Actions */}
+            <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
+              {/* User Info - Desktop Only */}
+              <div className="text-left hidden lg:block">
+                <p className="text-sm font-semibold truncate max-w-[150px]">{user?.name}</p>
+                <p className="text-xs text-muted-foreground truncate max-w-[150px]">{user?.email}</p>
+              </div>
+              
+              {/* Manual Registration Button */}
+              <Button
+                onClick={() => setManualRegistrationOpen(true)}
+                className="gap-2 hidden md:flex"
+                size="sm"
+              >
+                <Plus className="h-4 w-4" />
+                تسجيل يدوي
+              </Button>
+              
+              {/* Manual Registration Button - Mobile */}
+              <Button
+                onClick={() => setManualRegistrationOpen(true)}
+                size="icon"
+                className="md:hidden h-9 w-9"
+                title="تسجيل يدوي"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
+      </header>
+      
+      <div className="container mx-auto py-6 space-y-6" dir="rtl">
 
         {/* Tabs */}
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
@@ -344,7 +369,7 @@ export default function BookingsManagementPage() {
             <Users className="h-4 w-4" />
             تسجيلات العملاء
             {pendingCounts.leads > 0 && (
-              <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs">
+              <Badge variant="destructive" className="absolute -top-2 -left-2 h-6 w-6 flex items-center justify-center p-0 text-xs font-bold rounded-full shadow-lg">
                 {pendingCounts.leads}
               </Badge>
             )}
@@ -357,7 +382,7 @@ export default function BookingsManagementPage() {
             <Calendar className="h-4 w-4" />
             مواعيد الأطباء
             {pendingCounts.appointments > 0 && (
-              <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs">
+              <Badge variant="destructive" className="absolute -top-2 -left-2 h-6 w-6 flex items-center justify-center p-0 text-xs font-bold rounded-full shadow-lg">
                 {pendingCounts.appointments}
               </Badge>
             )}
@@ -370,7 +395,7 @@ export default function BookingsManagementPage() {
             <TrendingUp className="h-4 w-4" />
             حجوزات العروض
             {pendingCounts.offerLeads > 0 && (
-              <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs">
+              <Badge variant="destructive" className="absolute -top-2 -left-2 h-6 w-6 flex items-center justify-center p-0 text-xs font-bold rounded-full shadow-lg">
                 {pendingCounts.offerLeads}
               </Badge>
             )}
@@ -383,7 +408,7 @@ export default function BookingsManagementPage() {
             <UserCheck className="h-4 w-4" />
             تسجيلات المخيمات
             {pendingCounts.campRegistrations > 0 && (
-              <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs">
+              <Badge variant="destructive" className="absolute -top-2 -left-2 h-6 w-6 flex items-center justify-center p-0 text-xs font-bold rounded-full shadow-lg">
                 {pendingCounts.campRegistrations}
               </Badge>
             )}
@@ -440,18 +465,19 @@ export default function BookingsManagementPage() {
                 <CardDescription>إدارة ومتابعة تسجيلات العملاء</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <div className="relative flex-1">
+                {/* Filters - Responsive Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                  <div className="relative sm:col-span-2 lg:col-span-1">
                     <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="ابحث بالاسم، الهاتف، أو البريد..."
+                      placeholder="ابحث..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pr-10"
+                      className="pr-10 h-9"
                     />
                   </div>
                   <Select value={leadsDateFilter} onValueChange={setLeadsDateFilter}>
-                    <SelectTrigger className="w-full sm:w-[160px] h-9 md:h-10">
+                    <SelectTrigger className="h-9">
                       <SelectValue placeholder="كل الفترات" />
                     </SelectTrigger>
                     <SelectContent>
@@ -462,7 +488,7 @@ export default function BookingsManagementPage() {
                     </SelectContent>
                   </Select>
                   <Select value={leadsStatusFilter} onValueChange={setLeadsStatusFilter}>
-                    <SelectTrigger className="w-full sm:w-[160px] h-9 md:h-10">
+                    <SelectTrigger className="h-9">
                       <SelectValue placeholder="كل الحالات" />
                     </SelectTrigger>
                     <SelectContent>
@@ -475,7 +501,7 @@ export default function BookingsManagementPage() {
                     </SelectContent>
                   </Select>
                   <Select value={leadsSourceFilter} onValueChange={setLeadsSourceFilter}>
-                    <SelectTrigger className="w-full sm:w-[160px] h-9 md:h-10">
+                    <SelectTrigger className="h-9">
                       <SelectValue placeholder="كل المصادر" />
                     </SelectTrigger>
                     <SelectContent>
@@ -489,10 +515,10 @@ export default function BookingsManagementPage() {
                     variant="outline"
                     size="sm"
                     onClick={handleExportLeads}
-                    className="gap-2"
+                    className="gap-2 h-9"
                   >
                     <Download className="h-4 w-4" />
-                    تصدير
+                    <span className="hidden sm:inline">تصدير</span>
                   </Button>
                 </div>
 
@@ -661,18 +687,19 @@ export default function BookingsManagementPage() {
                 <CardDescription>إدارة ومتابعة مواعيد الأطباء</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
-                  <div className="relative flex-1 min-w-[200px]">
+                {/* Filters - Responsive Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
+                  <div className="relative sm:col-span-2 lg:col-span-1">
                     <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="ابحث بالاسم، الهاتف، أو البريد..."
+                      placeholder="ابحث..."
                       value={appointmentSearchTerm}
                       onChange={(e) => setAppointmentSearchTerm(e.target.value)}
-                      className="pr-10"
+                      className="pr-10 h-9"
                     />
                   </div>
                   <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
-                    <SelectTrigger className="w-full sm:w-[180px] h-9 md:h-10">
+                    <SelectTrigger className="h-9">
                       <SelectValue placeholder="كل الأطباء" />
                     </SelectTrigger>
                     <SelectContent>
@@ -685,7 +712,7 @@ export default function BookingsManagementPage() {
                     </SelectContent>
                   </Select>
                   <Select value={dateFilter} onValueChange={setDateFilter}>
-                    <SelectTrigger className="w-full sm:w-[160px] h-9 md:h-10">
+                    <SelectTrigger className="h-9">
                       <SelectValue placeholder="كل الفترات" />
                     </SelectTrigger>
                     <SelectContent>
@@ -696,7 +723,7 @@ export default function BookingsManagementPage() {
                     </SelectContent>
                   </Select>
                   <Select value={appointmentStatusFilter} onValueChange={setAppointmentStatusFilter}>
-                    <SelectTrigger className="w-full sm:w-[160px] h-9 md:h-10">
+                    <SelectTrigger className="h-9">
                       <SelectValue placeholder="كل الحالات" />
                     </SelectTrigger>
                     <SelectContent>
@@ -708,7 +735,7 @@ export default function BookingsManagementPage() {
                     </SelectContent>
                   </Select>
                   <Select value={appointmentSourceFilter} onValueChange={setAppointmentSourceFilter}>
-                    <SelectTrigger className="w-full sm:w-[160px] h-9 md:h-10">
+                    <SelectTrigger className="h-9">
                       <SelectValue placeholder="كل المصادر" />
                     </SelectTrigger>
                     <SelectContent>
@@ -722,10 +749,10 @@ export default function BookingsManagementPage() {
                     variant="outline"
                     size="sm"
                     onClick={handleExportAppointments}
-                    className="gap-2"
+                    className="gap-2 h-9"
                   >
                     <Download className="h-4 w-4" />
-                    تصدير
+                    <span className="hidden sm:inline">تصدير</span>
                   </Button>
                 </div>
 
