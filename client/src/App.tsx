@@ -31,6 +31,7 @@ import MessagesPage from "./pages/MessagesPage";
 import ReportsPage from "./pages/ReportsPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import CampStatsPage from "./pages/CampStatsPage";
+import BookingsManagementPage from "./pages/BookingsManagementPage";
 import PWAManager from "./components/PWAManager";
 import OfflineIndicator from "./components/OfflineIndicator";
 
@@ -60,7 +61,8 @@ function Router() {
       <Route path={"/dashboard/messages"} component={MessagesPage} />
       <Route path={"/dashboard/reports"} component={ReportsPage} />
       <Route path={"/dashboard/analytics"} component={AnalyticsPage} />
-      <Route path={"/dashboard/camp-stats"} component={CampStatsPage} />
+       <Route path={"/dashboard/camp-stats"} component={CampStatsPage} />
+      <Route path={"/dashboard/bookings"} component={BookingsManagementPage} />
       <Route path={"/admin"} component={AdminDashboard} />
       <Route path={"/reports/social-media"} component={SocialMediaReports} />
       <Route path={"/offline"} component={OfflinePage} />
