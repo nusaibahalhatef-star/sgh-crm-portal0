@@ -304,29 +304,29 @@ export default function BookingsManagementPage() {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto py-6 space-y-6">
+      <div className="container mx-auto py-6 space-y-6" dir="rtl">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-col gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">إدارة الحجوزات</h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-muted-foreground mt-1 text-sm md:text-base">
               إدارة جميع الحجوزات والتسجيلات
             </p>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Button
               onClick={() => setLocation("/dashboard")}
               variant="outline"
               size="sm"
-              className="gap-2"
+              className="gap-2 w-full sm:w-auto"
             >
               <ArrowRight className="h-4 w-4" />
               عودة إلى الصفحة الرئيسية
             </Button>
             <Button
               onClick={() => setManualRegistrationOpen(true)}
-              className="gap-2"
+              className="gap-2 w-full sm:w-auto"
             >
               <Plus className="h-4 w-4" />
               تسجيل يدوي
@@ -335,7 +335,7 @@ export default function BookingsManagementPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2">
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
           <Button
             variant={activeTab === "leads" ? "default" : "outline"}
             onClick={() => setActiveTab("leads")}
