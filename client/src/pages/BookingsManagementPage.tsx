@@ -535,7 +535,7 @@ export default function BookingsManagementPage() {
                   ) : (
                     filteredLeads.map((lead: any) => (
                       <LeadCard
-                        key={lead.id}
+                        key={`lead-${lead.id}`}
                         lead={lead}
                         onUpdateStatus={(lead) => {
                           setSelectedLead(lead);
@@ -580,7 +580,7 @@ export default function BookingsManagementPage() {
                       ) : (
                         filteredLeads.map((lead: any) => (
                           <TableRow 
-                            key={lead.id}
+                            key={`lead-${lead.id}`}
                             className={lead.status === 'pending' ? 'bg-red-50 hover:bg-red-100' : ''}
                           >
                             <TableCell className="font-medium">{lead.fullName}</TableCell>
@@ -769,7 +769,7 @@ export default function BookingsManagementPage() {
                   ) : (
                     filteredAppointments.map((appointment: any) => (
                       <AppointmentCard
-                        key={appointment.id}
+                        key={`appointment-${appointment.id}`}
                         appointment={appointment}
                         onViewDetails={(appointment: any) => {
                           setSelectedAppointment(appointment);
@@ -813,7 +813,7 @@ export default function BookingsManagementPage() {
                       ) : (
                         filteredAppointments.map((appointment: any) => (
                           <TableRow 
-                            key={appointment.id}
+                            key={`appointment-${appointment.id}`}
                             className={appointment.status === 'pending' ? 'bg-red-50 hover:bg-red-100' : ''}
                           >
                             <TableCell className="font-medium">{appointment.patientName}</TableCell>
