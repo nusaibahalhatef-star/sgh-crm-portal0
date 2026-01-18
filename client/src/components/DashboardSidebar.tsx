@@ -12,7 +12,14 @@ import {
   ChevronRight,
   FileEdit,
   Users,
-  Calendar
+  Calendar,
+  Briefcase,
+  CheckSquare,
+  Target,
+  Megaphone,
+  Video,
+  MapPin,
+  Headphones
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -73,6 +80,36 @@ const navItems: NavItem[] = [
     title: "التحليلات",
     href: "/dashboard/analytics",
     icon: BarChart3,
+  },
+  {
+    title: "فريق التسويق الرقمي",
+    href: "/dashboard/teams/digital-marketing",
+    icon: Megaphone,
+  },
+  {
+    title: "فريق وحدة الإعلام",
+    href: "/dashboard/teams/media",
+    icon: Video,
+  },
+  {
+    title: "فريق التسويق الميداني",
+    href: "/dashboard/teams/field-marketing",
+    icon: MapPin,
+  },
+  {
+    title: "فريق خدمة العملاء",
+    href: "/dashboard/teams/customer-service",
+    icon: Headphones,
+  },
+  {
+    title: "إدارة الحملات والمشاريع",
+    href: "/dashboard/projects",
+    icon: Target,
+  },
+  {
+    title: "المراجعة والاعتماد",
+    href: "/dashboard/review-approval",
+    icon: CheckSquare,
   },
 ];
 

@@ -11,7 +11,7 @@ export const users = mysqlTable("users", {
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin", "manager", "staff", "viewer"]).default("user").notNull(),
+  role: mysqlEnum("role", ["user", "admin", "manager", "staff", "viewer", "team_leader"]).default("user").notNull(),
   isActive: mysqlEnum("isActive", ["yes", "no"]).default("yes").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -263,3 +263,99 @@ export const campRegistrations = mysqlTable("campRegistrations", {
 
 export type CampRegistration = typeof campRegistrations.$inferSelect;
 export type InsertCampRegistration = typeof campRegistrations.$inferInsert;
+
+/**
+ * Teams table - stores team information
+ * جدول الفرق - يخزن معلومات الفرق
+ */
+export const teams = mysqlTable("teams", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  description: text("description"),
+  leaderId: int("leaderId"), // User ID of team leader
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Team = typeof teams.$inferSelect;
+export type InsertTeam = typeof teams.$inferInsert;
+
+/**
+ * Team Members table - stores team membership
+ * جدول أعضاء الفرق - يخزن عضوية الفرق
+ */
+export const teamMembers = mysqlTable("teamMembers", {
+  id: int("id").autoincrement().primaryKey(),
+  teamId: int("teamId").notNull(),
+  userId: int("userId").notNull(),
+  role: mysqlEnum("role", ["leader", "member"]).default("member").notNull(),
+  joinedAt: timestamp("joinedAt").defaultNow().notNull(),
+});
+
+export type TeamMember = typeof teamMembers.$inferSelect;
+export type InsertTeamMember = typeof teamMembers.$inferInsert;
+
+/**
+ * Projects table - stores project/campaign information for task management
+ * جدول المشاريع - يخزن معلومات المشاريع/الحملات لإدارة المهام
+ */
+export const projects = mysqlTable("projects", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  description: text("description"),
+  startDate: timestamp("startDate"),
+  endDate: timestamp("endDate"),
+  status: mysqlEnum("status", ["planning", "active", "completed", "on_hold", "cancelled"]).default("planning").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"]).default("medium").notNull(),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Project = typeof projects.$inferSelect;
+export type InsertProject = typeof projects.$inferInsert;
+
+/**
+ * Tasks table - stores task information
+ * جدول المهام - يخزن معلومات المهام
+ */
+export const tasks = mysqlTable("tasks", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId"), // Optional: link to project
+  teamId: int("teamId").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  assignedTo: int("assignedTo"), // User ID
+  priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"]).default("medium").notNull(),
+  status: mysqlEnum("status", ["todo", "in_progress", "review", "completed", "cancelled"]).default("todo").notNull(),
+  dueDate: timestamp("dueDate"),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Task = typeof tasks.$inferSelect;
+export type InsertTask = typeof tasks.$inferInsert;
+
+/**
+ * Task Deliverables table - stores task deliverables/submissions
+ * جدول تسليمات المهام - يخزن تسليمات/تقديمات المهام
+ */
+export const taskDeliverables = mysqlTable("taskDeliverables", {
+  id: int("id").autoincrement().primaryKey(),
+  taskId: int("taskId").notNull(),
+  userId: int("userId").notNull(), // Who submitted
+  fileUrl: varchar("fileUrl", { length: 500 }),
+  notes: text("notes"),
+  status: mysqlEnum("status", ["pending", "approved", "rejected", "revision_needed"]).default("pending").notNull(),
+  reviewNotes: text("reviewNotes"),
+  submittedAt: timestamp("submittedAt").defaultNow().notNull(),
+  reviewedBy: int("reviewedBy"), // Who reviewed
+  reviewedAt: timestamp("reviewedAt"),
+});
+
+export type TaskDeliverable = typeof taskDeliverables.$inferSelect;
+export type InsertTaskDeliverable = typeof taskDeliverables.$inferInsert;

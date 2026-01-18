@@ -1,1 +1,0 @@
-ALTER TABLE `doctors` MODIFY COLUMN `isVisiting` enum('yes','no') NOT NULL DEFAULT 'no';

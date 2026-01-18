@@ -1,1 +1,0 @@
-ALTER TABLE `campRegistrations` ADD `procedures` text;

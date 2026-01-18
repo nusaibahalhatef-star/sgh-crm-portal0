@@ -918,3 +918,78 @@
 - [x] إضافة TableSkeleton component
 - [x] استبدال Loader2 بـ TableSkeleton في AdminDashboard
 - [x] إضافة table-sticky-col للعمود الأول في جداول العروض والمخيمات
+
+
+### نظام إدارة مهام الفرق (Team Task Management System) 🔄 جاري العمل
+
+#### Database Schema
+- [x] إضافة team_leader إلى enum role في جدول users
+- [x] إنشاء جدول teams (id, name, slug, description, leaderId, isActive, createdAt, updatedAt)
+- [x] إنشاء جدول teamMembers (id, teamId, userId, role, joinedAt)
+- [x] إنشاء جدول projects (id, title, slug, description, startDate, endDate, status, priority, createdBy, createdAt, updatedAt)
+- [x] إنشاء جدول tasks (id, projectId, teamId, title, description, assignedTo, priority, status, dueDate, createdBy, createdAt, updatedAt)
+- [x] إنشاء جدول taskDeliverables (id, taskId, userId, fileUrl, notes, status, reviewNotes, submittedAt, reviewedBy, reviewedAt)
+- [x] تشغيل pnpm db:push لتطبيق التغييرات
+
+#### Backend (Server & DB)
+- [ ] إضافة team_leader_procedure في routers.ts
+- [ ] إضافة teams router (create, list, update, delete, addMember, removeMember)
+- [ ] إضافة campaigns router (create, list, update, delete, getTasks)
+- [ ] إضافة tasks router (create, list, update, delete, assign, updateStatus, getDeliverables)
+- [ ] إضافة deliverables router (submit, list, approve, reject)
+- [ ] إضافة query helpers في db.ts
+
+#### Frontend Pages
+- [ ] إنشاء DigitalMarketingTeamPage.tsx (فريق التسويق الرقمي)
+- [ ] إنشاء MediaTeamPage.tsx (فريق وحدة الإعلام)
+- [ ] إنشاء FieldMarketingTeamPage.tsx (فريق التسويق الميداني)
+- [ ] إنشاء CustomerServiceTeamPage.tsx (فريق خدمة العملاء)
+- [ ] إنشاء CampaignsProjectsPage.tsx (إدارة الحملات والمشاريع - admin & team_leader only)
+- [ ] إنشاء ReviewApprovalPage.tsx (المراجعة والاعتماد - admin & team_leader only)
+
+#### UI Components
+- [ ] إنشاء TaskCard.tsx (بطاقة المهمة)
+- [ ] إنشاء TaskForm.tsx (نموذج إنشاء/تعديل المهمة)
+- [ ] إنشاء DeliverableUpload.tsx (رفع التسليمات)
+- [ ] إنشاء CampaignCard.tsx (بطاقة الحملة/المشروع)
+- [ ] تحديث DashboardSidebar لإضافة الأقسام الجديدة
+
+#### Features
+- [ ] نظام إنشاء وتوزيع المهام
+- [ ] نظام متابعة التقدم (progress tracking)
+- [ ] نظام رفع التسليمات (file upload)
+- [ ] نظام المراجعة والاعتماد (approval workflow)
+- [ ] نظام الإشعارات للمهام الجديدة والتسليمات
+- [ ] فلاتر وبحث متقدم
+- [ ] تصدير التقارير
+
+#### Access Control
+- [ ] admin: وصول كامل لجميع الصفحات
+- [ ] team_leader: وصول لصفحة فريقه + إدارة الحملات + المراجعة
+- [ ] user: وصول لصفحة فريقه فقط (عرض المهام ورفع التسليمات)
+
+
+---
+
+## ✅ تم إنجازه: نظام إدارة مهام الفرق (Team Management System)
+
+### Database Schema
+- [x] إضافة team_leader إلى enum role
+- [x] إنشاء جدول teams
+- [x] إنشاء جدول teamMembers  
+- [x] إنشاء جدول projects
+- [x] إنشاء جدول tasks
+- [x] إنشاء جدول taskDeliverables
+
+### Frontend Pages (قيد التطوير)
+- [x] DigitalMarketingTeamPage - فريق التسويق الرقمي
+- [x] MediaTeamPage - فريق وحدة الإعلام
+- [x] FieldMarketingTeamPage - فريق التسويق الميداني
+- [x] CustomerServiceTeamPage - فريق خدمة العملاء
+- [x] ProjectsManagementPage - إدارة الحملات والمشاريع
+- [x] ReviewApprovalPage - المراجعة والاعتماد
+
+### Navigation
+- [x] تحديث DashboardSidebar بإضافة 6 صفحات جديدة
+- [x] تحديث App.tsx بإضافة routes للصفحات الجديدة
+- [x] جميع الصفحات responsive للجوال وسطح المكتب
