@@ -80,9 +80,9 @@ export default function DashboardLayout({
                 )}
               </div>
               <img
-                src={APP_LOGO}
-                alt={APP_TITLE}
-                className="h-12 w-12 md:h-14 md:w-14 rounded-lg object-cover shadow-sm"
+                src="/assets/new-logo.png"
+                alt="المستشفى السعودي الألماني"
+                className="h-10 md:h-12 w-auto object-contain flex-shrink-0"
               />
             </div>
             
