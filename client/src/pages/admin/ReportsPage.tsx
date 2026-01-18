@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Download, FileText, Loader2, RefreshCw, Phone, MessageCircle } from "lucide-react";
+import { exportToPDF, exportToExcel, type BookingData, type ReportStats } from "@/lib/exportUtils";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -142,11 +144,67 @@ export default function ReportsPage() {
   };
 
   const handleExportPDF = () => {
-    alert("سيتم إضافة ميزة التصدير إلى PDF قريباً");
+    try {
+      if (!bookingsReport || !detailedBookings) {
+        toast.error("لا توجد بيانات للتصدير");
+        return;
+      }
+
+      // تحويل البيانات إلى الشكل المطلوب
+      const bookingsData: BookingData[] = detailedBookings.map((booking: any) => ({
+        id: booking.id,
+        patientName: booking.fullName || 'غير محدد',
+        phone: booking.phone || '',
+        specialty: booking.specialty || 'غير محدد',
+        status: booking.status || 'pending',
+        createdAt: new Date(booking.createdAt),
+      }));
+
+      const stats: ReportStats = {
+        totalBookings: bookingsReport.grandTotal,
+        newLeads: leadsReport?.totalLeads || 0,
+        conversionRate: conversionReport?.overall.conversionRate || 0,
+        revenue: revenueReport?.totalRevenue || 0,
+      };
+
+      exportToPDF(bookingsData, stats, { from: dateRange.from!, to: dateRange.to! });
+      toast.success("تم تصدير التقرير إلى PDF بنجاح");
+    } catch (error) {
+      console.error('Export PDF error:', error);
+      toast.error("فشل تصدير التقرير");
+    }
   };
 
   const handleExportExcel = () => {
-    alert("سيتم إضافة ميزة التصدير إلى Excel قريباً");
+    try {
+      if (!bookingsReport || !detailedBookings) {
+        toast.error("لا توجد بيانات للتصدير");
+        return;
+      }
+
+      // تحويل البيانات إلى الشكل المطلوب
+      const bookingsData: BookingData[] = detailedBookings.map((booking: any) => ({
+        id: booking.id,
+        patientName: booking.fullName || 'غير محدد',
+        phone: booking.phone || '',
+        specialty: booking.specialty || 'غير محدد',
+        status: booking.status || 'pending',
+        createdAt: new Date(booking.createdAt),
+      }));
+
+      const stats: ReportStats = {
+        totalBookings: bookingsReport.grandTotal,
+        newLeads: leadsReport?.totalLeads || 0,
+        conversionRate: conversionReport?.overall.conversionRate || 0,
+        revenue: revenueReport?.totalRevenue || 0,
+      };
+
+      exportToExcel(bookingsData, stats, { from: dateRange.from!, to: dateRange.to! });
+      toast.success("تم تصدير التقرير إلى Excel بنجاح");
+    } catch (error) {
+      console.error('Export Excel error:', error);
+      toast.error("فشل تصدير التقرير");
+    }
   };
 
   // Prepare chart data for bookings
