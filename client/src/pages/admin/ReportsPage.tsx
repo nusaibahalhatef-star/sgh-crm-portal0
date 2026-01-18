@@ -169,7 +169,11 @@ export default function ReportsPage() {
         revenue: revenueReport?.totalRevenue || 0,
       };
 
-      exportToPDF(bookingsData, stats, { from: dateRange.from!, to: dateRange.to! });
+      // إذا لم يتم اختيار فترة، استخدم آخر 30 يوم
+      const fromDate = dateRange.from || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const toDate = dateRange.to || new Date();
+      
+      exportToPDF(bookingsData, stats, { from: fromDate, to: toDate });
       toast.success("تم تصدير التقرير إلى PDF بنجاح");
     } catch (error) {
       console.error('Export PDF error:', error);
@@ -203,7 +207,11 @@ export default function ReportsPage() {
         revenue: revenueReport?.totalRevenue || 0,
       };
 
-      exportToExcel(bookingsData, stats, { from: dateRange.from!, to: dateRange.to! });
+      // إذا لم يتم اختيار فترة، استخدم آخر 30 يوم
+      const fromDate = dateRange.from || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const toDate = dateRange.to || new Date();
+      
+      exportToExcel(bookingsData, stats, { from: fromDate, to: toDate });
       toast.success("تم تصدير التقرير إلى Excel بنجاح");
     } catch (error) {
       console.error('Export Excel error:', error);

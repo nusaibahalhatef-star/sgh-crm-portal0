@@ -1185,3 +1185,10 @@
 - [x] تحديث ReportsPage لإرسال type و source
 - [x] فحص TypeScript وإعادة تشغيل الخادم
 - [x] تأجيل إصلاح تصدير PDF لوقت لاحق
+
+### إصلاح تصدير Excel في /dashboard/reports ✅ مكتمل
+- [x] فحص مسار /dashboard/reports والملف المرتبط
+- [x] تحديد سبب عدم عمل التصدير (قيم dateRange غير معرّفة)
+- [x] إصلاح المشكلة بإضافة قيم افتراضية (آخر 30 يوم)
+- [x] إصلاح handleExportExcel و handleExportPDF
+- [x] إعادة تشغيل الخادم
