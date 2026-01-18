@@ -22,20 +22,52 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
 /**
- * Campaigns table - stores marketing campaign information
+ * Campaigns table - stores comprehensive marketing campaign information
+ * يخزّن معلومات شاملة عن الحملات التسويقية
  */
 export const campaigns = mysqlTable("campaigns", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   slug: varchar("slug", { length: 255 }).notNull().unique(),
   description: text("description"),
+  
+  // Campaign Type & Status
+  type: mysqlEnum("type", ["digital", "field", "awareness", "mixed"]).default("digital").notNull(),
+  status: mysqlEnum("status", ["draft", "active", "paused", "completed", "cancelled"]).default("draft").notNull(),
+  
+  // Budget
+  plannedBudget: int("plannedBudget"), // الميزانية المخططة
+  actualBudget: int("actualBudget"), // الميزانية الفعلية
+  currency: varchar("currency", { length: 10 }).default("YER"),
+  
+  // Dates
   startDate: timestamp("startDate"),
   endDate: timestamp("endDate"),
-  isActive: boolean("isActive").default(true).notNull(),
+  
+  // Platforms (JSON array)
+  platforms: text("platforms"), // ["facebook", "instagram", "google", "whatsapp", "field"]
+  
+  // Goals & KPIs
+  goals: text("goals"), // الأهداف (JSON)
+  targetLeads: int("targetLeads"), // هدف العملاء المحتملين
+  targetBookings: int("targetBookings"), // هدف الحجوزات
+  targetROI: int("targetROI"), // هدف عائد الاستثمار (%)
+  
+  // Team
+  teamLeaderId: int("teamLeaderId"), // قائد الفريق
+  teamMembers: text("teamMembers"), // JSON array of user IDs
+  
+  // Meta/Facebook Integration
   metaPixelId: varchar("metaPixelId", { length: 100 }),
   metaAccessToken: text("metaAccessToken"),
+  
+  // WhatsApp Integration
   whatsappEnabled: boolean("whatsappEnabled").default(false).notNull(),
   whatsappWelcomeMessage: text("whatsappWelcomeMessage"),
+  
+  // Legacy field
+  isActive: boolean("isActive").default(true).notNull(),
+  
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

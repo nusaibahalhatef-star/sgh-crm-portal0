@@ -1,0 +1,108 @@
+import { z } from "zod";
+import { router, protectedProcedure } from "../_core/trpc";
+import {
+  getCampaigns,
+  getCampaignById,
+  getCampaignBySlug,
+  createCampaign,
+  updateCampaign,
+  deleteCampaign,
+  getCampaignStats,
+  getCampaignsOverview,
+} from "../db/campaigns";
+
+// Validation schemas
+const campaignTypeSchema = z.enum(["digital", "field", "awareness", "mixed"]);
+const campaignStatusSchema = z.enum(["draft", "active", "paused", "completed", "cancelled"]);
+
+const createCampaignSchema = z.object({
+  name: z.string().min(1, "اسم الحملة مطلوب"),
+  slug: z.string().min(1, "الرابط المختصر مطلوب"),
+  description: z.string().optional(),
+  type: campaignTypeSchema,
+  status: campaignStatusSchema.optional(),
+  plannedBudget: z.number().optional(),
+  actualBudget: z.number().optional(),
+  currency: z.string().optional(),
+  startDate: z.date().optional(),
+  endDate: z.date().optional(),
+  platforms: z.string().optional(), // JSON string
+  goals: z.string().optional(), // JSON string
+  targetLeads: z.number().optional(),
+  targetBookings: z.number().optional(),
+  targetROI: z.number().optional(),
+  teamLeaderId: z.number().optional(),
+  teamMembers: z.string().optional(), // JSON string
+  metaPixelId: z.string().optional(),
+  metaAccessToken: z.string().optional(),
+  whatsappEnabled: z.boolean().optional(),
+  whatsappWelcomeMessage: z.string().optional(),
+});
+
+const updateCampaignSchema = createCampaignSchema.partial().extend({
+  id: z.number(),
+});
+
+export const campaignsRouter = router({
+  // Get all campaigns with filters
+  list: protectedProcedure
+    .input(
+      z.object({
+        status: z.string().optional(),
+        type: z.string().optional(),
+        search: z.string().optional(),
+      }).optional()
+    )
+    .query(async ({ input }) => {
+      return await getCampaigns(input);
+    }),
+
+  // Get campaign by ID
+  getById: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      return await getCampaignById(input.id);
+    }),
+
+  // Get campaign by slug
+  getBySlug: protectedProcedure
+    .input(z.object({ slug: z.string() }))
+    .query(async ({ input }) => {
+      return await getCampaignBySlug(input.slug);
+    }),
+
+  // Create campaign
+  create: protectedProcedure
+    .input(createCampaignSchema)
+    .mutation(async ({ input }) => {
+      return await createCampaign(input as any);
+    }),
+
+  // Update campaign
+  update: protectedProcedure
+    .input(updateCampaignSchema)
+    .mutation(async ({ input }) => {
+      const { id, ...data } = input;
+      return await updateCampaign(id, data as any);
+    }),
+
+  // Delete campaign
+  delete: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      return await deleteCampaign(input.id);
+    }),
+
+  // Get campaign statistics
+  getStats: protectedProcedure
+    .input(z.object({ campaignId: z.number() }))
+    .query(async ({ input }) => {
+      return await getCampaignStats(input.campaignId);
+    }),
+
+  // Get campaigns overview
+  getOverview: protectedProcedure
+    .query(async () => {
+      return await getCampaignsOverview();
+    }),
+});

@@ -44,6 +44,7 @@ import FieldMarketingTeamPage from "./pages/FieldMarketingTeamPage";
 import CustomerServiceTeamPage from "./pages/CustomerServiceTeamPage";
 import ProjectsManagementPage from "./pages/ProjectsManagementPage";
 import ReviewApprovalPage from "./pages/ReviewApprovalPage";
+import CampaignsPage from "./pages/admin/CampaignsPage";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -71,6 +72,7 @@ function Router() {
       <Route path={"/dashboard/whatsapp"} component={WhatsAppPage} />
       <Route path={"/dashboard/messages"} component={MessagesPage} />
       <Route path={"/dashboard/reports"} component={ReportsPageNew} />
+      <Route path={"/dashboard/campaigns"} component={CampaignsPage} />
       <Route path={"/dashboard/analytics"} component={AnalyticsPage} />
        <Route path={"/dashboard/camp-stats"} component={CampStatsPage} />
       <Route path={"/dashboard/bookings"} component={BookingsManagementPage} />

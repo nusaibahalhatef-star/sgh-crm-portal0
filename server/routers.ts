@@ -40,6 +40,7 @@ import { campRegistrationsRouter } from "./routers/campRegistrations";
 import { doctorsRouter } from "./routers/doctors";
 import { usersRouter } from "./routers/users";
 import { reportsRouter } from "./routers/reports";
+import { campaignsRouter } from "./routers/campaigns";
 import { sendNewLeadNotification, sendNewAppointmentEmail } from "./email";
 import { trackLead, trackCompleteRegistration } from "./facebookConversion";
 import { sendWelcomeMessage, sendBookingConfirmation, sendCustomMessage } from "./whatsapp";
@@ -48,6 +49,7 @@ import { getCombinedSocialMediaStats } from "./metaGraphAPI";
 import { runDeactivationJobs } from "./cron/deactivateExpired";
 
 export const appRouter = router({
+  campaigns: campaignsRouter,
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -305,55 +307,6 @@ export const appRouter = router({
         }
 
         return { success };
-      }),
-  }),
-
-  // Campaigns management
-  campaigns: router({
-    list: protectedProcedure.query(async () => {
-      return getAllCampaigns();
-    }),
-
-    getById: protectedProcedure
-      .input(z.object({ id: z.number() }))
-      .query(async ({ input }) => {
-        return getCampaignById(input.id);
-      }),
-
-    create: protectedProcedure
-      .input(z.object({
-        name: z.string(),
-        slug: z.string(),
-        description: z.string().optional(),
-        startDate: z.date().optional(),
-        endDate: z.date().optional(),
-        metaPixelId: z.string().optional(),
-        whatsappEnabled: z.boolean().optional(),
-        whatsappWelcomeMessage: z.string().optional(),
-      }))
-      .mutation(async ({ input }) => {
-        return createCampaign(input);
-      }),
-
-    update: protectedProcedure
-      .input(z.object({
-        id: z.number(),
-        name: z.string().optional(),
-        description: z.string().optional(),
-        isActive: z.boolean().optional(),
-        metaPixelId: z.string().optional(),
-        whatsappEnabled: z.boolean().optional(),
-        whatsappWelcomeMessage: z.string().optional(),
-      }))
-      .mutation(async ({ input }) => {
-        const { id, ...data } = input;
-        return updateCampaign(id, data);
-      }),
-
-    stats: protectedProcedure
-      .input(z.object({ campaignId: z.number() }))
-      .query(async ({ input }) => {
-        return getCampaignStats(input.campaignId);
       }),
   }),
 
