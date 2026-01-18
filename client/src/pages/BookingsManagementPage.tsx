@@ -82,7 +82,7 @@ export default function BookingsManagementPage() {
   const [activeTab, setActiveTab] = useState<"leads" | "appointments" | "offerLeads" | "campRegistrations">("leads");
   const [manualRegistrationOpen, setManualRegistrationOpen] = useState(false);
 
-  const { data: unifiedLeads, isLoading: leadsLoading, refetch: refetchLeads } = trpc.leads.unifiedList.useQuery();
+  const { data: unifiedLeads, isLoading: leadsLoading, refetch: refetchLeads } = trpc.leads.list.useQuery();
   const { data: stats } = trpc.leads.stats.useQuery();
   const { data: appointments, isLoading: appointmentsLoading, refetch: refetchAppointments } = trpc.appointments.list.useQuery();
   const { data: doctors = [] } = trpc.doctors.list.useQuery();
@@ -92,7 +92,7 @@ export default function BookingsManagementPage() {
   const [campRegistrationsPendingCount, setCampRegistrationsPendingCount] = useState(0);
   
   const pendingCounts = useMemo(() => {
-    const leadsPending = unifiedLeads?.filter(l => l.status === 'pending').length || 0;
+    const leadsPending = unifiedLeads?.filter(l => l.status === 'new').length || 0;
     const appointmentsPending = appointments?.filter(a => a.status === 'pending').length || 0;
     return {
       leads: leadsPending,
@@ -360,7 +360,7 @@ export default function BookingsManagementPage() {
       <div className="container mx-auto py-6 space-y-6" dir="rtl">
 
         {/* Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex gap-2 overflow-x-auto pt-3 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
           <Button
             variant={activeTab === "leads" ? "default" : "outline"}
             onClick={() => setActiveTab("leads")}

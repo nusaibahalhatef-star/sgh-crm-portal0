@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Phone, MessageCircle, Edit, User } from "lucide-react";
+import { Calendar, Phone, MessageCircle, Edit, User, Eye } from "lucide-react";
 
 interface CampRegistration {
   id: number;
@@ -17,6 +17,7 @@ interface CampRegistration {
 interface CampRegistrationCardProps {
   registration: CampRegistration;
   onEdit: () => void;
+  onViewDetails: () => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -33,7 +34,7 @@ const statusLabels: Record<string, string> = {
   cancelled: "ملغي",
 };
 
-export default function CampRegistrationCard({ registration, onEdit }: CampRegistrationCardProps) {
+export default function CampRegistrationCard({ registration, onEdit, onViewDetails }: CampRegistrationCardProps) {
   const handleCall = () => {
     window.location.href = `tel:${registration.phone}`;
   };
@@ -91,12 +92,11 @@ export default function CampRegistrationCard({ registration, onEdit }: CampRegis
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={handleCall}
-            className="flex-1"
           >
             <Phone className="w-4 h-4 ml-1" />
             اتصال
@@ -105,7 +105,7 @@ export default function CampRegistrationCard({ registration, onEdit }: CampRegis
             variant="outline"
             size="sm"
             onClick={handleWhatsApp}
-            className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+            className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
           >
             <MessageCircle className="w-4 h-4 ml-1" />
             واتساب
@@ -113,8 +113,15 @@ export default function CampRegistrationCard({ registration, onEdit }: CampRegis
           <Button
             variant="outline"
             size="sm"
+            onClick={onViewDetails}
+          >
+            <Eye className="w-4 h-4 ml-1" />
+            تفاصيل
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={onEdit}
-            className="flex-1"
           >
             <Edit className="w-4 h-4 ml-1" />
             تحديث

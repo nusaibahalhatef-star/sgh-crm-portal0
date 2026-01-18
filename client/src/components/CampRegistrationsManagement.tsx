@@ -66,6 +66,7 @@ export default function CampRegistrationsManagement({ onPendingCountChange }: { 
   const [selectedCamp, setSelectedCamp] = useState<string>("all");
   const [selectedRegistration, setSelectedRegistration] = useState<any>(null);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState("");
   const [dateFilter, setDateFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -350,6 +351,10 @@ export default function CampRegistrationsManagement({ onPendingCountChange }: { 
                     setNewStatus(reg.status);
                     setStatusDialogOpen(true);
                   }}
+                  onViewDetails={() => {
+                    setSelectedRegistration(reg);
+                    setDetailsDialogOpen(true);
+                  }}
                 />
               ))
             )}
@@ -380,7 +385,7 @@ export default function CampRegistrationsManagement({ onPendingCountChange }: { 
                   </TableRow>
                 ) : (
                   filteredRegistrations.map((reg: any) => (
-                    <TableRow key={reg.id} className={reg.status === 'new' ? 'bg-red-50 hover:bg-red-100' : ''}>
+                    <TableRow key={reg.id} className={reg.status === 'pending' ? 'bg-red-50 hover:bg-red-100' : ''}>
                       <TableCell className="font-medium">{reg.fullName}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -553,6 +558,89 @@ export default function CampRegistrationsManagement({ onPendingCountChange }: { 
                 )}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Details Dialog */}
+      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>تفاصيل التسجيل</DialogTitle>
+          </DialogHeader>
+          {selectedRegistration && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">الاسم الكامل</p>
+                  <p className="text-base font-semibold">{selectedRegistration.fullName}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">رقم الهاتف</p>
+                  <p className="text-base font-semibold" dir="ltr">{selectedRegistration.phone}</p>
+                </div>
+                {selectedRegistration.email && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">البريد الإلكتروني</p>
+                    <p className="text-base">{selectedRegistration.email}</p>
+                  </div>
+                )}
+                {selectedRegistration.age && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">العمر</p>
+                    <p className="text-base">{selectedRegistration.age} سنة</p>
+                  </div>
+                )}
+                {selectedRegistration.gender && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">الجنس</p>
+                    <p className="text-base">{selectedRegistration.gender === 'male' ? 'ذكر' : 'أنثى'}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">المخيم</p>
+                  <p className="text-base font-semibold">{selectedRegistration.campName || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">الحالة</p>
+                  <Badge className={`${statusColors[selectedRegistration.status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'}`}>
+                    {statusLabels[selectedRegistration.status as keyof typeof statusLabels] || selectedRegistration.status}
+                  </Badge>
+                </div>
+                {selectedRegistration.source && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">المصدر</p>
+                    <p className="text-base">{selectedRegistration.source === 'website' ? 'الموقع' : selectedRegistration.source === 'phone' ? 'هاتف' : 'يدوي'}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">تاريخ التسجيل</p>
+                  <p className="text-base">
+                    {new Date(selectedRegistration.createdAt).toLocaleDateString('ar-YE', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+              </div>
+              {selectedRegistration.notes && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-2">ملاحظات</p>
+                  <p className="text-base bg-muted p-3 rounded-md">{selectedRegistration.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setDetailsDialogOpen(false)}
+            >
+              إغلاق
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
