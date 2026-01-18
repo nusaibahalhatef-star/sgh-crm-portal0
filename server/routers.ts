@@ -39,6 +39,7 @@ import { offerLeadsRouter } from "./routers/offerLeads";
 import { campRegistrationsRouter } from "./routers/campRegistrations";
 import { doctorsRouter } from "./routers/doctors";
 import { usersRouter } from "./routers/users";
+import { reportsRouter } from "./routers/reports";
 import { sendNewLeadNotification, sendNewAppointmentEmail } from "./email";
 import { trackLead, trackCompleteRegistration } from "./facebookConversion";
 import { sendWelcomeMessage, sendBookingConfirmation, sendCustomMessage } from "./whatsapp";
@@ -530,6 +531,9 @@ export const appRouter = router({
   
   // Users management (admin only)
   users: usersRouter,
+
+  // Reports (admin only)
+  reports: reportsRouter,
 
   // Cron jobs (admin only)
   cron: router({

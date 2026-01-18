@@ -993,3 +993,59 @@
 - [x] تحديث DashboardSidebar بإضافة 6 صفحات جديدة
 - [x] تحديث App.tsx بإضافة routes للصفحات الجديدة
 - [x] جميع الصفحات responsive للجوال وسطح المكتب
+
+
+---
+
+## 📊 إعداد التقرير الشامل للمنصة 🔄 جاري العمل
+
+### مراجعة المنصة
+- [ ] مراجعة واجهة العميل (جميع الصفحات العامة)
+- [ ] مراجعة لوحة التحكم (جميع صفحات الإدارة)
+- [ ] مراجعة نظام الصلاحيات والأمان
+- [ ] مراجعة قاعدة البيانات والـ schema
+- [ ] مراجعة التكاملات (Meta، WhatsApp، Telegram)
+
+### محتوى التقرير
+- [ ] أهداف بناء المنصة
+- [ ] مميزات المنصة
+- [ ] مراحل التطوير (6 مراحل - نحن في المرحلة الثانية)
+- [ ] آلية عمل المنصة
+- [ ] آلية تعميم المنصة للإدارات المعنية
+- [ ] آلية النشر والتدريب
+- [ ] ما تم تحقيقه حتى الآن (بالتفصيل)
+- [ ] آلية العمل المفصلة لكل ميزة
+
+### تطوير صفحة التقارير الشاملة 🔄 جاري العمل
+
+#### Backend Development
+- [x] إنشاء reports router مع procedures للتقارير
+- [x] إضافة getBookingsReport procedure (حجوزات ومواعيد)
+- [x] إضافة getNewLeadsReport procedure (عملاء جدد)
+- [x] إضافة getConversionRatesReport procedure (معدلات التحويل)
+- [x] إضافة getRevenueReport procedure (إيرادات وأرباح)
+- [x] إضافة date range filtering لجميع التقارير
+
+#### Frontend Development
+- [x] إنشاء ReportsPage.tsx الصفحة الرئيسية للتقارير
+- [x] إضافة date range picker للفلترة
+- [x] إنشاء BookingsReportCard component
+- [x] إنشاء NewLeadsReportCard component
+- [x] إنشاء ConversionRatesCard component
+- [x] إنشاء RevenueReportCard component
+- [x] إضافة رسوم بيانية (Charts) باستخدام Recharts
+- [x] إضافة جداول تفصيلية لكل تقرير
+
+#### Export Functionality
+- [ ] إضافة export to PDF functionality
+- [ ] إضافة export to Excel functionality
+- [ ] إنشاء PDF template للتقارير
+- [ ] إنشاء Excel template للتقارير
+
+#### UI/UX Enhancements
+- [x] إضافة skeleton loading states
+- [x] إضافة error handling
+- [x] تحسين responsive design للجوال
+- [ ] إضافة print styles
+- [x] إضافة route في App.tsx
+- [ ] تحديث DashboardSidebar لإضافة رابط التقارير

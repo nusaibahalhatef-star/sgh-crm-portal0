@@ -31,6 +31,7 @@ import PublishingPage from "./pages/PublishingPage";
 import WhatsAppPage from "./pages/WhatsAppPage";
 import MessagesPage from "./pages/MessagesPage";
 import ReportsPage from "./pages/ReportsPage";
+import ReportsPageNew from "./pages/admin/ReportsPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import CampStatsPage from "./pages/CampStatsPage";
 import BookingsManagementPage from "./pages/BookingsManagementPage";
@@ -67,7 +68,7 @@ function Router() {
       <Route path={"/dashboard/publishing"} component={PublishingPage} />
       <Route path={"/dashboard/whatsapp"} component={WhatsAppPage} />
       <Route path={"/dashboard/messages"} component={MessagesPage} />
-      <Route path={"/dashboard/reports"} component={ReportsPage} />
+      <Route path={"/dashboard/reports"} component={ReportsPageNew} />
       <Route path={"/dashboard/analytics"} component={AnalyticsPage} />
        <Route path={"/dashboard/camp-stats"} component={CampStatsPage} />
       <Route path={"/dashboard/bookings"} component={BookingsManagementPage} />
