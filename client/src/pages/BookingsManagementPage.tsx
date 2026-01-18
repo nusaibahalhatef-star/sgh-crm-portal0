@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import OfferLeadsManagement from "@/components/OfferLeadsManagement";
@@ -72,7 +72,7 @@ const statusColors = {
 
 export default function BookingsManagementPage() {
   const { user } = useAuth();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -80,6 +80,27 @@ export default function BookingsManagementPage() {
   const [statusNotes, setStatusNotes] = useState("");
   const [leadsDateFilter, setLeadsDateFilter] = useState("all");
   const [activeTab, setActiveTab] = useState<"leads" | "appointments" | "offerLeads" | "campRegistrations">("leads");
+  
+  // Handle query parameters for direct navigation from notifications
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    const type = params.get('type');
+    
+    if (id && type) {
+      // Switch to appropriate tab
+      if (type === 'appointment') {
+        setActiveTab('appointments');
+      } else if (type === 'offer') {
+        setActiveTab('offerLeads');
+      } else if (type === 'camp') {
+        setActiveTab('campRegistrations');
+      }
+      
+      // Clear query parameters after handling
+      window.history.replaceState({}, '', '/dashboard/bookings');
+    }
+  }, [location]);
   const [manualRegistrationOpen, setManualRegistrationOpen] = useState(false);
 
   const { data: unifiedLeads, isLoading: leadsLoading, refetch: refetchLeads } = trpc.leads.list.useQuery();
