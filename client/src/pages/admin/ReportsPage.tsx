@@ -182,14 +182,13 @@ export default function ReportsPage() {
     : [];
 
   return (
-    <DashboardLayout>
+    <DashboardLayout
+      pageTitle="التقارير"
+      pageDescription="تقارير مفصلة عن أداء المنصة"
+    >
       <div className="space-y-4 md:space-y-6">
         {/* Header */}
         <div className="flex flex-col gap-3">
-          <div>
-            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">التقارير</h1>
-            <p className="text-sm md:text-base text-gray-600 mt-1">تقارير مفصلة عن أداء المنصة</p>
-          </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             {/* Date Range Picker */}

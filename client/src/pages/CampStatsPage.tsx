@@ -21,7 +21,9 @@ export default function CampStatsPage() {
 
   if (campsLoading || registrationsLoading) {
     return (
-      <DashboardLayout>
+      <DashboardLayout
+      pageTitle="إحصائيات المخيمات"
+      pageDescription="تقارير وإحصائيات شاملة للمخيمات">
         <div className="flex items-center justify-center min-h-screen" dir="rtl">
           <Loader2 className="w-12 h-12 animate-spin text-primary" />
         </div>
@@ -126,7 +128,9 @@ export default function CampStatsPage() {
     .sort((a, b) => b.value - a.value);
 
   return (
-    <DashboardLayout>
+    <DashboardLayout
+      pageTitle="إحصائيات المخيمات"
+      pageDescription="تقارير وإحصائيات شاملة للمخيمات">
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 p-3 sm:p-4 md:p-6 lg:p-8" dir="rtl">
         <div className="max-w-7xl mx-auto space-y-4 sm:space-y-5 md:space-y-6">
           {/* Header */}

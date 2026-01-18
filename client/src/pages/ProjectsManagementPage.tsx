@@ -19,7 +19,9 @@ import { ShieldCheck } from "lucide-react";
  */
 export default function ProjectsManagementPage() {
   return (
-    <DashboardLayout>
+    <DashboardLayout
+      pageTitle="إدارة الحملات والمشاريع"
+      pageDescription="إدارة ومتابعة الحملات والمشاريع">
       <div className="container py-6 md:py-8">
         {/* Page Header */}
         <div className="mb-6 md:mb-8">

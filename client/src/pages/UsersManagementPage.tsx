@@ -190,7 +190,10 @@ export default function UsersManagementPage() {
 
   if (isLoading) {
     return (
-      <DashboardLayout>
+      <DashboardLayout
+        pageTitle="إدارة المستخدمين"
+        pageDescription="إدارة ومتابعة مستخدمي النظام"
+      >
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
@@ -202,7 +205,10 @@ export default function UsersManagementPage() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout
+      pageTitle="إدارة المستخدمين"
+      pageDescription="إدارة ومتابعة مستخدمي النظام"
+    >
     <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
       <div className="max-w-7xl mx-auto">
         {/* Back Button */}

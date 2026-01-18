@@ -14,7 +14,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
  */
 export default function CustomerServiceTeamPage() {
   return (
-    <DashboardLayout>
+    <DashboardLayout
+      pageTitle="فريق خدمة العملاء"
+      pageDescription="إدارة ومتابعة فريق خدمة العملاء">
       <div className="container py-6 md:py-8">
         {/* Page Header */}
         <div className="mb-6 md:mb-8">

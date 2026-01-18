@@ -337,57 +337,22 @@ export default function BookingsManagementPage() {
   };
 
   return (
-    <DashboardLayout>
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
-        <div className="container py-3 md:py-4">
-          <div className="flex items-center justify-between gap-2">
-            {/* Logo and Title */}
-            <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
-              <img 
-                src="/assets/new-logo.png" 
-                alt="المستشفى السعودي الألماني" 
-                className="h-10 md:h-12 flex-shrink-0"
-              />
-              <div className="min-w-0">
-                <h1 className="text-base md:text-xl font-bold text-foreground truncate">إدارة الحجوزات</h1>
-                <p className="text-xs md:text-sm text-muted-foreground hidden sm:block truncate">إدارة جميع الحجوزات والتسجيلات</p>
-              </div>
-            </div>
-            
-            {/* Actions */}
-            <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
-              {/* User Info - Desktop Only */}
-              <div className="text-left hidden lg:block">
-                <p className="text-sm font-semibold truncate max-w-[150px]">{user?.name}</p>
-                <p className="text-xs text-muted-foreground truncate max-w-[150px]">{user?.email}</p>
-              </div>
-              
-              {/* Manual Registration Button */}
-              <Button
-                onClick={() => setManualRegistrationOpen(true)}
-                className="gap-2 hidden md:flex"
-                size="sm"
-              >
-                <Plus className="h-4 w-4" />
-                تسجيل يدوي
-              </Button>
-              
-              {/* Manual Registration Button - Mobile */}
-              <Button
-                onClick={() => setManualRegistrationOpen(true)}
-                size="icon"
-                className="md:hidden h-9 w-9"
-                title="تسجيل يدوي"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-      
+    <DashboardLayout
+      pageTitle="إدارة الحجوزات"
+      pageDescription="إدارة ومتابعة جميع الحجوزات والمواعيد"
+    >
       <div className="container mx-auto py-6 space-y-6" dir="rtl">
+        {/* Quick Actions */}
+        <div className="flex justify-end gap-2">
+          <Button
+            onClick={() => setManualRegistrationOpen(true)}
+            className="gap-2"
+            size="sm"
+          >
+            <Plus className="h-4 w-4" />
+            تسجيل يدوي
+          </Button>
+        </div>
 
         {/* Tabs */}
         <div className="flex gap-2 overflow-x-auto pt-3 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">

@@ -14,7 +14,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
  */
 export default function DigitalMarketingTeamPage() {
   return (
-    <DashboardLayout>
+    <DashboardLayout
+      pageTitle="فريق التسويق الرقمي"
+      pageDescription="إدارة ومتابعة فريق التسويق الرقمي">
       <div className="container py-6 md:py-8">
         {/* Page Header */}
         <div className="mb-6 md:mb-8">

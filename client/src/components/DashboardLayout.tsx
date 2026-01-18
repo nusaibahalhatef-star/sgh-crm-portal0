@@ -8,8 +8,12 @@ import { useLocation } from "wouter";
 
 export default function DashboardLayout({
   children,
+  pageTitle,
+  pageDescription,
 }: {
   children: React.ReactNode;
+  pageTitle?: string;
+  pageDescription?: string;
 }) {
   const { loading, user } = useAuth();
   const [location] = useLocation();
@@ -65,19 +69,21 @@ export default function DashboardLayout({
           <div className="flex items-center justify-between px-4 py-3 md:px-6">
             {/* Logo and Title */}
             <div className="flex items-center gap-3">
+              <div className="flex-1 text-right">
+                <h1 className="text-xl md:text-2xl font-bold text-primary">
+                  {pageTitle || APP_TITLE}
+                </h1>
+                {pageDescription && (
+                  <p className="text-sm text-muted-foreground hidden sm:block">
+                    {pageDescription}
+                  </p>
+                )}
+              </div>
               <img
                 src={APP_LOGO}
                 alt={APP_TITLE}
-                className="h-10 w-10 md:h-12 md:w-12 rounded-lg object-cover shadow-sm"
+                className="h-12 w-12 md:h-14 md:w-14 rounded-lg object-cover shadow-sm"
               />
-              <div className="hidden sm:block">
-                <h1 className="text-lg md:text-xl font-bold text-primary">
-                  {APP_TITLE}
-                </h1>
-                <p className="text-xs text-muted-foreground hidden md:block">
-                  نرعاكم كأهلينا - Caring like family
-                </p>
-              </div>
             </div>
             
             {/* User Info */}

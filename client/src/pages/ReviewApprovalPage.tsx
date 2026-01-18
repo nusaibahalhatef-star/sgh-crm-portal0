@@ -19,7 +19,9 @@ import { ShieldCheck } from "lucide-react";
  */
 export default function ReviewApprovalPage() {
   return (
-    <DashboardLayout>
+    <DashboardLayout
+      pageTitle="المراجعة والموافقة"
+      pageDescription="مراجعة والموافقة على المحتوى">
       <div className="container py-6 md:py-8">
         {/* Page Header */}
         <div className="mb-6 md:mb-8">
