@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Phone, MessageCircle, Eye, Edit, X } from "lucide-react";
+import { Search, Phone, MessageCircle, Edit, X, Calendar, Mail, User, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 interface PatientCardProps {
@@ -33,11 +33,6 @@ function PatientCard({ patient, onClose, onUpdateStatus }: PatientCardProps) {
     }
   };
 
-  const handleViewDetails = () => {
-    // Navigate to bookings management page
-    window.location.href = '/bookings-management';
-  };
-
   const handleUpdateStatus = () => {
     if (selectedStatus !== patient.status) {
       onUpdateStatus(patient.id, selectedStatus);
@@ -61,36 +56,168 @@ function PatientCard({ patient, onClose, onUpdateStatus }: PatientCardProps) {
     return <Badge variant={status_info.variant}>{status_info.label}</Badge>;
   };
 
+  // Get status options based on type
+  const getStatusOptions = () => {
+    if (patient.type === 'appointment') {
+      return [
+        { value: 'pending', label: 'قيد الانتظار' },
+        { value: 'confirmed', label: 'مؤكد' },
+        { value: 'completed', label: 'مكتمل' },
+        { value: 'cancelled', label: 'ملغي' },
+      ];
+    } else if (patient.type === 'offerLead') {
+      return [
+        { value: 'new', label: 'جديد' },
+        { value: 'contacted', label: 'تم التواصل' },
+        { value: 'booked', label: 'تم الحجز' },
+        { value: 'not_interested', label: 'غير مهتم' },
+        { value: 'no_answer', label: 'لم يرد' },
+      ];
+    } else if (patient.type === 'campRegistration') {
+      return [
+        { value: 'pending', label: 'قيد الانتظار' },
+        { value: 'confirmed', label: 'مؤكد' },
+        { value: 'attended', label: 'حضر' },
+        { value: 'cancelled', label: 'ملغي' },
+      ];
+    } else {
+      // Default for leads
+      return [
+        { value: 'new', label: 'جديد' },
+        { value: 'contacted', label: 'تم التواصل' },
+        { value: 'booked', label: 'تم الحجز' },
+        { value: 'not_interested', label: 'غير مهتم' },
+        { value: 'no_answer', label: 'لم يرد' },
+      ];
+    }
+  };
+
+  const getTypeLabel = () => {
+    if (patient.type === 'lead') return 'عميل';
+    if (patient.type === 'appointment') return 'موعد طبيب';
+    if (patient.type === 'offerLead') return 'حجز عرض';
+    if (patient.type === 'campRegistration') return 'تسجيل مخيم';
+    return 'غير محدد';
+  };
+
   return (
     <Card className="border-2 border-primary shadow-lg">
-      <CardContent className="p-6">
+      <CardContent className="p-4 md:p-6">
         {/* Close Button */}
         <div className="flex items-start justify-between mb-4">
-          <div>
-            <h3 className="text-xl font-bold mb-1">{patient.fullName}</h3>
-            <p className="text-sm text-muted-foreground">{patient.type === 'lead' ? 'عميل' : patient.type === 'appointment' ? 'موعد طبيب' : patient.type === 'offerLead' ? 'حجز عرض' : 'تسجيل مخيم'}</p>
+          <div className="flex-1">
+            <h3 className="text-lg md:text-xl font-bold mb-1">{patient.fullName}</h3>
+            <p className="text-xs md:text-sm text-muted-foreground">{getTypeLabel()}</p>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={onClose} className="shrink-0">
             <X className="h-4 w-4" />
           </Button>
         </div>
 
         {/* Patient Info */}
         <div className="space-y-3 mb-4">
-          <div>
-            <p className="text-sm text-muted-foreground">رقم الهاتف</p>
-            <p className="font-medium">{patient.phone || 'غير متوفر'}</p>
+          {/* Phone */}
+          <div className="flex items-start gap-2">
+            <Phone className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground">رقم الهاتف</p>
+              <p className="font-medium text-sm break-all" dir="ltr">{patient.phone || 'غير متوفر'}</p>
+            </div>
           </div>
+
+          {/* Email */}
           {patient.email && (
-            <div>
-              <p className="text-sm text-muted-foreground">البريد الإلكتروني</p>
-              <p className="font-medium">{patient.email}</p>
+            <div className="flex items-start gap-2">
+              <Mail className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground">البريد الإلكتروني</p>
+                <p className="font-medium text-sm break-all">{patient.email}</p>
+              </div>
             </div>
           )}
+
+          {/* Age */}
+          {patient.age && (
+            <div className="flex items-start gap-2">
+              <User className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <p className="text-xs text-muted-foreground">العمر</p>
+                <p className="font-medium text-sm">{patient.age} سنة</p>
+              </div>
+            </div>
+          )}
+
+          {/* Address */}
+          {patient.address && (
+            <div className="flex items-start gap-2">
+              <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground">العنوان</p>
+                <p className="font-medium text-sm">{patient.address}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Doctor Name (for appointments) */}
+          {patient.type === 'appointment' && patient.doctorName && (
+            <div className="flex items-start gap-2">
+              <User className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <p className="text-xs text-muted-foreground">الطبيب</p>
+                <p className="font-medium text-sm">{patient.doctorName}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Appointment Date (for appointments) */}
+          {patient.type === 'appointment' && patient.appointmentDate && (
+            <div className="flex items-start gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <p className="text-xs text-muted-foreground">تاريخ الموعد</p>
+                <p className="font-medium text-sm">{new Date(patient.appointmentDate).toLocaleDateString('ar-EG')}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Offer Title (for offer leads) */}
+          {patient.type === 'offerLead' && patient.offerTitle && (
+            <div className="flex items-start gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <p className="text-xs text-muted-foreground">العرض</p>
+                <p className="font-medium text-sm">{patient.offerTitle}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Camp Name (for camp registrations) */}
+          {patient.type === 'campRegistration' && patient.campName && (
+            <div className="flex items-start gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <p className="text-xs text-muted-foreground">المخيم</p>
+                <p className="font-medium text-sm">{patient.campName}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Status */}
           <div>
-            <p className="text-sm text-muted-foreground">الحالة</p>
-            <div className="mt-1">{getStatusBadge(patient.status)}</div>
+            <p className="text-xs text-muted-foreground mb-1">الحالة</p>
+            <div>{getStatusBadge(patient.status)}</div>
           </div>
+
+          {/* Created At */}
+          {patient.createdAt && (
+            <div className="flex items-start gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <p className="text-xs text-muted-foreground">تاريخ التسجيل</p>
+                <p className="font-medium text-sm">{new Date(patient.createdAt).toLocaleDateString('ar-EG')}</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Status Update */}
@@ -101,15 +228,9 @@ function PatientCard({ patient, onClose, onUpdateStatus }: PatientCardProps) {
             onChange={(e) => setSelectedStatus(e.target.value)}
             className="w-full p-2 border rounded-md text-sm"
           >
-            <option value="new">جديد</option>
-            <option value="pending">قيد الانتظار</option>
-            <option value="contacted">تم التواصل</option>
-            <option value="confirmed">مؤكد</option>
-            <option value="booked">تم الحجز</option>
-            <option value="attended">حضر</option>
-            <option value="cancelled">ملغي</option>
-            <option value="not_interested">غير مهتم</option>
-            <option value="no_answer">لم يرد</option>
+            {getStatusOptions().map(option => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
           </select>
           {selectedStatus !== patient.status && (
             <Button 
@@ -125,17 +246,13 @@ function PatientCard({ patient, onClose, onUpdateStatus }: PatientCardProps) {
 
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-2">
-          <Button variant="outline" onClick={handleCall} className="w-full">
-            <Phone className="h-4 w-4 mr-2" />
+          <Button variant="outline" onClick={handleCall} className="w-full text-xs md:text-sm">
+            <Phone className="h-4 w-4 mr-1 md:mr-2" />
             اتصال
           </Button>
-          <Button variant="outline" onClick={handleWhatsApp} className="w-full">
-            <MessageCircle className="h-4 w-4 mr-2" />
+          <Button variant="outline" onClick={handleWhatsApp} className="w-full text-xs md:text-sm">
+            <MessageCircle className="h-4 w-4 mr-1 md:mr-2" />
             واتساب
-          </Button>
-          <Button variant="outline" onClick={handleViewDetails} className="col-span-2">
-            <Eye className="h-4 w-4 mr-2" />
-            عرض التفاصيل الكاملة
           </Button>
         </div>
       </CardContent>
@@ -145,6 +262,7 @@ function PatientCard({ patient, onClose, onUpdateStatus }: PatientCardProps) {
 
 export default function QuickPatientSearch() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -158,7 +276,7 @@ export default function QuickPatientSearch() {
   const updateOfferLeadMutation = trpc.offerLeads.updateStatus.useMutation();
   const updateCampMutation = trpc.campRegistrations.updateStatus.useMutation();
 
-  // Search when query length >= 3
+  // Search when query length >= 3 - show ALL matching results
   useEffect(() => {
     if (searchQuery.length >= 3) {
       const allPatients = [
@@ -168,17 +286,14 @@ export default function QuickPatientSearch() {
         ...(campRegistrations || []).map(c => ({ ...c, type: 'campRegistration' })),
       ];
 
-      const found = allPatients.find(p => 
+      const results = allPatients.filter(p => 
         p.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.phone?.includes(searchQuery)
       );
 
-      if (found) {
-        setSelectedPatient(found);
-      } else {
-        setSelectedPatient(null);
-      }
+      setSearchResults(results);
     } else {
+      setSearchResults([]);
       setSelectedPatient(null);
     }
   }, [searchQuery, leads, appointments, offerLeads, campRegistrations]);
@@ -189,6 +304,7 @@ export default function QuickPatientSearch() {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setSelectedPatient(null);
         setSearchQuery("");
+        setSearchResults([]);
       }
     };
 
@@ -214,6 +330,14 @@ export default function QuickPatientSearch() {
     }
   };
 
+  const getTypeLabel = (type: string) => {
+    if (type === 'lead') return 'عميل';
+    if (type === 'appointment') return 'موعد';
+    if (type === 'offerLead') return 'عرض';
+    if (type === 'campRegistration') return 'مخيم';
+    return '';
+  };
+
   return (
     <div ref={searchRef} className="relative w-full">
       {/* Search Input */}
@@ -224,11 +348,43 @@ export default function QuickPatientSearch() {
           placeholder="ابحث بالاسم أو رقم الهاتف (3 أحرف على الأقل)..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pr-10 h-12 text-lg"
+          className="pr-10 h-12 text-base md:text-lg"
         />
       </div>
 
-      {/* Patient Card */}
+      {/* Search Results List */}
+      {searchQuery.length >= 3 && searchResults.length > 0 && !selectedPatient && (
+        <div className="absolute top-full mt-2 w-full z-50 max-h-[60vh] overflow-y-auto">
+          <Card>
+            <CardContent className="p-2">
+              <p className="text-xs text-muted-foreground p-2">
+                تم العثور على {searchResults.length} نتيجة
+              </p>
+              <div className="space-y-1">
+                {searchResults.map((result) => (
+                  <button
+                    key={`${result.type}-${result.id}`}
+                    onClick={() => setSelectedPatient(result)}
+                    className="w-full p-3 text-right hover:bg-slate-50 rounded-md transition-colors flex items-center justify-between group"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm group-hover:text-primary transition-colors truncate">
+                        {result.fullName}
+                      </p>
+                      <p className="text-xs text-muted-foreground" dir="ltr">{result.phone}</p>
+                    </div>
+                    <Badge variant="outline" className="shrink-0 ml-2 text-xs">
+                      {getTypeLabel(result.type)}
+                    </Badge>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Selected Patient Card */}
       {selectedPatient && (
         <div className="absolute top-full mt-2 w-full z-50">
           <PatientCard
@@ -236,6 +392,7 @@ export default function QuickPatientSearch() {
             onClose={() => {
               setSelectedPatient(null);
               setSearchQuery("");
+              setSearchResults([]);
             }}
             onUpdateStatus={handleUpdateStatus}
           />
@@ -243,7 +400,7 @@ export default function QuickPatientSearch() {
       )}
 
       {/* No Results */}
-      {searchQuery.length >= 3 && !selectedPatient && (
+      {searchQuery.length >= 3 && searchResults.length === 0 && (
         <div className="absolute top-full mt-2 w-full z-50">
           <Card>
             <CardContent className="p-4 text-center text-muted-foreground">
