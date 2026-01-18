@@ -351,19 +351,25 @@ export type Project = typeof projects.$inferSelect;
 export type InsertProject = typeof projects.$inferInsert;
 
 /**
- * Tasks table - stores task information
- * جدول المهام - يخزن معلومات المهام
+ * Tasks table - stores task information for digital marketing team
+ * جدول المهام - يخزن معلومات مهام فريق التسويق الرقمي
  */
 export const tasks = mysqlTable("tasks", {
   id: int("id").autoincrement().primaryKey(),
   projectId: int("projectId"), // Optional: link to project
-  teamId: int("teamId").notNull(),
+  teamId: int("teamId"),
+  campaignId: int("campaignId"), // Link to campaign
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
   assignedTo: int("assignedTo"), // User ID
   priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"]).default("medium").notNull(),
   status: mysqlEnum("status", ["todo", "in_progress", "review", "completed", "cancelled"]).default("todo").notNull(),
+  category: mysqlEnum("category", ["content", "design", "ads", "seo", "social_media", "analytics", "other"]).default("other").notNull(),
   dueDate: timestamp("dueDate"),
+  completedAt: timestamp("completedAt"),
+  estimatedHours: int("estimatedHours"),
+  actualHours: int("actualHours"),
+  tags: text("tags"), // JSON array of tags
   createdBy: int("createdBy").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -391,3 +397,38 @@ export const taskDeliverables = mysqlTable("taskDeliverables", {
 
 export type TaskDeliverable = typeof taskDeliverables.$inferSelect;
 export type InsertTaskDeliverable = typeof taskDeliverables.$inferInsert;
+
+/**
+ * Task Comments table - stores comments on tasks
+ * جدول تعليقات المهام - يخزن التعليقات على المهام
+ */
+export const taskComments = mysqlTable("task_comments", {
+  id: int("id").autoincrement().primaryKey(),
+  taskId: int("taskId").notNull(),
+  userId: int("userId").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type TaskComment = typeof taskComments.$inferSelect;
+export type InsertTaskComment = typeof taskComments.$inferInsert;
+
+/**
+ * Task Attachments table - stores attachments/deliverables for tasks
+ * جدول مرفقات المهام - يخزن المرفقات والتسليمات للمهام
+ */
+export const taskAttachments = mysqlTable("task_attachments", {
+  id: int("id").autoincrement().primaryKey(),
+  taskId: int("taskId").notNull(),
+  userId: int("userId").notNull(),
+  fileName: varchar("fileName", { length: 255 }).notNull(),
+  fileUrl: text("fileUrl").notNull(),
+  fileType: varchar("fileType", { length: 100 }),
+  fileSize: int("fileSize"),
+  attachmentType: mysqlEnum("attachmentType", ["deliverable", "reference", "other"]).default("other").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type TaskAttachment = typeof taskAttachments.$inferSelect;
+export type InsertTaskAttachment = typeof taskAttachments.$inferInsert;

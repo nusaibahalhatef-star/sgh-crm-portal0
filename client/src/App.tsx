@@ -45,6 +45,7 @@ import CustomerServiceTeamPage from "./pages/CustomerServiceTeamPage";
 import ProjectsManagementPage from "./pages/ProjectsManagementPage";
 import ReviewApprovalPage from "./pages/ReviewApprovalPage";
 import CampaignsPage from "./pages/admin/CampaignsPage";
+import DigitalMarketingTasksPage from "./pages/admin/DigitalMarketingTasksPage";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -76,7 +77,7 @@ function Router() {
       <Route path={"/dashboard/analytics"} component={AnalyticsPage} />
        <Route path={"/dashboard/camp-stats"} component={CampStatsPage} />
       <Route path={"/dashboard/bookings"} component={BookingsManagementPage} />
-      <Route path={"/dashboard/teams/digital-marketing"} component={DigitalMarketingTeamPage} />
+      <Route path={"/dashboard/teams/digital-marketing"} component={DigitalMarketingTasksPage} />
       <Route path={"/dashboard/teams/media"} component={MediaTeamPage} />
       <Route path={"/dashboard/teams/field-marketing"} component={FieldMarketingTeamPage} />
       <Route path={"/dashboard/teams/customer-service"} component={CustomerServiceTeamPage} />

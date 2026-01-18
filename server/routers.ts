@@ -41,6 +41,7 @@ import { doctorsRouter } from "./routers/doctors";
 import { usersRouter } from "./routers/users";
 import { reportsRouter } from "./routers/reports";
 import { campaignsRouter } from "./routers/campaigns";
+import { tasksRouter } from "./routers/tasks";
 import { sendNewLeadNotification, sendNewAppointmentEmail } from "./email";
 import { trackLead, trackCompleteRegistration } from "./facebookConversion";
 import { sendWelcomeMessage, sendBookingConfirmation, sendCustomMessage } from "./whatsapp";
@@ -50,6 +51,7 @@ import { runDeactivationJobs } from "./cron/deactivateExpired";
 
 export const appRouter = router({
   campaigns: campaignsRouter,
+  tasks: tasksRouter,
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
