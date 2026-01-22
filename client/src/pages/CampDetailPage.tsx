@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, Phone, Mail, Calendar, MapPin, Loader2, Heart } from "lucide-react";
+import { ArrowRight, Phone, Mail, Calendar, MapPin, Loader2, Heart, Users, CheckCircle2, Clock, Star } from "lucide-react";
 import { getRegistrationSource } from "@/lib/tracking";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
@@ -38,13 +38,10 @@ export default function CampDetailPage() {
   const availableProcedures = useMemo(() => {
     if (!camp?.availableProcedures) return [];
     try {
-      // Try to parse as JSON array first
       const parsed = JSON.parse(camp.availableProcedures);
       if (Array.isArray(parsed)) return parsed;
-      // If not JSON, split by newlines
       return camp.availableProcedures.split('\n').filter(p => p.trim());
     } catch {
-      // If parsing fails, split by newlines
       return camp.availableProcedures.split('\n').filter(p => p.trim());
     }
   }, [camp]);
@@ -79,12 +76,11 @@ export default function CampDetailPage() {
         email: formData.email || undefined,
         age: parseInt(formData.age),
         procedures: formData.procedures.length > 0 ? JSON.stringify(formData.procedures) : undefined,
-        source: getRegistrationSource(), // Auto-detect source from UTM
+        source: getRegistrationSource(),
       });
 
       toast.success("تم تسجيلك بنجاح! سنتواصل معك قريباً");
       
-      // Redirect to Thank You page with booking details
       const params = new URLSearchParams({
         type: 'camp',
         name: formData.fullName,
@@ -101,7 +97,6 @@ export default function CampDetailPage() {
     }
   };
 
-  // SEO meta tags
   const seoTitle = camp 
     ? `${camp.name} | المستشفى السعودي الألماني`
     : "المخيمات الطبية | المستشفى السعودي الألماني";
@@ -134,108 +129,198 @@ export default function CampDetailPage() {
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
       <Navbar />
 
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-green-600 to-blue-600 text-white py-20">
-        <div className="container mx-auto px-4">
+      {/* Enhanced Hero Section */}
+      <section className="relative bg-gradient-to-br from-green-600 via-green-700 to-blue-600 text-white py-16 md:py-24 overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
+            backgroundSize: '30px 30px'
+          }}></div>
+        </div>
+
+        <div className="container mx-auto px-4 relative z-10">
           <Button
             variant="ghost"
-            className="text-white hover:bg-white/20 mb-6"
+            className="text-white hover:bg-white/20 mb-6 text-sm md:text-base"
             onClick={() => setLocation("/camps")}
           >
             <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
             العودة إلى المخيمات
           </Button>
 
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
             <div>
-              <div className="flex items-center gap-3 mb-4">
-                <Heart className="h-8 w-8 text-red-400 fill-red-400" />
-                <span className="text-xl font-semibold">مخيم طبي خيري</span>
+              {/* Trust Badge */}
+              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-4">
+                <Heart className="h-5 w-5 text-red-400 fill-red-400" />
+                <span className="text-sm md:text-base font-semibold">مخيم طبي خيري مجاني</span>
               </div>
 
-              <h1 className="text-4xl md:text-5xl font-bold mb-6">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 leading-tight">
                 {camp.name}
               </h1>
 
-              <p className="text-xl text-white/90 leading-relaxed mb-6">
+              <p className="text-lg md:text-xl text-white/95 leading-relaxed mb-6">
                 {camp.description}
               </p>
 
-              {camp.startDate && camp.endDate && (
-                <div className="flex items-center gap-2 text-white/90 mb-4">
-                  <Calendar className="h-5 w-5" />
-                  <span>
-                    من {new Date(camp.startDate).toLocaleDateString("ar-EG")} إلى{" "}
-                    {new Date(camp.endDate).toLocaleDateString("ar-EG")}
-                  </span>
+              {/* Key Info Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-6">
+                {camp.startDate && camp.endDate && (
+                  <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm p-3 md:p-4 rounded-lg">
+                    <Calendar className="h-5 w-5 md:h-6 md:w-6 flex-shrink-0" />
+                    <div className="text-sm md:text-base">
+                      <div className="font-semibold">التاريخ</div>
+                      <div className="text-white/90 text-xs md:text-sm">
+                        {new Date(camp.startDate).toLocaleDateString("ar-EG")} - {new Date(camp.endDate).toLocaleDateString("ar-EG")}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm p-3 md:p-4 rounded-lg">
+                  <Users className="h-5 w-5 md:h-6 md:w-6 flex-shrink-0" />
+                  <div className="text-sm md:text-base">
+                    <div className="font-semibold">المقاعد محدودة</div>
+                    <div className="text-white/90 text-xs md:text-sm">سجل الآن قبل انتهاء الفرصة</div>
+                  </div>
                 </div>
-              )}
+              </div>
+
+              {/* CTA Button */}
+              <a href="#registration-form" className="inline-block">
+                <Button 
+                  size="lg" 
+                  className="bg-white text-green-700 hover:bg-green-50 font-bold text-base md:text-lg px-6 md:px-8 py-5 md:py-6 shadow-2xl hover:shadow-3xl transition-all duration-300 w-full sm:w-auto"
+                >
+                  <Heart className="ml-2 h-5 w-5 md:h-6 md:w-6" />
+                  سجل الآن مجاناً
+                </Button>
+              </a>
             </div>
 
             {camp.imageUrl && (
-              <div className="rounded-2xl overflow-hidden shadow-2xl">
-                <img
-                  src={camp.imageUrl}
-                  alt={camp.name}
-                  className="w-full h-auto object-cover"
-                />
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-tr from-green-400/20 to-blue-400/20 rounded-2xl transform rotate-3"></div>
+                <div className="relative rounded-2xl overflow-hidden shadow-2xl transform hover:scale-105 transition-transform duration-300">
+                  <img
+                    src={camp.imageUrl}
+                    alt={camp.name}
+                    className="w-full h-auto object-cover"
+                  />
+                </div>
               </div>
             )}
           </div>
         </div>
       </section>
 
-      {/* About Camp Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
-            عن المخيم
-          </h2>
-          <div className="prose prose-lg max-w-none text-right">
-            <p className="text-gray-700 leading-relaxed text-lg">
-              يأتي هذا المخيم الطبي الخيري ضمن مبادرات المستشفى السعودي الألماني في إطار
-              المسؤولية المجتمعية، حيث نسعى لتقديم خدمات طبية عالية الجودة للمحتاجين
-              والمستحقين بأسعار رمزية أو مجاناً.
-            </p>
-            <p className="text-gray-700 leading-relaxed text-lg mt-4">
-              يشرف على المخيم نخبة من أفضل الأطباء والجراحين المتخصصين، مع توفير أحدث
-              الأجهزة والتقنيات الطبية لضمان أفضل النتائج.
-            </p>
+      {/* Social Proof Section */}
+      <section className="py-8 md:py-12 bg-white border-b-2 border-green-100">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 text-center">
+            <div className="p-4">
+              <div className="text-3xl md:text-4xl font-bold text-green-600 mb-2">100%</div>
+              <div className="text-sm md:text-base text-gray-600">خدمات مجانية</div>
+            </div>
+            <div className="p-4">
+              <div className="text-3xl md:text-4xl font-bold text-blue-600 mb-2">500+</div>
+              <div className="text-sm md:text-base text-gray-600">مستفيد سابق</div>
+            </div>
+            <div className="p-4">
+              <div className="text-3xl md:text-4xl font-bold text-green-600 mb-2">20+</div>
+              <div className="text-sm md:text-base text-gray-600">طبيب متخصص</div>
+            </div>
+            <div className="p-4">
+              <div className="flex justify-center mb-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star key={star} className="h-5 w-5 md:h-6 md:w-6 text-yellow-400 fill-yellow-400" />
+                ))}
+              </div>
+              <div className="text-sm md:text-base text-gray-600">تقييم ممتاز</div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Camp Offers Section */}
+      {/* About Camp Section */}
+      <section className="py-12 md:py-16 bg-white">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-6 md:mb-8">
+            عن المخيم
+          </h2>
+          <div className="prose prose-lg max-w-none text-right">
+            <p className="text-gray-700 leading-relaxed text-base md:text-lg">
+              يأتي هذا المخيم الطبي الخيري ضمن مبادرات المستشفى السعودي الألماني في إطار
+              المسؤولية المجتمعية، حيث نسعى لتقديم خدمات طبية عالية الجودة للمحتاجين
+              والمستحقين بأسعار رمزية أو مجاناً.
+            </p>
+            <p className="text-gray-700 leading-relaxed text-base md:text-lg mt-4">
+              يشرف على المخيم نخبة من أفضل الأطباء والجراحين المتخصصين، مع توفير أحدث
+              الأجهزة والتقنيات الطبية لضمان أفضل النتائج.
+            </p>
+          </div>
+
+          {/* Features Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mt-8 md:mt-12">
+            <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg">
+              <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
+              <div>
+                <div className="font-semibold text-gray-900 mb-1">أطباء متخصصون</div>
+                <div className="text-sm text-gray-600">نخبة من أفضل الأطباء</div>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg">
+              <CheckCircle2 className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
+              <div>
+                <div className="font-semibold text-gray-900 mb-1">أحدث التقنيات</div>
+                <div className="text-sm text-gray-600">أجهزة طبية متطورة</div>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg">
+              <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
+              <div>
+                <div className="font-semibold text-gray-900 mb-1">خدمات مجانية</div>
+                <div className="text-sm text-gray-600">100% مجاني للجميع</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Free Offers Section */}
       {camp.freeOffers && (() => {
         const allOffers = camp.freeOffers.split('\n').filter((offer: string) => offer.trim());
-        const displayedOffers = showAllFreeOffers ? allOffers : allOffers.slice(0, 2);
-        const hasMore = allOffers.length > 2;
+        const displayedOffers = showAllFreeOffers ? allOffers : allOffers.slice(0, 4);
+        const hasMore = allOffers.length > 4;
         
         return (
-        <section className="py-16 bg-gradient-to-br from-green-50 to-blue-50">
-          <div className="container mx-auto px-4 max-w-4xl">
-            <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
+        <section className="py-12 md:py-16 bg-gradient-to-br from-green-50 to-blue-50">
+          <div className="container mx-auto px-4 max-w-5xl">
+            <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-6 md:mb-8">
               العروض المجانية
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               {displayedOffers.map((offer: string, index: number) => (
-                <div key={index} className="bg-white p-6 rounded-lg shadow-md border-r-4 border-green-600">
+                <div key={index} className="bg-white p-4 md:p-6 rounded-xl shadow-md border-r-4 border-green-600 hover:shadow-lg transition-shadow">
                   <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0" />
-                    <p className="text-gray-700 text-right flex-1">{offer.trim()}</p>
+                    <div className="bg-green-100 p-2 rounded-full flex-shrink-0">
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    </div>
+                    <p className="text-gray-700 text-right flex-1 text-sm md:text-base">{offer.trim()}</p>
                   </div>
                 </div>
               ))}
             </div>
             {hasMore && (
-              <div className="text-center mt-8">
+              <div className="text-center mt-6 md:mt-8">
                 <Button
                   variant="outline"
                   onClick={() => setShowAllFreeOffers(!showAllFreeOffers)}
-                  className="gap-2"
+                  className="gap-2 text-sm md:text-base"
                 >
-                  {showAllFreeOffers ? 'إخفاء' : `عرض المزيد (${allOffers.length - 2} عرض)`}
+                  {showAllFreeOffers ? 'إخفاء' : `عرض المزيد (${allOffers.length - 4} عرض)`}
                 </Button>
               </div>
             )}
@@ -247,33 +332,35 @@ export default function CampDetailPage() {
       {/* Discounted Offers Section */}
       {camp.discountedOffers && (() => {
         const allOffers = camp.discountedOffers.split('\n').filter((offer: string) => offer.trim());
-        const displayedOffers = showAllDiscountedOffers ? allOffers : allOffers.slice(0, 2);
-        const hasMore = allOffers.length > 2;
+        const displayedOffers = showAllDiscountedOffers ? allOffers : allOffers.slice(0, 4);
+        const hasMore = allOffers.length > 4;
         
         return (
-        <section className="py-16 bg-white">
-          <div className="container mx-auto px-4 max-w-4xl">
-            <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
+        <section className="py-12 md:py-16 bg-white">
+          <div className="container mx-auto px-4 max-w-5xl">
+            <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-6 md:mb-8">
               العروض المخفضة
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               {displayedOffers.map((offer: string, index: number) => (
-                <div key={index} className="bg-white p-6 rounded-lg shadow-md border-r-4 border-blue-600">
+                <div key={index} className="bg-white p-4 md:p-6 rounded-xl shadow-md border-r-4 border-blue-600 hover:shadow-lg transition-shadow">
                   <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0" />
-                    <p className="text-gray-700 text-right flex-1">{offer.trim()}</p>
+                    <div className="bg-blue-100 p-2 rounded-full flex-shrink-0">
+                      <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <p className="text-gray-700 text-right flex-1 text-sm md:text-base">{offer.trim()}</p>
                   </div>
                 </div>
               ))}
             </div>
             {hasMore && (
-              <div className="text-center mt-8">
+              <div className="text-center mt-6 md:mt-8">
                 <Button
                   variant="outline"
                   onClick={() => setShowAllDiscountedOffers(!showAllDiscountedOffers)}
-                  className="gap-2"
+                  className="gap-2 text-sm md:text-base"
                 >
-                  {showAllDiscountedOffers ? 'إخفاء' : `عرض المزيد (${allOffers.length - 2} عرض)`}
+                  {showAllDiscountedOffers ? 'إخفاء' : `عرض المزيد (${allOffers.length - 4} عرض)`}
                 </Button>
               </div>
             )}
@@ -288,18 +375,18 @@ export default function CampDetailPage() {
           const images = JSON.parse(camp.galleryImages);
           if (Array.isArray(images) && images.length > 0) {
             return (
-              <section className="py-16 bg-white">
+              <section className="py-12 md:py-16 bg-gradient-to-br from-green-50 to-blue-50">
                 <div className="container mx-auto px-4 max-w-6xl">
-                  <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
+                  <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-6 md:mb-8">
                     معرض صور المخيم
                   </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
                     {images.map((imageUrl: string, index: number) => (
                       <div key={index} className="rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
                         <img
                           src={imageUrl}
                           alt={`${camp.name} - صورة ${index + 1}`}
-                          className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
+                          className="w-full h-48 md:h-64 object-cover hover:scale-105 transition-transform duration-300"
                         />
                       </div>
                     ))}
@@ -309,22 +396,21 @@ export default function CampDetailPage() {
             );
           }
         } catch {
-          // If parsing fails, try splitting by newlines
           const images = camp.galleryImages.split('\n').filter((url: string) => url.trim());
           if (images.length > 0) {
             return (
-              <section className="py-16 bg-white">
+              <section className="py-12 md:py-16 bg-gradient-to-br from-green-50 to-blue-50">
                 <div className="container mx-auto px-4 max-w-6xl">
-                  <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
+                  <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-6 md:mb-8">
                     معرض صور المخيم
                   </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
                     {images.map((imageUrl: string, index: number) => (
                       <div key={index} className="rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
                         <img
                           src={imageUrl.trim()}
                           alt={`${camp.name} - صورة ${index + 1}`}
-                          className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
+                          className="w-full h-48 md:h-64 object-cover hover:scale-105 transition-transform duration-300"
                         />
                       </div>
                     ))}
@@ -337,25 +423,34 @@ export default function CampDetailPage() {
         return null;
       })()}
 
-      {/* Registration Form Section - Only show for active camps */}
+      {/* Registration Form Section */}
       {camp.isActive && (
-        <section className="py-16">
+        <section id="registration-form" className="py-12 md:py-16 bg-white">
           <div className="container mx-auto px-4 max-w-2xl">
-            <Card className="shadow-xl border-t-4 border-green-600">
-            <CardContent className="p-8">
-              <div className="text-center mb-8">
-                <Heart className="h-16 w-16 text-red-500 fill-red-500 mx-auto mb-4" />
-                <h2 className="text-3xl font-bold text-gray-900 mb-3">
+            {/* Urgency Banner */}
+            <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white p-4 md:p-6 rounded-xl mb-6 md:mb-8 text-center shadow-lg">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Clock className="h-5 w-5 md:h-6 md:w-6 animate-pulse" />
+                <span className="font-bold text-base md:text-lg">المقاعد محدودة!</span>
+              </div>
+              <p className="text-sm md:text-base">سجل الآن قبل امتلاء المقاعد المتاحة</p>
+            </div>
+
+            <Card className="shadow-2xl border-t-4 border-green-600">
+            <CardContent className="p-6 md:p-8">
+              <div className="text-center mb-6 md:mb-8">
+                <Heart className="h-12 w-12 md:h-16 md:w-16 text-red-500 fill-red-500 mx-auto mb-4" />
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
                   سجل الآن في المخيم
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-sm md:text-base text-gray-600">
                   املأ النموذج وسنتواصل معك لتأكيد التسجيل
                 </p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
                 <div>
-                  <Label htmlFor="fullName" className="text-right block mb-2">
+                  <Label htmlFor="fullName" className="text-right block mb-2 text-sm md:text-base">
                     الاسم الكامل <span className="text-red-500">*</span>
                   </Label>
                   <Input
@@ -366,12 +461,12 @@ export default function CampDetailPage() {
                     }
                     placeholder="أدخل اسمك الكامل"
                     required
-                    className="text-right"
+                    className="text-right text-sm md:text-base h-11 md:h-12"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="phone" className="text-right block mb-2">
+                  <Label htmlFor="phone" className="text-right block mb-2 text-sm md:text-base">
                     رقم الهاتف <span className="text-red-500">*</span>
                   </Label>
                   <div className="relative">
@@ -385,32 +480,13 @@ export default function CampDetailPage() {
                       }
                       placeholder="مثال: 0500000000"
                       required
-                      className="text-right pr-12"
+                      className="text-right pr-12 text-sm md:text-base h-11 md:h-12"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="email" className="text-right block mb-2">
-                    البريد الإلكتروني (اختياري)
-                  </Label>
-                  <div className="relative">
-                    <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
-                      placeholder="example@email.com"
-                      className="text-right pr-12"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="age" className="text-right block mb-2">
+                  <Label htmlFor="age" className="text-right block mb-2 text-sm md:text-base">
                     العمر <span className="text-red-500">*</span>
                   </Label>
                   <Input
@@ -424,13 +500,13 @@ export default function CampDetailPage() {
                     }
                     placeholder="أدخل عمرك"
                     required
-                    className="text-right"
+                    className="text-right text-sm md:text-base h-11 md:h-12"
                   />
                 </div>
 
                 {availableProcedures.length > 0 && (
                   <div>
-                    <Label className="text-right block mb-3 text-base font-medium">
+                    <Label className="text-right block mb-3 text-sm md:text-base font-medium">
                       الإجراءات المطلوبة (اختياري)
                     </Label>
                     
@@ -439,12 +515,12 @@ export default function CampDetailPage() {
                         type="button"
                         variant="outline"
                         onClick={() => setShowProcedures(true)}
-                        className="w-full py-6 text-base border-2 border-dashed border-gray-300 hover:border-green-500 hover:bg-green-50"
+                        className="w-full py-5 md:py-6 text-sm md:text-base border-2 border-dashed border-gray-300 hover:border-green-500 hover:bg-green-50"
                       >
                         <Heart className="w-5 h-5 ml-2" />
                         اضغط لاختيار الإجراءات المطلوبة
                         {formData.procedures.length > 0 && (
-                          <span className="mr-2 bg-green-600 text-white px-3 py-1 rounded-full text-sm">
+                          <span className="mr-2 bg-green-600 text-white px-3 py-1 rounded-full text-xs md:text-sm">
                             {formData.procedures.length} مختار
                           </span>
                         )}
@@ -455,7 +531,7 @@ export default function CampDetailPage() {
                           {availableProcedures.map((procedure: string) => (
                             <label
                               key={procedure}
-                              className={`flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+                              className={`flex items-center gap-3 p-3 md:p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
                                 formData.procedures.includes(procedure)
                                   ? 'border-green-600 bg-green-50'
                                   : 'border-gray-200 hover:border-green-300 hover:bg-gray-50'
@@ -479,9 +555,9 @@ export default function CampDetailPage() {
                                     });
                                   }
                                 }}
-                                className="w-5 h-5 text-green-600 rounded focus:ring-2 focus:ring-green-500"
+                                className="w-4 h-4 md:w-5 md:h-5 text-green-600 rounded focus:ring-2 focus:ring-green-500"
                               />
-                              <span className={`text-sm font-medium ${
+                              <span className={`text-xs md:text-sm font-medium ${
                                 formData.procedures.includes(procedure)
                                   ? 'text-green-900'
                                   : 'text-gray-700'
@@ -495,7 +571,7 @@ export default function CampDetailPage() {
                           type="button"
                           variant="outline"
                           onClick={() => setShowProcedures(false)}
-                          className="w-full"
+                          className="w-full text-sm md:text-base"
                         >
                           إخفاء الإجراءات
                         </Button>
@@ -506,7 +582,7 @@ export default function CampDetailPage() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white py-6 text-lg"
+                  className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white py-5 md:py-6 text-base md:text-lg font-bold shadow-lg hover:shadow-xl transition-all duration-300"
                   disabled={submitRegistration.isPending}
                 >
                   {submitRegistration.isPending ? (
@@ -517,10 +593,26 @@ export default function CampDetailPage() {
                   ) : (
                     <>
                       <Heart className="mr-2 h-5 w-5" />
-                      تسجيل في المخيم
+                      تسجيل في المخيم مجاناً
                     </>
                   )}
                 </Button>
+
+                {/* Trust Elements */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4 pt-4 text-xs md:text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <span>تسجيل آمن</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <span>رد فوري</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <span>100% مجاني</span>
+                  </div>
+                </div>
               </form>
             </CardContent>
           </Card>
@@ -530,22 +622,22 @@ export default function CampDetailPage() {
 
       {/* Expired Camp Notice */}
       {!camp.isActive && (
-        <section className="py-16">
+        <section className="py-12 md:py-16">
           <div className="container mx-auto px-4 max-w-2xl">
             <Card className="shadow-xl border-t-4 border-gray-400">
-              <CardContent className="p-8 text-center">
-                <div className="bg-gray-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
-                  <Calendar className="h-10 w-10 text-gray-500" />
+              <CardContent className="p-6 md:p-8 text-center">
+                <div className="bg-gray-100 rounded-full w-16 h-16 md:w-20 md:h-20 flex items-center justify-center mx-auto mb-4">
+                  <Calendar className="h-8 w-8 md:h-10 md:w-10 text-gray-500" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">
                   المخيم منتهي
                 </h2>
-                <p className="text-gray-600 mb-6">
+                <p className="text-sm md:text-base text-gray-600 mb-6">
                   هذا المخيم قد انتهى ولا يمكن التسجيل فيه حالياً. تابعنا للحصول على آخر التحديثات عن المخيمات القادمة.
                 </p>
                 <Button
                   onClick={() => setLocation('/camps')}
-                  className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+                  className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-sm md:text-base"
                 >
                   <ArrowRight className="h-4 w-4 ml-2" />
                   عودة إلى المخيمات
@@ -557,15 +649,15 @@ export default function CampDetailPage() {
       )}
 
       {/* Contact Section */}
-      <section className="bg-gradient-to-br from-green-600 to-blue-600 text-white py-12">
+      <section className="bg-gradient-to-br from-green-600 to-blue-600 text-white py-10 md:py-12">
         <div className="container mx-auto px-4 text-center">
-          <h3 className="text-2xl font-bold mb-4">للاستفسارات والمزيد من المعلومات</h3>
-          <p className="text-xl mb-6">اتصل بنا على الرقم المجاني</p>
+          <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4">للاستفسارات والمزيد من المعلومات</h3>
+          <p className="text-base md:text-xl mb-4 md:mb-6">اتصل بنا على الرقم المجاني</p>
           <a
             href="tel:8000018"
-            className="inline-flex items-center gap-2 bg-white text-green-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition-colors"
+            className="inline-flex items-center gap-2 bg-white text-green-600 px-6 md:px-8 py-3 md:py-4 rounded-full font-bold text-base md:text-lg hover:bg-gray-100 transition-colors shadow-lg"
           >
-            <Phone className="h-6 w-6" />
+            <Phone className="h-5 w-5 md:h-6 md:w-6" />
             8000018
           </a>
         </div>
