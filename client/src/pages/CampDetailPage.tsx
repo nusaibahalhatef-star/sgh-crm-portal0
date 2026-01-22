@@ -130,7 +130,7 @@ export default function CampDetailPage() {
       <Navbar />
 
       {/* Enhanced Hero Section */}
-      <section className="relative bg-gradient-to-br from-green-600 via-green-700 to-blue-600 text-white py-16 md:py-24 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-green-600 via-green-700 to-blue-600 text-white pt-4 md:pt-8 pb-16 md:pb-24 overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0" style={{
@@ -142,7 +142,7 @@ export default function CampDetailPage() {
         <div className="container mx-auto px-4 relative z-10">
           <Button
             variant="ghost"
-            className="text-white hover:bg-white/20 mb-6 text-sm md:text-base"
+            className="text-white hover:bg-white/20 mb-4 md:mb-6 text-sm md:text-base"
             onClick={() => setLocation("/camps")}
           >
             <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
@@ -151,10 +151,20 @@ export default function CampDetailPage() {
 
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
             <div>
-              {/* Trust Badge */}
-              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-4">
-                <img src="/assets/new-logo.png" alt="شعار المستشفى" className="h-5 w-5" />
-                <span className="text-sm md:text-base font-semibold">مخيم طبي خيري</span>
+              {/* Trust Badge with Register Button */}
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+                  <img src="/assets/new-logo.png" alt="شعار المستشفى" className="h-5 w-5" />
+                  <span className="text-sm md:text-base font-semibold">مخيم طبي خيري</span>
+                </div>
+                <a href="#registration-form">
+                  <Button 
+                    size="sm"
+                    className="bg-white text-green-700 hover:bg-green-50 font-bold text-sm px-4 py-2 shadow-lg"
+                  >
+                    سجل الآن مجاناً
+                  </Button>
+                </a>
               </div>
 
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 leading-tight">
@@ -188,16 +198,7 @@ export default function CampDetailPage() {
                 </div>
               </div>
 
-              {/* CTA Button */}
-              <a href="#registration-form" className="inline-block">
-                <Button 
-                  size="lg" 
-                  className="bg-white text-green-700 hover:bg-green-50 font-bold text-base md:text-lg px-6 md:px-8 py-5 md:py-6 shadow-2xl hover:shadow-3xl transition-all duration-300 w-full sm:w-auto"
-                >
-                  <Heart className="ml-2 h-5 w-5 md:h-6 md:w-6" />
-                  سجل الآن مجاناً
-                </Button>
-              </a>
+
             </div>
 
             {camp.imageUrl && (
@@ -221,6 +222,52 @@ export default function CampDetailPage() {
 
 
 
+
+      {/* Free Offers Section */}
+      {camp.freeOffers && (() => {
+        const allOffers = camp.freeOffers.split('\n').filter((offer: string) => offer.trim());
+        const displayedOffers = showAllFreeOffers ? allOffers : allOffers.slice(0, 4);
+        const hasMore = allOffers.length > 4;
+        
+        return (
+        <section className="py-12 md:py-16 bg-gradient-to-br from-green-50 to-blue-50">
+          <div className="container mx-auto px-4 max-w-5xl">
+            <div className="text-center mb-6 md:mb-8">
+              <div className="inline-flex items-center gap-2 bg-green-100 px-4 py-2 rounded-full mb-3">
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <span className="text-sm md:text-base font-semibold text-green-700">خدمات مجانية</span>
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+                ما يشمله المخيم
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              {displayedOffers.map((offer: string, index: number) => (
+                <div key={index} className="bg-white p-4 md:p-6 rounded-xl shadow-md border-r-4 border-green-600 hover:shadow-lg transition-shadow">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-green-100 p-2 rounded-full flex-shrink-0">
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    </div>
+                    <p className="text-gray-700 text-right flex-1 text-sm md:text-base">{offer.trim()}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {hasMore && (
+              <div className="text-center mt-6 md:mt-8">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAllFreeOffers(!showAllFreeOffers)}
+                  className="gap-2 text-sm md:text-base"
+                >
+                  {showAllFreeOffers ? 'إخفاء' : `عرض المزيد (${allOffers.length - 4} خدمة)`}
+                </Button>
+              </div>
+            )}
+          </div>
+        </section>
+        );
+      })()}
 
       {/* Discounted Offers Section */}
       {camp.discountedOffers && (() => {

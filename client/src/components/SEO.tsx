@@ -23,7 +23,7 @@ export default function SEO({
   keywords = "المستشفى السعودي الألماني, صنعاء, حجز موعد, أطباء, عروض طبية, مخيمات صحية, استشارات طبية",
 }: SEOProps) {
   const [location] = useLocation();
-  const currentUrl = url || `https://sghsanaa.manus.space${location}`;
+  const currentUrl = url || `https://sghsanaa.net${location}`;
 
   useEffect(() => {
     // Update document title
