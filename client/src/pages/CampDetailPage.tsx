@@ -153,8 +153,8 @@ export default function CampDetailPage() {
             <div>
               {/* Trust Badge */}
               <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-4">
-                <Heart className="h-5 w-5 text-red-400 fill-red-400" />
-                <span className="text-sm md:text-base font-semibold">مخيم طبي خيري مجاني</span>
+                <img src="/assets/new-logo.png" alt="شعار المستشفى" className="h-5 w-5" />
+                <span className="text-sm md:text-base font-semibold">مخيم طبي خيري</span>
               </div>
 
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 leading-tight">
@@ -216,118 +216,11 @@ export default function CampDetailPage() {
         </div>
       </section>
 
-      {/* Social Proof Section */}
-      <section className="py-8 md:py-12 bg-white border-b-2 border-green-100">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 text-center">
-            <div className="p-4">
-              <div className="text-3xl md:text-4xl font-bold text-green-600 mb-2">100%</div>
-              <div className="text-sm md:text-base text-gray-600">خدمات مجانية</div>
-            </div>
-            <div className="p-4">
-              <div className="text-3xl md:text-4xl font-bold text-blue-600 mb-2">500+</div>
-              <div className="text-sm md:text-base text-gray-600">مستفيد سابق</div>
-            </div>
-            <div className="p-4">
-              <div className="text-3xl md:text-4xl font-bold text-green-600 mb-2">20+</div>
-              <div className="text-sm md:text-base text-gray-600">طبيب متخصص</div>
-            </div>
-            <div className="p-4">
-              <div className="flex justify-center mb-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star key={star} className="h-5 w-5 md:h-6 md:w-6 text-yellow-400 fill-yellow-400" />
-                ))}
-              </div>
-              <div className="text-sm md:text-base text-gray-600">تقييم ممتاز</div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* About Camp Section */}
-      <section className="py-12 md:py-16 bg-white">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-6 md:mb-8">
-            عن المخيم
-          </h2>
-          <div className="prose prose-lg max-w-none text-right">
-            <p className="text-gray-700 leading-relaxed text-base md:text-lg">
-              يأتي هذا المخيم الطبي الخيري ضمن مبادرات المستشفى السعودي الألماني في إطار
-              المسؤولية المجتمعية، حيث نسعى لتقديم خدمات طبية عالية الجودة للمحتاجين
-              والمستحقين بأسعار رمزية أو مجاناً.
-            </p>
-            <p className="text-gray-700 leading-relaxed text-base md:text-lg mt-4">
-              يشرف على المخيم نخبة من أفضل الأطباء والجراحين المتخصصين، مع توفير أحدث
-              الأجهزة والتقنيات الطبية لضمان أفضل النتائج.
-            </p>
-          </div>
 
-          {/* Features Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mt-8 md:mt-12">
-            <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg">
-              <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
-              <div>
-                <div className="font-semibold text-gray-900 mb-1">أطباء متخصصون</div>
-                <div className="text-sm text-gray-600">نخبة من أفضل الأطباء</div>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg">
-              <CheckCircle2 className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
-              <div>
-                <div className="font-semibold text-gray-900 mb-1">أحدث التقنيات</div>
-                <div className="text-sm text-gray-600">أجهزة طبية متطورة</div>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg">
-              <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
-              <div>
-                <div className="font-semibold text-gray-900 mb-1">خدمات مجانية</div>
-                <div className="text-sm text-gray-600">100% مجاني للجميع</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* Free Offers Section */}
-      {camp.freeOffers && (() => {
-        const allOffers = camp.freeOffers.split('\n').filter((offer: string) => offer.trim());
-        const displayedOffers = showAllFreeOffers ? allOffers : allOffers.slice(0, 4);
-        const hasMore = allOffers.length > 4;
-        
-        return (
-        <section className="py-12 md:py-16 bg-gradient-to-br from-green-50 to-blue-50">
-          <div className="container mx-auto px-4 max-w-5xl">
-            <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-6 md:mb-8">
-              العروض المجانية
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              {displayedOffers.map((offer: string, index: number) => (
-                <div key={index} className="bg-white p-4 md:p-6 rounded-xl shadow-md border-r-4 border-green-600 hover:shadow-lg transition-shadow">
-                  <div className="flex items-start gap-3">
-                    <div className="bg-green-100 p-2 rounded-full flex-shrink-0">
-                      <CheckCircle2 className="h-5 w-5 text-green-600" />
-                    </div>
-                    <p className="text-gray-700 text-right flex-1 text-sm md:text-base">{offer.trim()}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {hasMore && (
-              <div className="text-center mt-6 md:mt-8">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowAllFreeOffers(!showAllFreeOffers)}
-                  className="gap-2 text-sm md:text-base"
-                >
-                  {showAllFreeOffers ? 'إخفاء' : `عرض المزيد (${allOffers.length - 4} عرض)`}
-                </Button>
-              </div>
-            )}
-          </div>
-        </section>
-        );
-      })()}
+
+
 
       {/* Discounted Offers Section */}
       {camp.discountedOffers && (() => {
@@ -439,7 +332,7 @@ export default function CampDetailPage() {
             <Card className="shadow-2xl border-t-4 border-green-600">
             <CardContent className="p-6 md:p-8">
               <div className="text-center mb-6 md:mb-8">
-                <Heart className="h-12 w-12 md:h-16 md:w-16 text-red-500 fill-red-500 mx-auto mb-4" />
+                <img src="/assets/new-logo.png" alt="شعار المستشفى" className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-4" />
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
                   سجل الآن في المخيم
                 </h2>
