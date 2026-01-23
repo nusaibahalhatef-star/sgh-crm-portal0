@@ -13,6 +13,7 @@ import DoctorsManagement from "@/components/DoctorsManagement";
 import LeadCard from "@/components/LeadCard";
 import TableSkeleton from "@/components/TableSkeleton";
 import AppointmentCard from "@/components/AppointmentCard";
+import SourceBadge from "@/components/SourceBadge";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -907,9 +908,16 @@ export default function AdminDashboard() {
                             {appointment.preferredDate || <span className="text-muted-foreground text-sm">غير محدد</span>}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="text-xs">
-                              {(appointment as any).source === 'web' ? 'موقع' : (appointment as any).source === 'phone' ? 'هاتف' : (appointment as any).source === 'manual' ? 'يدوي' : (appointment as any).source || 'غير محدد'}
-                            </Badge>
+                            <SourceBadge
+                              source={(appointment as any).source || 'direct'}
+                              utmSource={(appointment as any).utmSource}
+                              utmMedium={(appointment as any).utmMedium}
+                              utmCampaign={(appointment as any).utmCampaign}
+                              referrer={(appointment as any).referrer}
+                              fbclid={(appointment as any).fbclid}
+                              gclid={(appointment as any).gclid}
+                              size="sm"
+                            />
                           </TableCell>
                           <TableCell>
                             <Badge
@@ -996,7 +1004,22 @@ export default function AdminDashboard() {
                   )}
                   <p className="text-sm"><span className="font-semibold">نوع التسجيل:</span> {selectedLead.registrationType || 'غير محدد'}</p>
                   {selectedLead.source && (
-                    <p className="text-sm"><span className="font-semibold">المصدر:</span> {selectedLead.source === 'web' ? 'موقع' : selectedLead.source === 'phone' ? 'هاتف' : selectedLead.source === 'manual' ? 'يدوي' : selectedLead.source}</p>
+                    <div className="text-sm">
+                      <span className="font-semibold">المصدر:</span>
+                      <div className="mt-1">
+                        <SourceBadge
+                          source={selectedLead.source || 'direct'}
+                          utmSource={selectedLead.utmSource}
+                          utmMedium={selectedLead.utmMedium}
+                          utmCampaign={selectedLead.utmCampaign}
+                          referrer={selectedLead.referrer}
+                          fbclid={selectedLead.fbclid}
+                          gclid={selectedLead.gclid}
+                          showDetails={true}
+                          size="md"
+                        />
+                      </div>
+                    </div>
                   )}
                   {selectedLead.notes && (
                     <p className="text-sm"><span className="font-semibold">ملاحظات:</span> {selectedLead.notes}</p>

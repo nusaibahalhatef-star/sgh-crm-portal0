@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { useRoute, Link, useLocation } from "wouter";
 import { ArrowRight, Calendar, Phone, Award, Loader2, CheckCircle, Star, Users, Clock, CheckCircle2, TrendingUp } from "lucide-react";
-import { getRegistrationSource } from "@/lib/tracking";
+import { getCompleteTrackingData } from "@/lib/tracking";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -57,6 +57,8 @@ export default function DoctorDetailPage() {
     }
 
     try {
+      const trackingData = getCompleteTrackingData();
+      
       await submitAppointment.mutateAsync({
         doctorId: doctor.id,
         fullName: formData.fullName,
@@ -68,7 +70,14 @@ export default function DoctorDetailPage() {
         preferredTime: formData.preferredTime || undefined,
         additionalNotes: formData.additionalNotes || undefined,
         campaignSlug: `doctor-${slug}`,
-        source: getRegistrationSource(),
+        source: trackingData.source,
+        utmSource: trackingData.utmSource,
+        utmMedium: trackingData.utmMedium,
+        utmCampaign: trackingData.utmCampaign,
+        utmContent: trackingData.utmContent,
+        referrer: trackingData.referrer,
+        fbclid: trackingData.fbclid,
+        gclid: trackingData.gclid,
       });
 
       setSubmitted(true);

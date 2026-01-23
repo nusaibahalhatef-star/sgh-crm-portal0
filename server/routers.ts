@@ -101,6 +101,9 @@ export const appRouter = router({
         utmMedium: z.string().optional(),
         utmCampaign: z.string().optional(),
         utmContent: z.string().optional(),
+        referrer: z.string().optional(),
+        fbclid: z.string().optional(),
+        gclid: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         // Get or create campaign by slug
@@ -334,6 +337,9 @@ export const appRouter = router({
         utmMedium: z.string().optional(),
         utmCampaign: z.string().optional(),
         utmContent: z.string().optional(),
+        referrer: z.string().optional(),
+        fbclid: z.string().optional(),
+        gclid: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         // Get or create campaign by slug
@@ -372,6 +378,9 @@ export const appRouter = router({
           utmMedium: input.utmMedium,
           utmCampaign: input.utmCampaign,
           utmContent: input.utmContent,
+          referrer: input.referrer,
+          fbclid: input.fbclid,
+          gclid: input.gclid,
         });
 
         // Send email notification

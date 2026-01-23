@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowRight, Phone, Mail, Calendar, CheckCircle2, Loader2, Tag, Users, Clock, Star, TrendingUp, Sparkles } from "lucide-react";
-import { getRegistrationSource } from "@/lib/tracking";
+import { getCompleteTrackingData } from "@/lib/tracking";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -47,12 +47,21 @@ export default function OfferDetailPage() {
     if (!offer) return;
 
     try {
+      const trackingData = getCompleteTrackingData();
+      
       await submitLead.mutateAsync({
         offerId: offer.id,
         fullName: formData.fullName,
         phone: formData.phone,
         email: formData.email || undefined,
-        source: getRegistrationSource(),
+        source: trackingData.source,
+        utmSource: trackingData.utmSource,
+        utmMedium: trackingData.utmMedium,
+        utmCampaign: trackingData.utmCampaign,
+        utmContent: trackingData.utmContent,
+        referrer: trackingData.referrer,
+        fbclid: trackingData.fbclid,
+        gclid: trackingData.gclid,
       });
 
       toast.success("تم إرسال طلبك بنجاح! سنتواصل معك قريباً");

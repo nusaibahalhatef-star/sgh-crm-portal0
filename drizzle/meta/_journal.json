@@ -127,6 +127,13 @@
       "when": 1768770088141,
       "tag": "0017_thankful_callisto",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1769211936878,
+      "tag": "0018_smooth_the_liberteens",
+      "breakpoints": true
     }
   ]
 }

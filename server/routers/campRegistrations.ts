@@ -19,6 +19,13 @@ export const campRegistrationsRouter = router({
         medicalCondition: z.string().optional(),
         notes: z.string().optional(),
         source: z.string().optional(),
+        utmSource: z.string().optional(),
+        utmMedium: z.string().optional(),
+        utmCampaign: z.string().optional(),
+        utmContent: z.string().optional(),
+        referrer: z.string().optional(),
+        fbclid: z.string().optional(),
+        gclid: z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -35,6 +42,13 @@ export const campRegistrationsRouter = router({
         medicalCondition: input.medicalCondition,
         notes: input.notes,
         source: input.source || "website",
+        utmSource: input.utmSource,
+        utmMedium: input.utmMedium,
+        utmCampaign: input.utmCampaign,
+        utmContent: input.utmContent,
+        referrer: input.referrer,
+        fbclid: input.fbclid,
+        gclid: input.gclid,
         status: "pending",
       });
 

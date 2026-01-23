@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowRight, Phone, Mail, Calendar, MapPin, Loader2, Heart, Users, CheckCircle2, Clock, Star } from "lucide-react";
-import { getRegistrationSource } from "@/lib/tracking";
+import { getCompleteTrackingData } from "@/lib/tracking";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -69,6 +69,8 @@ export default function CampDetailPage() {
     if (!camp) return;
 
     try {
+      const trackingData = getCompleteTrackingData();
+      
       await submitRegistration.mutateAsync({
         campId: camp.id,
         fullName: formData.fullName,
@@ -76,7 +78,14 @@ export default function CampDetailPage() {
         email: formData.email || undefined,
         age: parseInt(formData.age),
         procedures: formData.procedures.length > 0 ? JSON.stringify(formData.procedures) : undefined,
-        source: getRegistrationSource(),
+        source: trackingData.source,
+        utmSource: trackingData.utmSource,
+        utmMedium: trackingData.utmMedium,
+        utmCampaign: trackingData.utmCampaign,
+        utmContent: trackingData.utmContent,
+        referrer: trackingData.referrer,
+        fbclid: trackingData.fbclid,
+        gclid: trackingData.gclid,
       });
 
       toast.success("تم تسجيلك بنجاح! سنتواصل معك قريباً");
