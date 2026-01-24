@@ -468,60 +468,80 @@ export default function BookingsManagementPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Filters - Responsive Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
-                  <div className="relative sm:col-span-2 lg:col-span-1">
-                    <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="ابحث..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pr-10 h-9"
-                    />
+                <div className="flex flex-col gap-3">
+                  {/* Quick Filter Button */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant={leadsStatusFilter === "new" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setLeadsStatusFilter(leadsStatusFilter === "new" ? "all" : "new")}
+                      className="gap-2 h-9 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white border-0"
+                    >
+                      <TrendingUp className="h-4 w-4" />
+                      {leadsStatusFilter === "new" ? "عرض الكل" : "المعلقة فقط"}
+                      {leadsStatusFilter !== "new" && pendingCounts.leads > 0 && (
+                        <Badge variant="secondary" className="mr-1 bg-white text-orange-600">
+                          {pendingCounts.leads}
+                        </Badge>
+                      )}
+                    </Button>
                   </div>
-                  <Select value={leadsDateFilter} onValueChange={setLeadsDateFilter}>
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="كل الفترات" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">كل الفترات</SelectItem>
-                      <SelectItem value="today">اليوم</SelectItem>
-                      <SelectItem value="week">هذا الأسبوع</SelectItem>
-                      <SelectItem value="month">هذا الشهر</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={leadsStatusFilter} onValueChange={setLeadsStatusFilter}>
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="كل الحالات" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">كل الحالات</SelectItem>
-                      <SelectItem value="pending">قيد الانتظار</SelectItem>
-                      <SelectItem value="contacted">تم التواصل</SelectItem>
-                      <SelectItem value="booked">تم الحجز</SelectItem>
-                      <SelectItem value="not_interested">غير مهتم</SelectItem>
-                      <SelectItem value="no_answer">لم يرد</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={leadsSourceFilter} onValueChange={setLeadsSourceFilter}>
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="كل المصادر" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">كل المصادر</SelectItem>
-                      <SelectItem value="website">موقع</SelectItem>
-                      <SelectItem value="phone">هاتف</SelectItem>
-                      <SelectItem value="manual">يدوي</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleExportLeads}
-                    className="gap-2 h-9"
-                  >
-                    <Download className="h-4 w-4" />
-                    <span className="hidden sm:inline">تصدير</span>
-                  </Button>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                    <div className="relative sm:col-span-2 lg:col-span-1">
+                      <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="ابحث..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pr-10 h-9"
+                      />
+                    </div>
+                    <Select value={leadsDateFilter} onValueChange={setLeadsDateFilter}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="كل الفترات" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">كل الفترات</SelectItem>
+                        <SelectItem value="today">اليوم</SelectItem>
+                        <SelectItem value="week">هذا الأسبوع</SelectItem>
+                        <SelectItem value="month">هذا الشهر</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={leadsStatusFilter} onValueChange={setLeadsStatusFilter}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="كل الحالات" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">كل الحالات</SelectItem>
+                        <SelectItem value="new">جديد</SelectItem>
+                        <SelectItem value="contacted">تم التواصل</SelectItem>
+                        <SelectItem value="booked">تم الحجز</SelectItem>
+                        <SelectItem value="not_interested">غير مهتم</SelectItem>
+                        <SelectItem value="no_answer">لم يرد</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={leadsSourceFilter} onValueChange={setLeadsSourceFilter}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="كل المصادر" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">كل المصادر</SelectItem>
+                        <SelectItem value="website">موقع</SelectItem>
+                        <SelectItem value="phone">هاتف</SelectItem>
+                        <SelectItem value="manual">يدوي</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExportLeads}
+                      className="gap-2 h-9"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span className="hidden sm:inline">تصدير</span>
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Mobile Cards View */}
@@ -690,72 +710,92 @@ export default function BookingsManagementPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Filters - Responsive Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
-                  <div className="relative sm:col-span-2 lg:col-span-1">
-                    <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="ابحث..."
-                      value={appointmentSearchTerm}
-                      onChange={(e) => setAppointmentSearchTerm(e.target.value)}
-                      className="pr-10 h-9"
-                    />
+                <div className="flex flex-col gap-3">
+                  {/* Quick Filter Button */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant={appointmentStatusFilter === "pending" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setAppointmentStatusFilter(appointmentStatusFilter === "pending" ? "all" : "pending")}
+                      className="gap-2 h-9 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white border-0"
+                    >
+                      <TrendingUp className="h-4 w-4" />
+                      {appointmentStatusFilter === "pending" ? "عرض الكل" : "المعلقة فقط"}
+                      {appointmentStatusFilter !== "pending" && pendingCounts.appointments > 0 && (
+                        <Badge variant="secondary" className="mr-1 bg-white text-orange-600">
+                          {pendingCounts.appointments}
+                        </Badge>
+                      )}
+                    </Button>
                   </div>
-                  <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="كل الأطباء" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">كل الأطباء</SelectItem>
-                      {doctors.map((doctor: any) => (
-                        <SelectItem key={doctor.id} value={doctor.id.toString()}>
-                          {doctor.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={dateFilter} onValueChange={setDateFilter}>
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="كل الفترات" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">كل الفترات</SelectItem>
-                      <SelectItem value="today">اليوم</SelectItem>
-                      <SelectItem value="week">هذا الأسبوع</SelectItem>
-                      <SelectItem value="month">هذا الشهر</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={appointmentStatusFilter} onValueChange={setAppointmentStatusFilter}>
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="كل الحالات" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">كل الحالات</SelectItem>
-                      <SelectItem value="pending">قيد الانتظار</SelectItem>
-                      <SelectItem value="confirmed">مؤكد</SelectItem>
-                      <SelectItem value="cancelled">ملغي</SelectItem>
-                      <SelectItem value="completed">مكتمل</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={appointmentSourceFilter} onValueChange={setAppointmentSourceFilter}>
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="كل المصادر" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">كل المصادر</SelectItem>
-                      <SelectItem value="website">موقع</SelectItem>
-                      <SelectItem value="phone">هاتف</SelectItem>
-                      <SelectItem value="manual">يدوي</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleExportAppointments}
-                    className="gap-2 h-9"
-                  >
-                    <Download className="h-4 w-4" />
-                    <span className="hidden sm:inline">تصدير</span>
-                  </Button>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
+                    <div className="relative sm:col-span-2 lg:col-span-1">
+                      <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="ابحث..."
+                        value={appointmentSearchTerm}
+                        onChange={(e) => setAppointmentSearchTerm(e.target.value)}
+                        className="pr-10 h-9"
+                      />
+                    </div>
+                    <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="كل الأطباء" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">كل الأطباء</SelectItem>
+                        {doctors.map((doctor: any) => (
+                          <SelectItem key={doctor.id} value={doctor.id.toString()}>
+                            {doctor.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={dateFilter} onValueChange={setDateFilter}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="كل الفترات" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">كل الفترات</SelectItem>
+                        <SelectItem value="today">اليوم</SelectItem>
+                        <SelectItem value="week">هذا الأسبوع</SelectItem>
+                        <SelectItem value="month">هذا الشهر</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={appointmentStatusFilter} onValueChange={setAppointmentStatusFilter}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="كل الحالات" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">كل الحالات</SelectItem>
+                        <SelectItem value="pending">قيد الانتظار</SelectItem>
+                        <SelectItem value="confirmed">مؤكد</SelectItem>
+                        <SelectItem value="cancelled">ملغي</SelectItem>
+                        <SelectItem value="completed">مكتمل</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={appointmentSourceFilter} onValueChange={setAppointmentSourceFilter}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="كل المصادر" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">كل المصادر</SelectItem>
+                        <SelectItem value="website">موقع</SelectItem>
+                        <SelectItem value="phone">هاتف</SelectItem>
+                        <SelectItem value="manual">يدوي</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExportAppointments}
+                      className="gap-2 h-9"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span className="hidden sm:inline">تصدير</span>
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Mobile Cards View */}

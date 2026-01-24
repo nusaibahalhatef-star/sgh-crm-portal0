@@ -271,6 +271,24 @@ export default function CampRegistrationsManagement({ onPendingCountChange }: { 
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Quick Filter Button */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant={statusFilter === "pending" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter(statusFilter === "pending" ? "all" : "pending")}
+              className="gap-2 h-9 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white border-0"
+            >
+              <Clock className="h-4 w-4" />
+              {statusFilter === "pending" ? "عرض الكل" : "المعلقة فقط"}
+              {statusFilter !== "pending" && pendingCount > 0 && (
+                <Badge variant="secondary" className="mr-1 bg-white text-orange-600">
+                  {pendingCount}
+                </Badge>
+              )}
+            </Button>
+          </div>
+          
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="relative flex-1">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
