@@ -117,6 +117,10 @@ export default function BookingsManagementPage() {
   const { data: appointments, isLoading: appointmentsLoading, refetch: refetchAppointments } = trpc.appointments.list.useQuery();
   const { data: doctors = [] } = trpc.doctors.list.useQuery();
   
+  // Load offerLeads and campRegistrations data directly to show badges immediately
+  const { data: offerLeadsData } = trpc.offerLeads.list.useQuery();
+  const { data: campRegistrationsData } = trpc.campRegistrations.list.useQuery();
+  
   // Count pending (not updated) bookings
   const [offerLeadsPendingCount, setOfferLeadsPendingCount] = useState(0);
   const [campRegistrationsPendingCount, setCampRegistrationsPendingCount] = useState(0);
@@ -124,13 +128,16 @@ export default function BookingsManagementPage() {
   const pendingCounts = useMemo(() => {
     const leadsPending = unifiedLeads?.filter(l => l.status === 'new').length || 0;
     const appointmentsPending = appointments?.filter(a => a.status === 'pending').length || 0;
+    // Use direct data if available, otherwise use state from child components
+    const offerLeadsPending = offerLeadsData?.filter((o: any) => o.status === 'pending').length || offerLeadsPendingCount;
+    const campRegistrationsPending = campRegistrationsData?.filter((c: any) => c.status === 'pending').length || campRegistrationsPendingCount;
     return {
       leads: leadsPending,
       appointments: appointmentsPending,
-      offerLeads: offerLeadsPendingCount,
-      campRegistrations: campRegistrationsPendingCount,
+      offerLeads: offerLeadsPending,
+      campRegistrations: campRegistrationsPending,
     };
-  }, [unifiedLeads, appointments, offerLeadsPendingCount, campRegistrationsPendingCount]);
+  }, [unifiedLeads, appointments, offerLeadsData, campRegistrationsData, offerLeadsPendingCount, campRegistrationsPendingCount]);
   
   const [appointmentSearchTerm, setAppointmentSearchTerm] = useState("");
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
