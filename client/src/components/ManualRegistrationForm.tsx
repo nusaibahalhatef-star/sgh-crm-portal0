@@ -261,15 +261,22 @@ export default function ManualRegistrationForm() {
                   <SelectValue placeholder="اختر الحالة" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="new">جديد</SelectItem>
-                  <SelectItem value="contacted">تم التواصل</SelectItem>
-                  <SelectItem value="booked">تم الحجز</SelectItem>
-                  <SelectItem value="not_interested">غير مهتم</SelectItem>
-                  <SelectItem value="no_answer">لم يرد</SelectItem>
-                  <SelectItem value="pending">قيد الانتظار</SelectItem>
-                  <SelectItem value="confirmed">مؤكد</SelectItem>
-                  <SelectItem value="completed">مكتمل</SelectItem>
-                  <SelectItem value="cancelled">ملغي</SelectItem>
+                  {registrationType === "lead" ? (
+                    <>
+                      <SelectItem value="new">جديد</SelectItem>
+                      <SelectItem value="contacted">تم التواصل</SelectItem>
+                      <SelectItem value="booked">تم الحجز</SelectItem>
+                      <SelectItem value="not_interested">غير مهتم</SelectItem>
+                      <SelectItem value="no_answer">لم يرد</SelectItem>
+                    </>
+                  ) : (
+                    <>
+                      <SelectItem value="pending">قيد الانتظار</SelectItem>
+                      <SelectItem value="confirmed">مؤكد</SelectItem>
+                      <SelectItem value="completed">مكتمل</SelectItem>
+                      <SelectItem value="cancelled">ملغي</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>

@@ -1422,3 +1422,12 @@
 - [x] إضافة حقل status في ManualRegistrationForm
 - [x] تحديث backend routers لدعم status في التسجيل اليدوي
 - [x] توحيد status types بين leads وappointments
+
+### جعل خيارات الحالة ديناميكية وإصلاح SyntaxError ✅ مكتمل
+- [x] جعل خيارات status في ManualRegistrationForm ديناميكية حسب bookingType
+- [x] leads: new, contacted, booked, not_interested, no_answer
+- [x] appointments: pending, confirmed, completed, cancelled
+- [x] offerLeads: pending, confirmed, completed, cancelled
+- [x] campRegistrations: pending, confirmed, completed, cancelled
+- [x] إصلاح خطأ SyntaxError عند عرض التفاصيل - إضافة try-catch و validation
+- [x] إضافة sanitizeLead function لتنظيف البيانات قبل عرضها

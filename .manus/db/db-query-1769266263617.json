@@ -1,0 +1,9 @@
+{
+  "query": "SELECT id, fullName, phone, doctorId, offerId, campId, createdAt FROM (\n  SELECT id, fullName, phone, NULL as doctorId, NULL as offerId, NULL as campId, createdAt FROM leads\n  UNION ALL\n  SELECT id, fullName, phone, doctorId, NULL as offerId, NULL as campId, createdAt FROM appointments\n  UNION ALL\n  SELECT id, fullName, phone, NULL as doctorId, offerId, NULL as campId, createdAt FROM offerLeads\n  UNION ALL\n  SELECT id, fullName, phone, NULL as doctorId, NULL as offerId, campId, createdAt FROM campRegistrations\n) AS all_records\nWHERE createdAt IS NULL OR createdAt = '' OR createdAt = '0'\nLIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2xtgvXGdr7mxJSP.root --database HgGpRPs4xs9xrzjfX4xmFY --execute SELECT id, fullName, phone, doctorId, offerId, campId, createdAt FROM (\n  SELECT id, fullName, phone, NULL as doctorId, NULL as offerId, NULL as campId, createdAt FROM leads\n  UNION ALL\n  SELECT id, fullName, phone, doctorId, NULL as offerId, NULL as campId, createdAt FROM appointments\n  UNION ALL\n  SELECT id, fullName, phone, NULL as doctorId, offerId, NULL as campId, createdAt FROM offerLeads\n  UNION ALL\n  SELECT id, fullName, phone, NULL as doctorId, NULL as offerId, campId, createdAt FROM campRegistrations\n) AS all_records\nWHERE createdAt IS NULL OR createdAt = '' OR createdAt = '0'\nLIMIT 10;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 365
+}

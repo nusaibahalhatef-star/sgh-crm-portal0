@@ -70,6 +70,20 @@ const statusColors = {
   no_answer: "bg-gray-500",
 };
 
+// Sanitize lead data to prevent JSON parsing errors
+const sanitizeLead = (lead: any) => {
+  if (!lead) return null;
+  const sanitized = { ...lead };
+  // Remove NaN, undefined, or invalid values
+  Object.keys(sanitized).forEach(key => {
+    const value = sanitized[key];
+    if (value === undefined || value === null || (typeof value === 'number' && isNaN(value))) {
+      delete sanitized[key];
+    }
+  });
+  return sanitized;
+};
+
 export default function BookingsManagementPage() {
   const { user } = useAuth();
   const [location, setLocation] = useLocation();
@@ -560,7 +574,7 @@ export default function BookingsManagementPage() {
                         key={`lead-${lead.id}`}
                         lead={lead}
                         onUpdateStatus={(lead) => {
-                          setSelectedLead(lead);
+                          setSelectedLead(sanitizeLead(lead));
                           setNewStatus(lead.status);
                           setStatusDialogOpen(true);
                         }}
@@ -641,7 +655,7 @@ export default function BookingsManagementPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
-                                  setSelectedLead(lead);
+                                  setSelectedLead(sanitizeLead(lead));
                                   setNewStatus(lead.status);
                                   setStatusDialogOpen(true);
                                 }}
@@ -958,7 +972,14 @@ export default function BookingsManagementPage() {
                   )}
                   <p className="text-sm">
                     <span className="font-medium">تاريخ التسجيل:</span>{' '}
-                    {new Date(selectedLead.createdAt).toLocaleString("ar-EG")}
+                    {(() => {
+                      try {
+                        const date = selectedLead.createdAt ? new Date(selectedLead.createdAt) : null;
+                        return date && !isNaN(date.getTime()) ? date.toLocaleString("ar-EG") : 'غير متوفر';
+                      } catch (e) {
+                        return 'غير متوفر';
+                      }
+                    })()}
                   </p>
                 </div>
                 <div className="space-y-2">
