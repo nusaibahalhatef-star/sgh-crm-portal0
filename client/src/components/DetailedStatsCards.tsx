@@ -48,8 +48,9 @@ export default function DetailedStatsCards() {
     };
 
     // Total stats (all bookings combined)
+    // Note: leads are the same people who made registrations, so we don't add them to total
     const totalStats = {
-      total: campStats.total + appointmentStats.total + offerStats.total + (leads?.length || 0),
+      total: campStats.total + appointmentStats.total + offerStats.total,
       camps: campStats.total,
       appointments: appointmentStats.total,
       offers: offerStats.total,
