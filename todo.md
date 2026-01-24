@@ -1407,3 +1407,18 @@
 - [x] إضافة زر "عرض المعلقة فقط" في تبويب تسجيلات المخيمات
 - [x] عرض badge بعدد الحجوزات المعلقة على الزر
 - [x] تصميم الزر بألوان gradient (برتقالي-أحمر) لجذب الانتباه
+
+### إصلاح التسجيل اليدوي وإضافة خيار الحالة 🔄 جاري العمل
+- [ ] فحص وتحليل خطأ SyntaxError عند عرض تفاصيل التسجيلات اليدوية
+- [ ] إصلاح مشكلة parsing البيانات (JSON/number format)
+- [ ] إضافة حقل "حالة التسجيل" في نموذج التسجيل اليدوي (Select: pending, confirmed, completed, cancelled)
+- [ ] تحديث ManualBookingForm component
+- [ ] تحديث backend routers لدعم status في التسجيل اليدوي
+- [ ] اختبار التسجيل اليدوي وعرض التفاصيل
+
+### إصلاح التسجيل اليدوي وإضافة خيار الحالة ✅ مكتمل
+- [x] فحص خطأ SyntaxError عند عرض تفاصيل التسجيلات اليدوية
+- [x] إصلاح parseInt validation لتجنب NaN
+- [x] إضافة حقل status في ManualRegistrationForm
+- [x] تحديث backend routers لدعم status في التسجيل اليدوي
+- [x] توحيد status types بين leads وappointments

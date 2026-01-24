@@ -49,6 +49,7 @@ export default function ManualRegistrationForm() {
   const [campAge, setCampAge] = useState("");
   const [campProcedure, setCampProcedure] = useState("");
   const [medicalCondition, setMedicalCondition] = useState("");
+  const [registrationStatus, setRegistrationStatus] = useState<"new" | "contacted" | "booked" | "not_interested" | "no_answer" | "pending" | "confirmed" | "completed" | "cancelled">("new");
 
   const { data: doctors } = trpc.doctors.list.useQuery();
   const { data: offers } = trpc.offers.getAll.useQuery();
@@ -131,6 +132,7 @@ export default function ManualRegistrationForm() {
     setCampAge("");
     setCampProcedure("");
     setMedicalCondition("");
+    setRegistrationStatus("new");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -147,6 +149,7 @@ export default function ManualRegistrationForm() {
       email: email || undefined,
       notes: notes || undefined,
       source: "manual" as const,
+      status: registrationStatus,
     };
 
     switch (registrationType) {
@@ -158,10 +161,15 @@ export default function ManualRegistrationForm() {
           toast.error("الرجاء اختيار الطبيب");
           return;
         }
+        const parsedDoctorId = parseInt(doctorId);
+        if (isNaN(parsedDoctorId)) {
+          toast.error("معرف الطبيب غير صالح");
+          return;
+        }
         createAppointmentMutation.mutate({
           ...baseData,
           campaignSlug: "manual",
-          doctorId: parseInt(doctorId),
+          doctorId: parsedDoctorId,
           preferredDate: preferredDate || undefined,
           preferredTime: preferredTime || undefined,
           age: appointmentAge ? parseInt(appointmentAge) : undefined,
@@ -174,9 +182,14 @@ export default function ManualRegistrationForm() {
           toast.error("الرجاء اختيار العرض");
           return;
         }
+        const parsedOfferId = parseInt(offerId);
+        if (isNaN(parsedOfferId)) {
+          toast.error("معرف العرض غير صالح");
+          return;
+        }
         createOfferLeadMutation.mutate({
           ...baseData,
-          offerId: parseInt(offerId),
+          offerId: parsedOfferId,
         });
         break;
       case "camp":
@@ -184,9 +197,14 @@ export default function ManualRegistrationForm() {
           toast.error("الرجاء اختيار المخيم");
           return;
         }
+        const parsedCampId = parseInt(campId);
+        if (isNaN(parsedCampId)) {
+          toast.error("معرف المخيم غير صالح");
+          return;
+        }
         createCampRegistrationMutation.mutate({
           ...baseData,
-          campId: parseInt(campId),
+          campId: parsedCampId,
           age: campAge ? parseInt(campAge) : undefined,
           procedures: campProcedure || undefined,
           medicalCondition: medicalCondition || undefined,
@@ -220,19 +238,41 @@ export default function ManualRegistrationForm() {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Registration Type */}
-          <div className="space-y-2">
-            <Label>نوع الحجز</Label>
-            <Select value={registrationType} onValueChange={(value: any) => setRegistrationType(value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="اختر نوع الحجز" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="lead">عميل عام</SelectItem>
-                <SelectItem value="appointment">موعد طبيب</SelectItem>
-                <SelectItem value="offer">حجز عرض</SelectItem>
-                <SelectItem value="camp">تسجيل مخيم</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>نوع الحجز</Label>
+              <Select value={registrationType} onValueChange={(value: any) => setRegistrationType(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر نوع الحجز" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="lead">عميل عام</SelectItem>
+                  <SelectItem value="appointment">موعد طبيب</SelectItem>
+                  <SelectItem value="offer">حجز عرض</SelectItem>
+                  <SelectItem value="camp">تسجيل مخيم</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>حالة التسجيل</Label>
+              <Select value={registrationStatus} onValueChange={(value: any) => setRegistrationStatus(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر الحالة" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">جديد</SelectItem>
+                  <SelectItem value="contacted">تم التواصل</SelectItem>
+                  <SelectItem value="booked">تم الحجز</SelectItem>
+                  <SelectItem value="not_interested">غير مهتم</SelectItem>
+                  <SelectItem value="no_answer">لم يرد</SelectItem>
+                  <SelectItem value="pending">قيد الانتظار</SelectItem>
+                  <SelectItem value="confirmed">مؤكد</SelectItem>
+                  <SelectItem value="completed">مكتمل</SelectItem>
+                  <SelectItem value="cancelled">ملغي</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Basic Info */}

@@ -96,6 +96,8 @@ export const appRouter = router({
         fullName: z.string().min(1),
         phone: z.string().min(1),
         email: z.string().email().optional(),
+        notes: z.string().optional(),
+        status: z.enum(["new", "contacted", "booked", "not_interested", "no_answer", "pending", "confirmed", "completed", "cancelled"]).optional(),
         source: z.string().optional(), // Auto-detected source from UTM
         utmSource: z.string().optional(),
         utmMedium: z.string().optional(),
@@ -130,7 +132,8 @@ export const appRouter = router({
           fullName: input.fullName,
           phone: input.phone,
           email: input.email,
-          status: "new",
+          notes: input.notes,
+          status: input.status || "new",
           source: input.source || "direct", // Use auto-detected source or default to direct
           utmSource: input.utmSource,
           utmMedium: input.utmMedium,

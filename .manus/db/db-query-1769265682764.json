@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `leads` MODIFY COLUMN `status` enum('new','contacted','booked','not_interested','no_answer','pending','confirmed','completed','cancelled') NOT NULL DEFAULT 'new';\n\nALTER TABLE `offerLeads` MODIFY COLUMN `status` enum('new','contacted','booked','not_interested','no_answer','pending','confirmed','completed','cancelled') NOT NULL DEFAULT 'new';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2xtgvXGdr7mxJSP.root --database HgGpRPs4xs9xrzjfX4xmFY --execute ALTER TABLE `leads` MODIFY COLUMN `status` enum('new','contacted','booked','not_interested','no_answer','pending','confirmed','completed','cancelled') NOT NULL DEFAULT 'new';\n\nALTER TABLE `offerLeads` MODIFY COLUMN `status` enum('new','contacted','booked','not_interested','no_answer','pending','confirmed','completed','cancelled') NOT NULL DEFAULT 'new';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1045
+}

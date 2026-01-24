@@ -1,0 +1,2 @@
+ALTER TABLE `leads` MODIFY COLUMN `status` enum('new','contacted','booked','not_interested','no_answer','pending','confirmed','completed','cancelled') NOT NULL DEFAULT 'new';--> statement-breakpoint
+ALTER TABLE `offerLeads` MODIFY COLUMN `status` enum('new','contacted','booked','not_interested','no_answer','pending','confirmed','completed','cancelled') NOT NULL DEFAULT 'new';

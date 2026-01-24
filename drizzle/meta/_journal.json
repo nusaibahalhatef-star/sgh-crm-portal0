@@ -134,6 +134,13 @@
       "when": 1769211936878,
       "tag": "0018_smooth_the_liberteens",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1769265670182,
+      "tag": "0019_optimal_mandarin",
+      "breakpoints": true
     }
   ]
 }
