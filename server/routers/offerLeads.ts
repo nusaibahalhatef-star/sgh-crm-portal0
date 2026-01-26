@@ -60,6 +60,19 @@ export const offerLeadsRouter = router({
         });
       }
 
+      // Send automated offer booking confirmation message (Patient Journey)
+      if (offer) {
+        const { sendOfferBookingConfirmationInteractive, formatDateForMessage, formatTimeForMessage } = await import("../messaging");
+        await sendOfferBookingConfirmationInteractive({
+          phone: input.phone,
+          name: input.fullName,
+          service: offer.title,
+          date: offer.startDate ? formatDateForMessage(new Date(offer.startDate)) : "غير محدد",
+          time: offer.startDate ? formatTimeForMessage(new Date(offer.startDate)) : "غير محدد",
+          bookingId: Number(lead.insertId),
+        });
+      }
+
       return { success: true, id: lead.insertId };
     }),
 
