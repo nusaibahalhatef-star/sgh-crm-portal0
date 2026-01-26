@@ -1450,3 +1450,20 @@
   - [ ] قوالب جاهزة (تأكيد، تذكير)
   - [ ] متغيرات ديناميكية {name}, {date}, {time}
   - [ ] استخدام القوالب عند إرسال الرسائل
+
+
+### تكامل WhatsApp Web (QR Code) - حل مؤقت ✅ مكتمل
+- [x] تثبيت مكتبة whatsapp-web.js
+- [x] تثبيت مكتبات مساعدة (qrcode, qrcode-terminal)
+- [x] إنشاء WhatsApp Service في server/whatsappWebService.ts
+- [x] إضافة session management و QR code generation
+- [x] إضافة event handlers (ready, qr, message, authenticated)
+- [x] إنشاء tRPC endpoints للتحكم في WhatsApp (getStatus, getQR, disconnect, initialize)
+- [x] إنشاء صفحة WhatsApp Connection في الإدارة
+- [x] إضافة عرض QR code للمسح
+- [x] إضافة مؤشر حالة الاتصال (connected/disconnected/connecting)
+- [x] ربط إرسال الرسائل بـ WhatsApp Web Service
+- [x] إضافة استقبال الرسائل الواردة وحفظها في قاعدة البيانات
+- [x] إضافة معالجة الرسائل الواردة تلقائياً (auto-create conversations)
+- [x] إضافة error handling في WhatsApp Service
+- [x] إضافة أزرار الاتصال والقوالب في صفحة المحادثات

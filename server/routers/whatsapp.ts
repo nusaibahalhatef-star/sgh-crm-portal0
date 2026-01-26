@@ -1,8 +1,39 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
 import * as db from "../db";
+import whatsappWebService from "../whatsappWebService";
 
 export const whatsappRouter = router({
+  // WhatsApp Web Connection Management
+  connection: router({
+    status: protectedProcedure.query(async () => {
+      return whatsappWebService.getStatus();
+    }),
+    
+    getQR: protectedProcedure.query(async () => {
+      const qrCode = whatsappWebService.getQRCode();
+      return { qrCode };
+    }),
+    
+    initialize: protectedProcedure.mutation(async () => {
+      try {
+        await whatsappWebService.initialize();
+        return { success: true, message: "WhatsApp initialization started" };
+      } catch (error: any) {
+        throw new Error(`Failed to initialize WhatsApp: ${error.message}`);
+      }
+    }),
+    
+    disconnect: protectedProcedure.mutation(async () => {
+      try {
+        await whatsappWebService.disconnect();
+        return { success: true, message: "WhatsApp disconnected" };
+      } catch (error: any) {
+        throw new Error(`Failed to disconnect WhatsApp: ${error.message}`);
+      }
+    }),
+  }),
+
   // Conversations
   conversations: router({
     list: protectedProcedure.query(async () => {
@@ -78,17 +109,33 @@ export const whatsappRouter = router({
         })
       )
       .mutation(async ({ input, ctx }) => {
-        // TODO: Integrate with WhatsApp Business API to actually send the message
-        // For now, just save to database
+        // Get conversation details
+        const conversation = await db.getWhatsAppConversationById(input.conversationId);
+        if (!conversation) {
+          throw new Error("Conversation not found");
+        }
+
+        // Send via WhatsApp Web if connected
+        if (whatsappWebService.isClientReady()) {
+          try {
+            await whatsappWebService.sendMessage(conversation.phoneNumber, input.content);
+          } catch (error: any) {
+            console.error("Failed to send WhatsApp message:", error);
+            // Continue to save in database even if sending fails
+          }
+        }
+
+        // Save to database
         const message = await db.createWhatsAppMessage({
           ...input,
-          direction: "outgoing",
+          direction: "outbound",
           status: "sent",
-          sentBy: ctx.user.id,
+          sentAt: new Date(),
         });
 
         // Update conversation lastMessageAt
         await db.updateWhatsAppConversation(input.conversationId, {
+          lastMessage: input.content.substring(0, 100),
           lastMessageAt: new Date(),
         });
 

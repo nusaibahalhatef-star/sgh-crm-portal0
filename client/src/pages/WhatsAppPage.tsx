@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MessageCircle, Send, Search, Plus, FileText, Clock, CheckCheck, User, Phone, Settings } from "lucide-react";
+import { MessageCircle, Send, Search, Plus, FileText, Clock, CheckCheck, User, Phone, Settings, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -124,12 +124,20 @@ export default function WhatsAppPage() {
               <h1 className="text-3xl font-bold text-gray-900">إدارة محادثات واتساب</h1>
               <p className="text-gray-600">تواصل مع العملاء عبر واتساب بيزنس</p>
             </div>
-            <Link href="/dashboard/whatsapp/templates">
-              <Button variant="outline" className="gap-2">
-                <FileText className="h-5 w-5" />
-                إدارة القوالب
-              </Button>
-            </Link>
+            <div className="flex gap-2">
+              <Link href="/dashboard/whatsapp/connection">
+                <Button variant="outline" className="gap-2">
+                  <Smartphone className="h-5 w-5" />
+                  الاتصال
+                </Button>
+              </Link>
+              <Link href="/dashboard/whatsapp/templates">
+                <Button variant="outline" className="gap-2">
+                  <FileText className="h-5 w-5" />
+                  القوالب
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
 
