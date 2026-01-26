@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MessageCircle, Send, Search, Plus, FileText, Clock, CheckCheck, User, Phone, Settings, Smartphone } from "lucide-react";
+import { MessageCircle, Send, Search, Plus, FileText, Clock, CheckCheck, User, Phone, Settings, Smartphone, Wifi, WifiOff, Loader2 as LoaderIcon } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -36,6 +36,12 @@ export default function WhatsAppPage() {
     );
 
   const { data: templates } = trpc.whatsapp.templates.list.useQuery();
+
+  // WhatsApp connection status
+  const { data: connectionStatus, isLoading: statusLoading } = 
+    trpc.whatsapp.connection.status.useQuery(undefined, {
+      refetchInterval: 5000, // Poll every 5 seconds
+    });
 
   // Mutations
   const sendMessageMutation = trpc.whatsapp.messages.send.useMutation({
@@ -93,7 +99,38 @@ export default function WhatsAppPage() {
   };
 
   const handleUseTemplate = (templateContent: string) => {
-    setMessageText(templateContent);
+    // Auto-fill variables from conversation data
+    let filledContent = templateContent;
+    
+    if (selectedConv) {
+      // Replace {name} with customer name
+      if (selectedConv.customerName) {
+        filledContent = filledContent.replaceAll("{name}", selectedConv.customerName);
+      }
+      
+      // Replace {phone} with customer phone
+      if (selectedConv.phoneNumber) {
+        filledContent = filledContent.replaceAll("{phone}", selectedConv.phoneNumber);
+      }
+      
+      // Replace {date} with today's date
+      const today = new Date().toLocaleDateString("ar-EG", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+      filledContent = filledContent.replaceAll("{date}", today);
+      
+      // Replace {time} with current time
+      const now = new Date().toLocaleTimeString("ar-EG", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      filledContent = filledContent.replaceAll("{time}", now);
+    }
+    
+    setMessageText(filledContent);
+    toast.success("تم تطبيق القالب مع ملء المتغيرات تلقائياً");
   };
 
   const getStatusIcon = (status: string) => {
@@ -124,7 +161,30 @@ export default function WhatsAppPage() {
               <h1 className="text-3xl font-bold text-gray-900">إدارة محادثات واتساب</h1>
               <p className="text-gray-600">تواصل مع العملاء عبر واتساب بيزنس</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
+              {/* Connection Status Badge */}
+              {statusLoading ? (
+                <Badge variant="secondary" className="gap-1">
+                  <LoaderIcon className="h-3 w-3 animate-spin" />
+                  جاري التحقق...
+                </Badge>
+              ) : connectionStatus?.isReady ? (
+                <Badge className="bg-green-500 hover:bg-green-600 gap-1">
+                  <Wifi className="h-3 w-3" />
+                  متصل
+                </Badge>
+              ) : connectionStatus?.isConnecting ? (
+                <Badge variant="secondary" className="gap-1">
+                  <LoaderIcon className="h-3 w-3 animate-spin" />
+                  جاري الاتصال...
+                </Badge>
+              ) : (
+                <Badge variant="destructive" className="gap-1">
+                  <WifiOff className="h-3 w-3" />
+                  غير متصل
+                </Badge>
+              )}
+              
               <Link href="/dashboard/whatsapp/connection">
                 <Button variant="outline" className="gap-2">
                   <Smartphone className="h-5 w-5" />
@@ -329,23 +389,36 @@ export default function WhatsAppPage() {
 
                   {/* Templates Quick Access */}
                   {templates && templates.length > 0 && (
-                    <div className="border-t p-3 bg-gray-50">
-                      <div className="flex items-center gap-2 mb-2">
-                        <FileText className="h-4 w-4 text-gray-600" />
-                        <span className="text-sm font-medium text-gray-700">قوالب سريعة:</span>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {templates.slice(0, 3).map((template: any) => (
-                          <Button
-                            key={template.id}
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleUseTemplate(template.content)}
-                            className="text-xs"
-                          >
-                            {template.name}
+                    <div className="border-t p-3 bg-gradient-to-r from-purple-50 to-pink-50">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-purple-600" />
+                          <span className="text-sm font-semibold text-purple-900">ردود سريعة (قوالب):</span>
+                        </div>
+                        <Link href="/dashboard/whatsapp/templates">
+                          <Button size="sm" variant="ghost" className="text-xs text-purple-600 hover:text-purple-700">
+                            عرض الكل
                           </Button>
-                        ))}
+                        </Link>
+                      </div>
+                      <ScrollArea className="max-h-24">
+                        <div className="flex flex-wrap gap-2">
+                          {templates.map((template: any) => (
+                            <Button
+                              key={template.id}
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleUseTemplate(template.content)}
+                              className="text-xs bg-white hover:bg-purple-50 border-purple-200 hover:border-purple-300"
+                            >
+                              <FileText className="h-3 w-3 ml-1" />
+                              {template.name}
+                            </Button>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                      <div className="mt-2 text-xs text-purple-700 bg-purple-100/50 p-2 rounded">
+                        💡 سيتم ملء المتغيرات ({'{'}name{'}'}, {'{'}date{'}'}, {'{'}time{'}'}) تلقائياً
                       </div>
                     </div>
                   )}
