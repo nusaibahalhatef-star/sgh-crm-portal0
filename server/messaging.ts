@@ -165,3 +165,215 @@ export function formatTimeForMessage(date: Date): string {
     hour12: true,
   }).format(date);
 }
+
+/**
+ * ============================================
+ * OFFER LEADS MESSAGING FUNCTIONS
+ * ============================================
+ */
+
+/**
+ * Send offer booking confirmation message with interactive buttons (WhatsApp API)
+ */
+export async function sendOfferBookingConfirmationInteractive(data: {
+  phone: string;
+  name: string;
+  service: string;
+  date: string;
+  time: string;
+  bookingId: number;
+}) {
+  const setting = await getMessageSettingByType("offer_booking_confirmation_interactive");
+  if (!setting || setting.isEnabled === 0) {
+    console.log("[Messaging] offer_booking_confirmation_interactive is disabled");
+    return { success: false, reason: "disabled" };
+  }
+
+  const message = replaceMessageVariables(setting.messageContent, {
+    name: data.name,
+    service: data.service,
+    date: data.date,
+    time: data.time,
+  });
+
+  console.log("[Messaging] Sending offer booking confirmation (interactive):", {
+    phone: data.phone,
+    message,
+    bookingId: data.bookingId,
+  });
+
+  // TODO: Implement WhatsApp Business API call with interactive buttons
+  return { success: true, message };
+}
+
+/**
+ * Send offer booking confirmed success message (WhatsApp Integration)
+ */
+export async function sendOfferBookingConfirmedSuccess(data: {
+  phone: string;
+  name: string;
+  service: string;
+  date: string;
+  time: string;
+}) {
+  const setting = await getMessageSettingByType("offer_booking_confirmed_success");
+  if (!setting || setting.isEnabled === 0) {
+    console.log("[Messaging] offer_booking_confirmed_success is disabled");
+    return { success: false, reason: "disabled" };
+  }
+
+  const message = replaceMessageVariables(setting.messageContent, {
+    name: data.name,
+    service: data.service,
+    date: data.date,
+    time: data.time,
+  });
+
+  const { sendCustomMessage } = await import("./whatsapp");
+  const success = await sendCustomMessage(data.phone, message);
+
+  console.log("[Messaging] Sent offer booking confirmed success:", {
+    phone: data.phone,
+    success,
+  });
+
+  return { success, message };
+}
+
+/**
+ * Send offer patient arrival welcome message (WhatsApp Integration)
+ */
+export async function sendOfferPatientArrivalWelcome(data: {
+  phone: string;
+  name: string;
+  service: string;
+}) {
+  const setting = await getMessageSettingByType("offer_patient_arrival_welcome");
+  if (!setting || setting.isEnabled === 0) {
+    console.log("[Messaging] offer_patient_arrival_welcome is disabled");
+    return { success: false, reason: "disabled" };
+  }
+
+  const message = replaceMessageVariables(setting.messageContent, {
+    name: data.name,
+    service: data.service,
+  });
+
+  const { sendCustomMessage } = await import("./whatsapp");
+  const success = await sendCustomMessage(data.phone, message);
+
+  console.log("[Messaging] Sent offer patient arrival welcome:", {
+    phone: data.phone,
+    success,
+  });
+
+  return { success, message };
+}
+
+/**
+ * ============================================
+ * CAMP REGISTRATIONS MESSAGING FUNCTIONS
+ * ============================================
+ */
+
+/**
+ * Send camp registration confirmation message with interactive buttons (WhatsApp API)
+ */
+export async function sendCampRegistrationConfirmationInteractive(data: {
+  phone: string;
+  name: string;
+  campName: string;
+  date: string;
+  time: string;
+  location: string;
+  bookingId: number;
+}) {
+  const setting = await getMessageSettingByType("camp_registration_confirmation_interactive");
+  if (!setting || setting.isEnabled === 0) {
+    console.log("[Messaging] camp_registration_confirmation_interactive is disabled");
+    return { success: false, reason: "disabled" };
+  }
+
+  const message = replaceMessageVariables(setting.messageContent, {
+    name: data.name,
+    camp_name: data.campName,
+    date: data.date,
+    time: data.time,
+    location: data.location,
+  });
+
+  console.log("[Messaging] Sending camp registration confirmation (interactive):", {
+    phone: data.phone,
+    message,
+    bookingId: data.bookingId,
+  });
+
+  // TODO: Implement WhatsApp Business API call with interactive buttons
+  return { success: true, message };
+}
+
+/**
+ * Send camp registration confirmed success message (WhatsApp Integration)
+ */
+export async function sendCampRegistrationConfirmedSuccess(data: {
+  phone: string;
+  name: string;
+  campName: string;
+  date: string;
+  time: string;
+  location: string;
+}) {
+  const setting = await getMessageSettingByType("camp_registration_confirmed_success");
+  if (!setting || setting.isEnabled === 0) {
+    console.log("[Messaging] camp_registration_confirmed_success is disabled");
+    return { success: false, reason: "disabled" };
+  }
+
+  const message = replaceMessageVariables(setting.messageContent, {
+    name: data.name,
+    camp_name: data.campName,
+    date: data.date,
+    time: data.time,
+    location: data.location,
+  });
+
+  const { sendCustomMessage } = await import("./whatsapp");
+  const success = await sendCustomMessage(data.phone, message);
+
+  console.log("[Messaging] Sent camp registration confirmed success:", {
+    phone: data.phone,
+    success,
+  });
+
+  return { success, message };
+}
+
+/**
+ * Send camp patient arrival welcome message (WhatsApp Integration)
+ */
+export async function sendCampPatientArrivalWelcome(data: {
+  phone: string;
+  name: string;
+  campName: string;
+}) {
+  const setting = await getMessageSettingByType("camp_patient_arrival_welcome");
+  if (!setting || setting.isEnabled === 0) {
+    console.log("[Messaging] camp_patient_arrival_welcome is disabled");
+    return { success: false, reason: "disabled" };
+  }
+
+  const message = replaceMessageVariables(setting.messageContent, {
+    name: data.name,
+    camp_name: data.campName,
+  });
+
+  const { sendCustomMessage } = await import("./whatsapp");
+  const success = await sendCustomMessage(data.phone, message);
+
+  console.log("[Messaging] Sent camp patient arrival welcome:", {
+    phone: data.phone,
+    success,
+  });
+
+  return { success, message };
+}

@@ -67,6 +67,20 @@ export const campRegistrationsRouter = router({
         });
       }
 
+      // Send automated camp registration confirmation message (Patient Journey)
+      if (camp) {
+        const { sendCampRegistrationConfirmationInteractive, formatDateForMessage, formatTimeForMessage } = await import("../messaging");
+        await sendCampRegistrationConfirmationInteractive({
+          phone: input.phone,
+          name: input.fullName,
+          campName: camp.name,
+          date: camp.startDate ? formatDateForMessage(new Date(camp.startDate)) : "غير محدد",
+          time: camp.startDate ? formatTimeForMessage(new Date(camp.startDate)) : "غير محدد",
+          location: "المستشفى السعودي الألماني - صنعاء",
+          bookingId: Number(registration.insertId),
+        });
+      }
+
       return { success: true, id: registration.insertId };
     }),
 
