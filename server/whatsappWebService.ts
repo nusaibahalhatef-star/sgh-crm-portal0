@@ -49,6 +49,7 @@ class WhatsAppWebService {
           dataPath: "./.wwebjs_auth",
         }),
         puppeteer: {
+          executablePath: "/home/ubuntu/.cache/puppeteer/chrome/linux-131.0.6778.204/chrome-linux64/chrome",
           headless: true,
           args: [
             "--no-sandbox",

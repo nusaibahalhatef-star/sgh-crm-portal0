@@ -1483,3 +1483,9 @@
 - [x] تحديث إعدادات WhatsApp Service لاستخدام Chromium
 - [x] إضافة webVersionCache لحل مشاكل التوافق
 - [x] إعادة تشغيل الخادم والتحقق من عدم وجود أخطاء
+
+
+### حل مشكلة مسار Chromium النهائي ✅ مكتمل
+- [x] تحديد executablePath الصحيح لـ Chromium في puppeteer config
+- [x] إضافة المسار الكامل: /home/ubuntu/.cache/puppeteer/chrome/linux-131.0.6778.204/chrome-linux64/chrome
+- [x] إعادة تشغيل الخادم والتحقق من عدم وجود أخطاء
