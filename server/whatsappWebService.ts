@@ -3,6 +3,7 @@ const { Client, LocalAuth } = pkg;
 import type { Message } from "whatsapp-web.js";
 import QRCode from "qrcode";
 import qrcode from "qrcode-terminal";
+import puppeteer from "puppeteer";
 import { 
   createWhatsAppConversation, 
   createWhatsAppMessage, 
@@ -49,7 +50,7 @@ class WhatsAppWebService {
           dataPath: "./.wwebjs_auth",
         }),
         puppeteer: {
-          executablePath: "/home/ubuntu/.cache/puppeteer/chrome/linux-131.0.6778.204/chrome-linux64/chrome",
+          executablePath: puppeteer.executablePath(),
           headless: true,
           args: [
             "--no-sandbox",
