@@ -72,6 +72,19 @@ export default function ManualRegistrationForm() {
     setCampProcedure("");
   }, [campId]);
 
+  // Update registration status when registration type changes
+  useEffect(() => {
+    if (registrationType === 'appointment') {
+      setRegistrationStatus('confirmed');
+    } else if (registrationType === 'offer') {
+      setRegistrationStatus('confirmed');
+    } else if (registrationType === 'camp') {
+      setRegistrationStatus('confirmed');
+    } else {
+      setRegistrationStatus('new');
+    }
+  }, [registrationType]);
+
   const createLeadMutation = trpc.leads.submit.useMutation({
     onSuccess: () => {
       toast.success("تم إضافة العميل بنجاح");
@@ -271,9 +284,8 @@ export default function ManualRegistrationForm() {
                     </>
                   ) : (
                     <>
-                      <SelectItem value="pending">قيد الانتظار</SelectItem>
                       <SelectItem value="confirmed">مؤكد</SelectItem>
-                      <SelectItem value="completed">مكتمل</SelectItem>
+                      <SelectItem value="completed">حضر/مكتمل</SelectItem>
                       <SelectItem value="cancelled">ملغي</SelectItem>
                     </>
                   )}
