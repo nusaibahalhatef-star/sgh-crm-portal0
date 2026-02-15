@@ -1,0 +1,31 @@
+{
+  "query": "SELECT 'camps' as type, id, name, isActive, endDate FROM camps WHERE isActive = false\nUNION ALL\nSELECT 'offers' as type, id, title as name, isActive, endDate FROM offers WHERE isActive = false;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2xtgvXGdr7mxJSP.root --database HgGpRPs4xs9xrzjfX4xmFY --execute SELECT 'camps' as type, id, name, isActive, endDate FROM camps WHERE isActive = false\nUNION ALL\nSELECT 'offers' as type, id, title as name, isActive, endDate FROM offers WHERE isActive = false;",
+  "rows": [
+    {
+      "type": "offers",
+      "id": "1",
+      "name": "عرض الوالدة الطبيعية 60 الف ريال ",
+      "isActive": "0",
+      "endDate": "2025-12-31 00:00:00"
+    },
+    {
+      "type": "camps",
+      "id": "90001",
+      "name": "المخيم الخيري للجراحة العامة وجراحة المناظير",
+      "isActive": "0",
+      "endDate": "2026-01-10 00:00:00"
+    },
+    {
+      "type": "camps",
+      "id": "90002",
+      "name": "المخيم الخيري الاول لأمراض النساء و التوليد",
+      "isActive": "0",
+      "endDate": "2026-02-15 00:00:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "type\tid\tname\tisActive\tendDate\noffers\t1\tعرض الوالدة الطبيعية 60 الف ريال \t0\t2025-12-31 00:00:00\ncamps\t90001\tالمخيم الخيري للجراحة العامة وجراحة المناظير\t0\t2026-01-10 00:00:00\ncamps\t90002\tالمخيم الخيري الاول لأمراض النساء و التوليد\t0\t2026-02-15 00:00:00\n",
+  "stderr": "",
+  "execution_time_ms": 383
+}
