@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار getAllAdmin</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { background: #d4edda; }
+        .error { background: #f8d7da; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>اختبار getAllAdmin للمخيمات والعروض</h1>
+    
+    <div id="camps-public" class="section">
+        <h2>camps.getAll (عام - نشطة فقط)</h2>
+        <div id="camps-public-result">جاري التحميل...</div>
+    </div>
+    
+    <div id="camps-admin" class="section">
+        <h2>camps.getAllAdmin (إداري - الكل)</h2>
+        <div id="camps-admin-result">جاري التحميل...</div>
+    </div>
+    
+    <div id="offers-public" class="section">
+        <h2>offers.getAll (عام - نشطة فقط)</h2>
+        <div id="offers-public-result">جاري التحميل...</div>
+    </div>
+    
+    <div id="offers-admin" class="section">
+        <h2>offers.getAllAdmin (إداري - الكل)</h2>
+        <div id="offers-admin-result">جاري التحميل...</div>
+    </div>
+
+    <script>
+        async function testAPI(endpoint, resultId) {
+            try {
+                const response = await fetch(`/api/trpc/${endpoint}`);
+                const data = await response.json();
+                
+                const resultDiv = document.getElementById(resultId);
+                
+                if (data.error) {
+                    resultDiv.parentElement.classList.add('error');
+                    resultDiv.innerHTML = `<strong>خطأ:</strong> ${data.error.json.message}<br><pre>${JSON.stringify(data.error, null, 2)}</pre>`;
+                } else {
+                    const items = data.result.data.json;
+                    resultDiv.parentElement.classList.add('success');
+                    resultDiv.innerHTML = `
+                        <strong>عدد العناصر:</strong> ${items.length}<br>
+                        <strong>النشطة:</strong> ${items.filter(i => i.isActive).length}<br>
+                        <strong>غير النشطة:</strong> ${items.filter(i => !i.isActive).length}<br>
+                        <pre>${JSON.stringify(items.map(i => ({id: i.id, name: i.name || i.title, isActive: i.isActive})), null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                const resultDiv = document.getElementById(resultId);
+                resultDiv.parentElement.classList.add('error');
+                resultDiv.innerHTML = `<strong>خطأ في الاتصال:</strong> ${error.message}`;
+            }
+        }
+
+        // تشغيل الاختبارات
+        testAPI('camps.getAll', 'camps-public-result');
+        testAPI('camps.getAllAdmin', 'camps-admin-result');
+        testAPI('offers.getAll', 'offers-public-result');
+        testAPI('offers.getAllAdmin', 'offers-admin-result');
+    </script>
+</body>
+</html>
