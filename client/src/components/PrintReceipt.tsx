@@ -35,7 +35,7 @@ export function printReceipt(data: PrintReceiptProps["data"], userName: string) 
   const singleReceiptHTML = `
     <div class="receipt">
       <div class="header">
-        <img src="/SGHHospitalColorAR.png" alt="المستشفى السعودي الألماني">
+        <img src="/sgh-logo-full.png" alt="المستشفى السعودي الألماني">
         <div class="phone">8000018</div>
       </div>
       
@@ -89,8 +89,8 @@ export function printReceipt(data: PrintReceiptProps["data"], userName: string) 
     <div class="page-break"></div>
   `;
 
-  // تكرار المحتوى 4 مرات
-  const fourReceipts = singleReceiptHTML.repeat(4);
+  // تكرار المحتوى 2 مرات
+  const twoReceipts = singleReceiptHTML.repeat(2);
 
   const receiptHTML = `
     <!DOCTYPE html>
@@ -194,7 +194,7 @@ export function printReceipt(data: PrintReceiptProps["data"], userName: string) 
       </style>
     </head>
     <body>
-      ${fourReceipts}
+      ${twoReceipts}
       
       <script>
         window.onload = function() {
