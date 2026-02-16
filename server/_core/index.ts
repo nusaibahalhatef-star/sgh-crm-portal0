@@ -7,7 +7,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
-import { initSimpleCronScheduler } from "../cron/scheduler";
+// import { initSimpleCronScheduler } from "../cron/scheduler";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -62,7 +62,7 @@ async function startServer() {
     console.log(`Server running on http://localhost:${port}/`);
     
     // Initialize cron scheduler for automatic deactivation
-    initSimpleCronScheduler();
+    // initSimpleCronScheduler(); // Disabled: Auto-deactivation feature removed per user request
   });
 }
 
