@@ -1,5 +1,10 @@
 import PDFDocument from 'pdfkit';
 import { Readable } from 'stream';
+import path from 'path';
+
+// مسارات الخطوط العربية
+const AMIRI_REGULAR = path.join(process.cwd(), 'server', 'fonts', 'Amiri-Regular.ttf');
+const AMIRI_BOLD = path.join(process.cwd(), 'server', 'fonts', 'Amiri-Bold.ttf');
 
 /**
  * معلومات التصدير (Metadata)
@@ -53,7 +58,7 @@ function addHeader(doc: PDFKit.PDFDocument, metadata: ExportMetadata) {
   // معلومات الاتصال على اليسار
   doc
     .fontSize(10)
-    .font('Helvetica')
+    .font(AMIRI_REGULAR)
     .text('8000018', 50, 40, { align: 'left' })
     .text('info@sghsanaa.net', 50, 55, { align: 'left' });
 
@@ -66,7 +71,7 @@ function addHeader(doc: PDFKit.PDFDocument, metadata: ExportMetadata) {
   // عنوان الجدول
   doc
     .fontSize(16)
-    .font('Helvetica-Bold')
+    .font(AMIRI_BOLD)
     .text(metadata.tableName, 50, 120, {
       align: 'center',
       width: doc.page.width - 100,
@@ -78,7 +83,7 @@ function addHeader(doc: PDFKit.PDFDocument, metadata: ExportMetadata) {
   if (metadata.dateRange) {
     doc
       .fontSize(10)
-      .font('Helvetica')
+      .font(AMIRI_REGULAR)
       .text(`نطاق التاريخ: ${metadata.dateRange}`, 50, yPos, { align: 'right' });
     yPos += 20;
   }
@@ -117,7 +122,7 @@ function addFooter(doc: PDFKit.PDFDocument, metadata: ExportMetadata) {
   // وقت التصدير على اليسار
   doc
     .fontSize(9)
-    .font('Helvetica')
+    .font(AMIRI_REGULAR)
     .text(metadata.exportDate, 50, footerY, { align: 'left' });
 
   // شعار "نرعاكم كأهالينا" في المنتصف
@@ -153,7 +158,7 @@ function addTable(
   // رسم رؤوس الأعمدة (معكوسة لـ RTL)
   doc
     .fontSize(10)
-    .font('Helvetica-Bold')
+    .font(AMIRI_BOLD)
     .fillColor('#2D6A4F');
 
   // عكس ترتيب الأعمدة لـ RTL
@@ -176,7 +181,7 @@ function addTable(
   yPos += rowHeight;
 
   // رسم صفوف البيانات
-  doc.fontSize(9).font('Helvetica');
+  doc.fontSize(9).font(AMIRI_REGULAR);
 
   data.forEach((row, rowIndex) => {
     // التحقق من الحاجة لصفحة جديدة
