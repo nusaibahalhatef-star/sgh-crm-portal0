@@ -112,7 +112,7 @@ export default function OfferLeadsManagement({
   const [offerLeadsSearchTerm, setOfferLeadsSearchTerm] = useState("");
   
   // Sorting state
-  const [sortField, setSortField] = useState<'date' | 'name' | 'status' | null>(null);
+  const [sortField, setSortField] = useState<'date' | 'name' | 'phone' | 'email' | 'offer' | 'source' | 'receiptNumber' | 'status' | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   
   // Debounced search for better performance
@@ -247,6 +247,26 @@ export default function OfferLeadsManagement({
           case 'name':
             aValue = a.fullName.toLowerCase();
             bValue = b.fullName.toLowerCase();
+            break;
+          case 'phone':
+            aValue = (a.phone || '').toLowerCase();
+            bValue = (b.phone || '').toLowerCase();
+            break;
+          case 'email':
+            aValue = (a.email || '').toLowerCase();
+            bValue = (b.email || '').toLowerCase();
+            break;
+          case 'offer':
+            aValue = (a.offerTitle || '').toLowerCase();
+            bValue = (b.offerTitle || '').toLowerCase();
+            break;
+          case 'source':
+            aValue = (a.source || '').toLowerCase();
+            bValue = (b.source || '').toLowerCase();
+            break;
+          case 'receiptNumber':
+            aValue = (a.receiptNumber || '').toLowerCase();
+            bValue = (b.receiptNumber || '').toLowerCase();
             break;
           case 'status':
             aValue = a.status;
@@ -523,7 +543,24 @@ export default function OfferLeadsManagement({
                       className="rounded border-gray-300"
                     />
                   </TableHead>
-                  <TableHead className="text-right">رقم السند</TableHead>
+                  <TableHead 
+                    className="text-right cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => {
+                      if (sortField === 'receiptNumber') {
+                        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                      } else {
+                        setSortField('receiptNumber');
+                        setSortDirection('asc');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-1 justify-end">
+                      رقم السند
+                      {sortField === 'receiptNumber' && (
+                        <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </TableHead>
                   <TableHead 
                     className="text-right cursor-pointer hover:bg-muted/50 select-none"
                     onClick={() => {
@@ -542,10 +579,78 @@ export default function OfferLeadsManagement({
                       )}
                     </div>
                   </TableHead>
-                  <TableHead className="text-right">رقم الهاتف</TableHead>
-                  <TableHead className="text-right">البريد الإلكتروني</TableHead>
-                  <TableHead className="text-right">العرض</TableHead>
-                  <TableHead className="text-right">المصدر</TableHead>
+                  <TableHead 
+                    className="text-right cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => {
+                      if (sortField === 'phone') {
+                        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                      } else {
+                        setSortField('phone');
+                        setSortDirection('asc');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-1 justify-end">
+                      رقم الهاتف
+                      {sortField === 'phone' && (
+                        <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="text-right cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => {
+                      if (sortField === 'email') {
+                        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                      } else {
+                        setSortField('email');
+                        setSortDirection('asc');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-1 justify-end">
+                      البريد الإلكتروني
+                      {sortField === 'email' && (
+                        <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="text-right cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => {
+                      if (sortField === 'offer') {
+                        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                      } else {
+                        setSortField('offer');
+                        setSortDirection('asc');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-1 justify-end">
+                      العرض
+                      {sortField === 'offer' && (
+                        <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="text-right cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => {
+                      if (sortField === 'source') {
+                        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                      } else {
+                        setSortField('source');
+                        setSortDirection('asc');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-1 justify-end">
+                      المصدر
+                      {sortField === 'source' && (
+                        <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </TableHead>
                   <TableHead 
                     className="text-right cursor-pointer hover:bg-muted/50 select-none"
                     onClick={() => {

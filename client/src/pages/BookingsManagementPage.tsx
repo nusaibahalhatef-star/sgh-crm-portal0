@@ -179,7 +179,7 @@ export default function BookingsManagementPage() {
   const [campRegistrationsPendingCount, setCampRegistrationsPendingCount] = useState(0);
   
   // Sorting state
-  const [appointmentSortField, setAppointmentSortField] = useState<'date' | 'name' | 'status' | null>(null);
+  const [appointmentSortField, setAppointmentSortField] = useState<'date' | 'name' | 'phone' | 'doctor' | 'specialty' | 'source' | 'receiptNumber' | 'status' | null>(null);
   const [appointmentSortDirection, setAppointmentSortDirection] = useState<'asc' | 'desc'>('asc');
   
   // Debounced search terms for better performance
@@ -381,6 +381,26 @@ export default function BookingsManagementPage() {
           case 'name':
             aValue = (a.fullName || a.patientName || '').toLowerCase();
             bValue = (b.fullName || b.patientName || '').toLowerCase();
+            break;
+          case 'phone':
+            aValue = (a.phone || '').toLowerCase();
+            bValue = (b.phone || '').toLowerCase();
+            break;
+          case 'doctor':
+            aValue = (a.doctorName || '').toLowerCase();
+            bValue = (b.doctorName || '').toLowerCase();
+            break;
+          case 'specialty':
+            aValue = (a.doctorSpecialty || '').toLowerCase();
+            bValue = (b.doctorSpecialty || '').toLowerCase();
+            break;
+          case 'source':
+            aValue = (a.source || '').toLowerCase();
+            bValue = (b.source || '').toLowerCase();
+            break;
+          case 'receiptNumber':
+            aValue = (a.receiptNumber || '').toLowerCase();
+            bValue = (b.receiptNumber || '').toLowerCase();
             break;
           case 'status':
             aValue = a.status;
@@ -1017,11 +1037,96 @@ export default function BookingsManagementPage() {
                             )}
                           </div>
                         </TableHead>
-                        <TableHead>الهاتف</TableHead>
-                        <TableHead>الطبيب</TableHead>
-                        <TableHead>التخصص</TableHead>
-                        <TableHead>المصدر</TableHead>
-                        <TableHead>رقم السند</TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => {
+                            if (appointmentSortField === 'phone') {
+                              setAppointmentSortDirection(appointmentSortDirection === 'asc' ? 'desc' : 'asc');
+                            } else {
+                              setAppointmentSortField('phone');
+                              setAppointmentSortDirection('asc');
+                            }
+                          }}
+                        >
+                          <div className="flex items-center gap-1">
+                            الهاتف
+                            {appointmentSortField === 'phone' && (
+                              <span className="text-xs">{appointmentSortDirection === 'asc' ? '↑' : '↓'}</span>
+                            )}
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => {
+                            if (appointmentSortField === 'doctor') {
+                              setAppointmentSortDirection(appointmentSortDirection === 'asc' ? 'desc' : 'asc');
+                            } else {
+                              setAppointmentSortField('doctor');
+                              setAppointmentSortDirection('asc');
+                            }
+                          }}
+                        >
+                          <div className="flex items-center gap-1">
+                            الطبيب
+                            {appointmentSortField === 'doctor' && (
+                              <span className="text-xs">{appointmentSortDirection === 'asc' ? '↑' : '↓'}</span>
+                            )}
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => {
+                            if (appointmentSortField === 'specialty') {
+                              setAppointmentSortDirection(appointmentSortDirection === 'asc' ? 'desc' : 'asc');
+                            } else {
+                              setAppointmentSortField('specialty');
+                              setAppointmentSortDirection('asc');
+                            }
+                          }}
+                        >
+                          <div className="flex items-center gap-1">
+                            التخصص
+                            {appointmentSortField === 'specialty' && (
+                              <span className="text-xs">{appointmentSortDirection === 'asc' ? '↑' : '↓'}</span>
+                            )}
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => {
+                            if (appointmentSortField === 'source') {
+                              setAppointmentSortDirection(appointmentSortDirection === 'asc' ? 'desc' : 'asc');
+                            } else {
+                              setAppointmentSortField('source');
+                              setAppointmentSortDirection('asc');
+                            }
+                          }}
+                        >
+                          <div className="flex items-center gap-1">
+                            المصدر
+                            {appointmentSortField === 'source' && (
+                              <span className="text-xs">{appointmentSortDirection === 'asc' ? '↑' : '↓'}</span>
+                            )}
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => {
+                            if (appointmentSortField === 'receiptNumber') {
+                              setAppointmentSortDirection(appointmentSortDirection === 'asc' ? 'desc' : 'asc');
+                            } else {
+                              setAppointmentSortField('receiptNumber');
+                              setAppointmentSortDirection('asc');
+                            }
+                          }}
+                        >
+                          <div className="flex items-center gap-1">
+                            رقم السند
+                            {appointmentSortField === 'receiptNumber' && (
+                              <span className="text-xs">{appointmentSortDirection === 'asc' ? '↑' : '↓'}</span>
+                            )}
+                          </div>
+                        </TableHead>
                         <TableHead 
                           className="cursor-pointer hover:bg-muted/50 select-none"
                           onClick={() => {
