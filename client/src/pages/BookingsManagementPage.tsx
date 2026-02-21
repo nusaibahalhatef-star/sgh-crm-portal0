@@ -9,6 +9,8 @@ import AppointmentCard from "@/components/AppointmentCard";
 import ActionButtons from "@/components/ActionButtons";
 import EmptyState from "@/components/EmptyState";
 import TableSkeleton from "@/components/TableSkeleton";
+import QuickFilters from "@/components/QuickFilters";
+import InlineStatusEditor from "@/components/InlineStatusEditor";
 import { DateRangePicker } from "@/components/DateRangePicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -716,23 +718,17 @@ export default function BookingsManagementPage() {
               <CardContent className="space-y-4">
                 {/* Filters - Responsive Grid */}
                 <div className="flex flex-col gap-3">
-                  {/* Quick Filter Button */}
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant={appointmentStatusFilter === "pending" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setAppointmentStatusFilter(appointmentStatusFilter === "pending" ? "all" : "pending")}
-                      className="gap-2 h-9 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white border-0"
-                    >
-                      <TrendingUp className="h-4 w-4" />
-                      {appointmentStatusFilter === "pending" ? "عرض الكل" : "المعلقة فقط"}
-                      {appointmentStatusFilter !== "pending" && pendingCounts.appointments > 0 && (
-                        <Badge variant="secondary" className="mr-1 bg-white text-orange-600">
-                          {pendingCounts.appointments}
-                        </Badge>
-                      )}
-                    </Button>
-                  </div>
+                  {/* Quick Filters */}
+                  <QuickFilters
+                    filters={[
+                      { label: 'الكل', value: 'all', count: appointmentStats.total },
+                      { label: 'قيد الانتظار', value: 'pending', count: appointmentStats.pending, color: 'text-yellow-600 hover:bg-yellow-50' },
+                      { label: 'مؤكد', value: 'confirmed', count: appointmentStats.confirmed, color: 'text-green-600 hover:bg-green-50' },
+                      { label: 'ملغي', value: 'cancelled', count: appointmentStats.cancelled, color: 'text-red-600 hover:bg-red-50' },
+                    ]}
+                    activeFilter={appointmentStatusFilter}
+                    onFilterChange={setAppointmentStatusFilter}
+                  />
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
                     <div className="relative sm:col-span-2 lg:col-span-1">
@@ -907,20 +903,22 @@ export default function BookingsManagementPage() {
                               {!(appointment as any).source && '-'}
                             </TableCell>
                             <TableCell>
-                              <Badge
-                                variant={
-                                  appointment.status === "confirmed"
-                                    ? "default"
-                                    : appointment.status === "cancelled"
-                                    ? "destructive"
-                                    : "secondary"
-                                }
-                              >
-                                {appointment.status === "pending" && "قيد الانتظار"}
-                                {appointment.status === "confirmed" && "مؤكد"}
-                                {appointment.status === "cancelled" && "ملغي"}
-                                {appointment.status === "completed" && "مكتمل"}
-                              </Badge>
+                              <InlineStatusEditor
+                                currentStatus={appointment.status}
+                                statusOptions={[
+                                  { value: 'pending', label: 'قيد الانتظار', color: 'bg-yellow-500' },
+                                  { value: 'confirmed', label: 'مؤكد', color: 'bg-green-500' },
+                                  { value: 'completed', label: 'مكتمل', color: 'bg-blue-500' },
+                                  { value: 'cancelled', label: 'ملغي', color: 'bg-red-500' },
+                                ]}
+                                onSave={async (newStatus) => {
+                                  await updateAppointmentStatusMutation.mutateAsync({
+                                    id: appointment.id,
+                                    status: newStatus,
+                                    staffNotes: '',
+                                  });
+                                }}
+                              />
                             </TableCell>
                             <TableCell>
                               <div className="flex gap-1">
