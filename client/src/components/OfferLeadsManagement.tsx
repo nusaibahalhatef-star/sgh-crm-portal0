@@ -1,6 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
+import ActionButtons from "@/components/ActionButtons";
+import EmptyState from "@/components/EmptyState";
+import TableSkeleton from "@/components/TableSkeleton";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -44,7 +47,14 @@ import {
   CheckSquare,
   Square,
   Printer,
+  Settings,
+  ShoppingBag,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { exportToExcel, formatOfferLeadsForExport } from "@/lib/exportToExcel";
 import { printReceipt } from "@/components/PrintReceipt";
@@ -356,17 +366,13 @@ export default function OfferLeadsManagement({
           {/* Mobile Cards View */}
           <div className="md:hidden">
             {isLoading ? (
-              <>
-                <CardSkeleton />
-                <CardSkeleton />
-                <CardSkeleton />
-              </>
+              <TableSkeleton rows={3} columns={4} />
             ) : filteredLeads.length === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center text-muted-foreground">
-                  لا توجد حجوزات متاحة
-                </CardContent>
-              </Card>
+              <EmptyState
+                icon={ShoppingBag}
+                title="لا توجد حجوزات"
+                description="لم يتم العثور على أي حجوزات للعروض في الفترة المحددة. جرب تغيير الفلاتر."
+              />
             ) : (
               filteredLeads.map((lead: any) => (
                 <OfferLeadCard
@@ -438,10 +444,20 @@ export default function OfferLeadsManagement({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLeads.length === 0 ? (
+                {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                      لا توجد حجوزات متاحة
+                    <TableCell colSpan={10} className="p-0">
+                      <TableSkeleton rows={5} columns={10} />
+                    </TableCell>
+                  </TableRow>
+                ) : filteredLeads.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={10} className="py-12">
+                      <EmptyState
+                        icon={ShoppingBag}
+                        title="لا توجد حجوزات"
+                        description="لم يتم العثور على أي حجوزات للعروض في الفترة المحددة. جرب تغيير الفلاتر."
+                      />
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -467,10 +483,14 @@ export default function OfferLeadsManagement({
                       <TableCell className="font-medium">{lead.fullName}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <a href={`tel:${lead.phone}`} className="hover:text-primary">
-                            {lead.phone}
-                          </a>
+                          <span className="font-mono">{lead.phone}</span>
+                          <ActionButtons
+                            phoneNumber={lead.phone}
+                            showWhatsApp={true}
+                            whatsAppMessage={`مرحباً ${lead.fullName}، شكراً لاهتمامك بعرضنا الطبي. نود التواصل معك لتأكيد حجزك.`}
+                            size="sm"
+                            variant="ghost"
+                          />
                         </div>
                       </TableCell>
                       <TableCell>
@@ -505,57 +525,57 @@ export default function OfferLeadsManagement({
                         {new Date(lead.createdAt).toLocaleDateString("ar-SA")}
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedLead(lead);
-                              setNewStatus(lead.status);
-                              setStatusDialogOpen(true);
-                            }}
-                          >
-                            <Eye className="h-4 w-4 ml-2" />
-                            عرض التفاصيل
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                            onClick={() => {
-                              const message = `مرحباً ${lead.fullName}،\n\nشكراً لاهتمامك بعرضنا الطبي. نود التواصل معك لتأكيد حجزك.\n\nالمستشفى السعودي الألماني - صنعاء`;
-                              window.open(`https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
-                            }}
-                          >
-                            <MessageCircle className="h-4 w-4 ml-2" />
-                            واتساب
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                            onClick={async () => {
-                              try {
-                                const result = await generateReceiptNumberMutation.mutateAsync({ id: lead.id });
-                                const offerName = lead.offerName || `عرض #${lead.offerId}`;
-                                printReceipt({
-                                  fullName: lead.fullName,
-                                  phone: lead.phone,
-                                  age: lead.age ?? undefined,
-                                  registrationDate: new Date(lead.createdAt),
-                                  type: "offer",
-                                  typeName: offerName,
-                                  receiptNumber: result.receiptNumber,
-                                }, user?.name || "مستخدم");
-                              } catch (error) {
-                                console.error('Error generating receipt number:', error);
-                                toast.error('فشل في توليد رقم السند');
-                              }
-                            }}
-                          >
-                            <Printer className="h-4 w-4 ml-2" />
-                            طباعة
-                          </Button>
+                        <div className="flex gap-1">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedLead(lead);
+                                  setNewStatus(lead.status);
+                                  setStatusDialogOpen(true);
+                                }}
+                              >
+                                <Settings className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>تحديث الحالة</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                onClick={async () => {
+                                  try {
+                                    const result = await generateReceiptNumberMutation.mutateAsync({ id: lead.id });
+                                    const offerName = lead.offerName || `عرض #${lead.offerId}`;
+                                    printReceipt({
+                                      fullName: lead.fullName,
+                                      phone: lead.phone,
+                                      age: lead.age ?? undefined,
+                                      registrationDate: new Date(lead.createdAt),
+                                      type: "offer",
+                                      typeName: offerName,
+                                      receiptNumber: result.receiptNumber,
+                                    }, user?.name || "مستخدم");
+                                  } catch (error) {
+                                    console.error('Error generating receipt number:', error);
+                                    toast.error('فشل في توليد رقم السند');
+                                  }
+                                }}
+                              >
+                                <Printer className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>طباعة السند</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                       </TableCell>
                     </TableRow>
