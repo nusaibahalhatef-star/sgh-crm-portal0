@@ -105,7 +105,7 @@ export default function OfferLeadsManagement({
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState("");
   const [dateFilter, setDateFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [sourceFilter, setSourceFilter] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [bulkUpdateDialogOpen, setBulkUpdateDialogOpen] = useState(false);
@@ -123,7 +123,6 @@ export default function OfferLeadsManagement({
     page: 1,
     limit: 10000, // Get all records within date range
     searchTerm: debouncedSearch,
-    status: statusFilter !== "all" ? statusFilter : undefined,
     dateFrom: dateRange.from.toISOString(),
     dateTo: dateRange.to.toISOString(),
   });
@@ -156,7 +155,6 @@ export default function OfferLeadsManagement({
           page: 1,
           limit: 10000,
           searchTerm: debouncedSearch,
-          status: statusFilter !== "all" ? statusFilter : undefined,
           dateFrom: dateRange.from.toISOString(),
           dateTo: dateRange.to.toISOString(),
         },
@@ -188,7 +186,6 @@ export default function OfferLeadsManagement({
             page: 1,
             limit: 10000,
             searchTerm: debouncedSearch,
-            status: statusFilter !== "all" ? statusFilter : undefined,
             dateFrom: dateRange.from.toISOString(),
             dateTo: dateRange.to.toISOString(),
           },
@@ -238,6 +235,11 @@ export default function OfferLeadsManagement({
     // Filter by source (multiple selection)
     if (sourceFilter && sourceFilter.length > 0) {
       filtered = filtered.filter((lead: any) => sourceFilter.includes(lead.source));
+    }
+    
+    // Filter by status (multiple selection)
+    if (statusFilter && statusFilter.length > 0) {
+      filtered = filtered.filter((lead: any) => statusFilter.includes(lead.status));
     }
     
     let sorted = filtered;
@@ -290,7 +292,7 @@ export default function OfferLeadsManagement({
     }
     
     return sorted;
-  }, [offerLeads, selectedOffer, sourceFilter, sortField, sortDirection]);
+  }, [offerLeads, selectedOffer, sourceFilter, statusFilter, sortField, sortDirection]);
 
   const handleStatusUpdate = () => {
     if (!selectedLead || !newStatus) return;
@@ -406,18 +408,6 @@ export default function OfferLeadsManagement({
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Quick Filters */}
-          <QuickFilters
-            filters={[
-              { label: 'الكل', value: 'all', count: stats?.total || 0 },
-              { label: 'جديد', value: 'new', count: stats?.new || 0, color: 'text-blue-600 hover:bg-blue-50' },
-              { label: 'تم التواصل', value: 'contacted', count: stats?.contacted || 0, color: 'text-yellow-600 hover:bg-yellow-50' },
-              { label: 'تم الحجز', value: 'booked', count: stats?.booked || 0, color: 'text-green-600 hover:bg-green-50' },
-            ]}
-            activeFilter={statusFilter}
-            onFilterChange={setStatusFilter}
-          />
-          
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="relative flex-1">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -447,19 +437,19 @@ export default function OfferLeadsManagement({
                 <SelectItem value="month">هذا الشهر</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[160px] h-9 md:h-10">
-                <SelectValue placeholder="كل الحالات" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">كل الحالات</SelectItem>
-                <SelectItem value="new">جديد</SelectItem>
-                <SelectItem value="contacted">تم التواصل</SelectItem>
-                <SelectItem value="booked">تم الحجز</SelectItem>
-                <SelectItem value="not_interested">غير مهتم</SelectItem>
-                <SelectItem value="no_answer">لم يرد</SelectItem>
-              </SelectContent>
-            </Select>
+            <MultiSelect
+              options={[
+                { value: 'new', label: 'جديد' },
+                { value: 'contacted', label: 'تم التواصل' },
+                { value: 'booked', label: 'تم الحجز' },
+                { value: 'not_interested', label: 'غير مهتم' },
+                { value: 'no_answer', label: 'لم يرد' },
+              ]}
+              selected={statusFilter}
+              onChange={setStatusFilter}
+              placeholder="كل الحالات"
+              className="w-full sm:w-[160px] h-9 md:h-10"
+            />
             <MultiSelect
               options={SOURCE_OPTIONS}
               selected={sourceFilter}

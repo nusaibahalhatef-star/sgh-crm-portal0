@@ -2557,3 +2557,12 @@
 - [x] تحديث filtering logic لدعم خيارات متعددة
 - [x] إزالة campId/offerId/doctorId من server-side queries
 - [x] استخدام client-side filtering لجميع الفلاتر
+
+### تحسين فلتر الحالات - Multi-Select ✅ مكتمل
+- [x] تطبيق Multi-Select لفلتر الحالات في جدول مواعيد الأطباء (Leads & Appointments)
+- [x] تطبيق Multi-Select لفلتر الحالات في جدول حجوزات العروض
+- [x] تطبيق Multi-Select لفلتر الحالات في جدول تسجيلات المخيمات
+- [x] تحديث filtering logic لدعم حالات متعددة
+- [x] إزالة status من server-side queries واستخدام client-side filtering
+- [x] إزالة QuickFilters للحالات (استخدام MultiSelect فقط)
+- [x] تحديث زر "المعلقة فقط" ليعمل مع Multi-Select
