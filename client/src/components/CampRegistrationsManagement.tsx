@@ -107,7 +107,7 @@ export default function CampRegistrationsManagement({
   const [editedPhone, setEditedPhone] = useState("");
   const [attendanceDate, setAttendanceDate] = useState("");
   const [dateFilter, setDateFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [sourceFilter, setSourceFilter] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [bulkUpdateDialogOpen, setBulkUpdateDialogOpen] = useState(false);
@@ -125,7 +125,6 @@ export default function CampRegistrationsManagement({
     page: 1,
     limit: 10000, // Get all records within date range
     searchTerm: debouncedSearch,
-    status: statusFilter !== "all" ? statusFilter : undefined,
     dateFrom: dateRange.from.toISOString(),
     dateTo: dateRange.to.toISOString(),
   });
@@ -170,7 +169,6 @@ export default function CampRegistrationsManagement({
           page: 1,
           limit: 10000,
           searchTerm: debouncedSearch,
-          status: statusFilter !== "all" ? statusFilter : undefined,
           dateFrom: dateRange.from.toISOString(),
           dateTo: dateRange.to.toISOString(),
         },
@@ -202,7 +200,6 @@ export default function CampRegistrationsManagement({
             page: 1,
             limit: 10000,
             searchTerm: debouncedSearch,
-            status: statusFilter !== "all" ? statusFilter : undefined,
             dateFrom: dateRange.from.toISOString(),
             dateTo: dateRange.to.toISOString(),
           },
@@ -233,6 +230,11 @@ export default function CampRegistrationsManagement({
     // Filter by source (multiple selection)
     if (sourceFilter && sourceFilter.length > 0) {
       filtered = filtered.filter((registration: any) => sourceFilter.includes(registration.source));
+    }
+    
+    // Filter by status (multiple selection)
+    if (statusFilter && statusFilter.length > 0) {
+      filtered = filtered.filter((registration: any) => statusFilter.includes(registration.status));
     }
     
     let sorted = filtered;
@@ -289,7 +291,7 @@ export default function CampRegistrationsManagement({
     }
     
     return sorted;
-  }, [registrations, selectedCamp, sourceFilter, sortField, sortDirection]);
+  }, [registrations, selectedCamp, sourceFilter, statusFilter, sortField, sortDirection]);
 
   const handleSelectAll = () => {
     if (selectedIds.length === filteredRegistrations.length) {
@@ -408,18 +410,6 @@ export default function CampRegistrationsManagement({
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Quick Filters */}
-          <QuickFilters
-            filters={[
-              { label: 'الكل', value: 'all', count: stats?.total || 0 },
-              { label: 'قيد الانتظار', value: 'pending', count: stats?.pending || 0, color: 'text-yellow-600 hover:bg-yellow-50' },
-              { label: 'مؤكد', value: 'confirmed', count: stats?.confirmed || 0, color: 'text-green-600 hover:bg-green-50' },
-              { label: 'حضر', value: 'attended', count: stats?.attended || 0, color: 'text-blue-600 hover:bg-blue-50' },
-            ]}
-            activeFilter={statusFilter}
-            onFilterChange={setStatusFilter}
-          />
-          
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="relative flex-1">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -449,18 +439,18 @@ export default function CampRegistrationsManagement({
                 <SelectItem value="month">هذا الشهر</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[160px] h-9 md:h-10">
-                <SelectValue placeholder="كل الحالات" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">كل الحالات</SelectItem>
-                <SelectItem value="pending">قيد الانتظار</SelectItem>
-                <SelectItem value="confirmed">مؤكد</SelectItem>
-                <SelectItem value="attended">حضر</SelectItem>
-                <SelectItem value="cancelled">ملغي</SelectItem>
-              </SelectContent>
-            </Select>
+            <MultiSelect
+              options={[
+                { value: 'pending', label: 'قيد الانتظار' },
+                { value: 'confirmed', label: 'مؤكد' },
+                { value: 'attended', label: 'حضر' },
+                { value: 'cancelled', label: 'ملغي' },
+              ]}
+              selected={statusFilter}
+              onChange={setStatusFilter}
+              placeholder="كل الحالات"
+              className="w-full sm:w-[160px] h-9 md:h-10"
+            />
             <MultiSelect
               options={SOURCE_OPTIONS}
               selected={sourceFilter}

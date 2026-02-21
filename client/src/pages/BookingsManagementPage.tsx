@@ -172,9 +172,9 @@ export default function BookingsManagementPage() {
   const [appointmentDate, setAppointmentDate] = useState("");
   const [selectedDoctor, setSelectedDoctor] = useState<string[]>([]);
   const [dateFilter, setDateFilter] = useState("all");
-  const [appointmentStatusFilter, setAppointmentStatusFilter] = useState("all");
+  const [appointmentStatusFilter, setAppointmentStatusFilter] = useState<string[]>([]);
   const [appointmentSourceFilter, setAppointmentSourceFilter] = useState<string[]>([]);
-  const [leadsStatusFilter, setLeadsStatusFilter] = useState("all");
+  const [leadsStatusFilter, setLeadsStatusFilter] = useState<string[]>([]);
   const [leadsSourceFilter, setLeadsSourceFilter] = useState<string[]>([]);
   const [offerLeadsPendingCount, setOfferLeadsPendingCount] = useState(0);
   const [campRegistrationsPendingCount, setCampRegistrationsPendingCount] = useState(0);
@@ -194,7 +194,6 @@ export default function BookingsManagementPage() {
     page: 1,
     limit: 10000, // Get all records within date range
     searchTerm: debouncedAppointmentSearch,
-    status: appointmentStatusFilter !== "all" ? appointmentStatusFilter : undefined,
     dateFrom: dateRange.from.toISOString(),
     dateTo: dateRange.to.toISOString(),
   });
@@ -249,7 +248,6 @@ export default function BookingsManagementPage() {
           page: 1,
           limit: 10000,
           searchTerm: debouncedAppointmentSearch,
-          status: appointmentStatusFilter !== "all" ? appointmentStatusFilter : undefined,
           dateFrom: dateRange.from.toISOString(),
           dateTo: dateRange.to.toISOString(),
         },
@@ -283,7 +281,6 @@ export default function BookingsManagementPage() {
             page: 1,
             limit: 10000,
             searchTerm: debouncedAppointmentSearch,
-            status: appointmentStatusFilter !== "all" ? appointmentStatusFilter : undefined,
             dateFrom: dateRange.from.toISOString(),
             dateTo: dateRange.to.toISOString(),
           },
@@ -338,9 +335,9 @@ export default function BookingsManagementPage() {
       });
     }
     
-    // Filter by status
-    if (leadsStatusFilter && leadsStatusFilter !== "all") {
-      filtered = filtered.filter((lead: any) => lead.status === leadsStatusFilter);
+    // Filter by status (multiple selection)
+    if (leadsStatusFilter && leadsStatusFilter.length > 0) {
+      filtered = filtered.filter((lead: any) => leadsStatusFilter.includes(lead.status));
     }
     
     // Filter by source (multiple selection)
@@ -365,6 +362,11 @@ export default function BookingsManagementPage() {
     // Filter by source (multiple selection)
     if (appointmentSourceFilter && appointmentSourceFilter.length > 0) {
       filtered = filtered.filter((appointment: any) => appointmentSourceFilter.includes(appointment.source));
+    }
+    
+    // Filter by status (multiple selection)
+    if (appointmentStatusFilter && appointmentStatusFilter.length > 0) {
+      filtered = filtered.filter((appointment: any) => appointmentStatusFilter.includes(appointment.status));
     }
     
     let sorted = filtered;
@@ -424,7 +426,7 @@ export default function BookingsManagementPage() {
     }
     
     return sorted;
-  }, [appointments, selectedDoctor, appointmentSourceFilter, appointmentSortField, appointmentSortDirection]);
+  }, [appointments, selectedDoctor, appointmentSourceFilter, appointmentStatusFilter, appointmentSortField, appointmentSortDirection]);
 
   const appointmentStats = useMemo(() => {
     if (!appointments) return { total: 0, pending: 0, confirmed: 0, cancelled: 0 };
@@ -630,14 +632,14 @@ export default function BookingsManagementPage() {
                   {/* Quick Filter Button */}
                   <div className="flex items-center gap-2">
                     <Button
-                      variant={leadsStatusFilter === "new" ? "default" : "outline"}
+                      variant={leadsStatusFilter.includes("new") && leadsStatusFilter.length === 1 ? "default" : "outline"}
                       size="sm"
-                      onClick={() => setLeadsStatusFilter(leadsStatusFilter === "new" ? "all" : "new")}
+                      onClick={() => setLeadsStatusFilter(leadsStatusFilter.includes("new") && leadsStatusFilter.length === 1 ? [] : ["new"])}
                       className="gap-2 h-9 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white border-0"
                     >
                       <TrendingUp className="h-4 w-4" />
-                      {leadsStatusFilter === "new" ? "عرض الكل" : "المعلقة فقط"}
-                      {leadsStatusFilter !== "new" && pendingCounts.leads > 0 && (
+                      {leadsStatusFilter.includes("new") && leadsStatusFilter.length === 1 ? "عرض الكل" : "المعلقة فقط"}
+                      {!(leadsStatusFilter.includes("new") && leadsStatusFilter.length === 1) && pendingCounts.leads > 0 && (
                         <Badge variant="secondary" className="mr-1 bg-white text-orange-600">
                           {pendingCounts.leads}
                         </Badge>
@@ -666,19 +668,19 @@ export default function BookingsManagementPage() {
                         <SelectItem value="month">هذا الشهر</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Select value={leadsStatusFilter} onValueChange={setLeadsStatusFilter}>
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder="كل الحالات" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">كل الحالات</SelectItem>
-                        <SelectItem value="new">جديد</SelectItem>
-                        <SelectItem value="contacted">تم التواصل</SelectItem>
-                        <SelectItem value="booked">تم الحجز</SelectItem>
-                        <SelectItem value="not_interested">غير مهتم</SelectItem>
-                        <SelectItem value="no_answer">لم يرد</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <MultiSelect
+                      options={[
+                        { value: 'new', label: 'جديد' },
+                        { value: 'contacted', label: 'تم التواصل' },
+                        { value: 'booked', label: 'تم الحجز' },
+                        { value: 'not_interested', label: 'غير مهتم' },
+                        { value: 'no_answer', label: 'لم يرد' },
+                      ]}
+                      selected={leadsStatusFilter}
+                      onChange={setLeadsStatusFilter}
+                      placeholder="كل الحالات"
+                      className="h-9"
+                    />
                     <MultiSelect
                       options={SOURCE_OPTIONS}
                       selected={leadsSourceFilter}
@@ -877,18 +879,6 @@ export default function BookingsManagementPage() {
               <CardContent className="space-y-4">
                 {/* Filters - Responsive Grid */}
                 <div className="flex flex-col gap-3">
-                  {/* Quick Filters */}
-                  <QuickFilters
-                    filters={[
-                      { label: 'الكل', value: 'all', count: appointmentStats.total },
-                      { label: 'قيد الانتظار', value: 'pending', count: appointmentStats.pending, color: 'text-yellow-600 hover:bg-yellow-50' },
-                      { label: 'مؤكد', value: 'confirmed', count: appointmentStats.confirmed, color: 'text-green-600 hover:bg-green-50' },
-                      { label: 'ملغي', value: 'cancelled', count: appointmentStats.cancelled, color: 'text-red-600 hover:bg-red-50' },
-                    ]}
-                    activeFilter={appointmentStatusFilter}
-                    onFilterChange={setAppointmentStatusFilter}
-                  />
-                  
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
                     <div className="relative sm:col-span-2 lg:col-span-1">
                       <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -917,18 +907,18 @@ export default function BookingsManagementPage() {
                         <SelectItem value="month">هذا الشهر</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Select value={appointmentStatusFilter} onValueChange={setAppointmentStatusFilter}>
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder="كل الحالات" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">كل الحالات</SelectItem>
-                        <SelectItem value="pending">قيد الانتظار</SelectItem>
-                        <SelectItem value="confirmed">مؤكد</SelectItem>
-                        <SelectItem value="cancelled">ملغي</SelectItem>
-                        <SelectItem value="completed">مكتمل</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <MultiSelect
+                      options={[
+                        { value: 'pending', label: 'قيد الانتظار' },
+                        { value: 'confirmed', label: 'مؤكد' },
+                        { value: 'cancelled', label: 'ملغي' },
+                        { value: 'completed', label: 'مكتمل' },
+                      ]}
+                      selected={appointmentStatusFilter}
+                      onChange={setAppointmentStatusFilter}
+                      placeholder="كل الحالات"
+                      className="h-9"
+                    />
                     <MultiSelect
                       options={SOURCE_OPTIONS}
                       selected={appointmentSourceFilter}
