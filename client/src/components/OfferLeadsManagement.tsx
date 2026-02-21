@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import ActionButtons from "@/components/ActionButtons";
 import EmptyState from "@/components/EmptyState";
 import TableSkeleton from "@/components/TableSkeleton";
+import QuickFilters from "@/components/QuickFilters";
+import InlineStatusEditor from "@/components/InlineStatusEditor";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -282,23 +284,17 @@ export default function OfferLeadsManagement({
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Quick Filter Button */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant={statusFilter === "new" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setStatusFilter(statusFilter === "new" ? "all" : "new")}
-              className="gap-2 h-9 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white border-0"
-            >
-              <TrendingUp className="h-4 w-4" />
-              {statusFilter === "new" ? "عرض الكل" : "المعلقة فقط"}
-              {statusFilter !== "new" && pendingCount > 0 && (
-                <Badge variant="secondary" className="mr-1 bg-white text-orange-600">
-                  {pendingCount}
-                </Badge>
-              )}
-            </Button>
-          </div>
+          {/* Quick Filters */}
+          <QuickFilters
+            filters={[
+              { label: 'الكل', value: 'all', count: stats?.total || 0 },
+              { label: 'جديد', value: 'new', count: stats?.new || 0, color: 'text-blue-600 hover:bg-blue-50' },
+              { label: 'تم التواصل', value: 'contacted', count: stats?.contacted || 0, color: 'text-yellow-600 hover:bg-yellow-50' },
+              { label: 'تم الحجز', value: 'booked', count: stats?.booked || 0, color: 'text-green-600 hover:bg-green-50' },
+            ]}
+            activeFilter={statusFilter}
+            onFilterChange={setStatusFilter}
+          />
           
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="relative flex-1">
@@ -517,9 +513,23 @@ export default function OfferLeadsManagement({
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge className={statusColors[lead.status as keyof typeof statusColors]}>
-                          {statusLabels[lead.status as keyof typeof statusLabels]}
-                        </Badge>
+                        <InlineStatusEditor
+                          currentStatus={lead.status}
+                          statusOptions={[
+                            { value: 'new', label: 'جديد', color: 'bg-blue-500' },
+                            { value: 'contacted', label: 'تم التواصل', color: 'bg-yellow-500' },
+                            { value: 'booked', label: 'تم الحجز', color: 'bg-green-500' },
+                            { value: 'not_interested', label: 'غير مهتم', color: 'bg-red-500' },
+                            { value: 'no_answer', label: 'لم يرد', color: 'bg-gray-500' },
+                          ]}
+                          onSave={async (newStatus) => {
+                            await updateStatusMutation.mutateAsync({
+                              id: lead.id,
+                              status: newStatus as any,
+                              notes: '',
+                            });
+                          }}
+                        />
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {new Date(lead.createdAt).toLocaleDateString("ar-SA")}
