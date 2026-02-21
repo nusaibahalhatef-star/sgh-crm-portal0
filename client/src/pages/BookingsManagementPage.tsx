@@ -8,6 +8,7 @@ import LeadCard from "@/components/LeadCard";
 import AppointmentCard from "@/components/AppointmentCard";
 import ActionButtons from "@/components/ActionButtons";
 import EmptyState from "@/components/EmptyState";
+import MultiSelect from "@/components/MultiSelect";
 import TableSkeleton from "@/components/TableSkeleton";
 import QuickFilters from "@/components/QuickFilters";
 import InlineStatusEditor from "@/components/InlineStatusEditor";
@@ -172,9 +173,9 @@ export default function BookingsManagementPage() {
   const [selectedDoctor, setSelectedDoctor] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
   const [appointmentStatusFilter, setAppointmentStatusFilter] = useState("all");
-  const [appointmentSourceFilter, setAppointmentSourceFilter] = useState("all");
+  const [appointmentSourceFilter, setAppointmentSourceFilter] = useState<string[]>([]);
   const [leadsStatusFilter, setLeadsStatusFilter] = useState("all");
-  const [leadsSourceFilter, setLeadsSourceFilter] = useState("all");
+  const [leadsSourceFilter, setLeadsSourceFilter] = useState<string[]>([]);
   const [offerLeadsPendingCount, setOfferLeadsPendingCount] = useState(0);
   const [campRegistrationsPendingCount, setCampRegistrationsPendingCount] = useState(0);
   
@@ -194,7 +195,6 @@ export default function BookingsManagementPage() {
     limit: 10000, // Get all records within date range
     searchTerm: debouncedAppointmentSearch,
     doctorId: selectedDoctor !== "all" ? parseInt(selectedDoctor) : undefined,
-    source: appointmentSourceFilter !== "all" ? appointmentSourceFilter : undefined,
     status: appointmentStatusFilter !== "all" ? appointmentStatusFilter : undefined,
     dateFrom: dateRange.from.toISOString(),
     dateTo: dateRange.to.toISOString(),
@@ -251,7 +251,6 @@ export default function BookingsManagementPage() {
           limit: 10000,
           searchTerm: debouncedAppointmentSearch,
           doctorId: selectedDoctor !== "all" ? parseInt(selectedDoctor) : undefined,
-          source: appointmentSourceFilter !== "all" ? appointmentSourceFilter : undefined,
           status: appointmentStatusFilter !== "all" ? appointmentStatusFilter : undefined,
           dateFrom: dateRange.from.toISOString(),
           dateTo: dateRange.to.toISOString(),
@@ -287,7 +286,6 @@ export default function BookingsManagementPage() {
             limit: 10000,
             searchTerm: debouncedAppointmentSearch,
             doctorId: selectedDoctor !== "all" ? parseInt(selectedDoctor) : undefined,
-            source: appointmentSourceFilter !== "all" ? appointmentSourceFilter : undefined,
             status: appointmentStatusFilter !== "all" ? appointmentStatusFilter : undefined,
             dateFrom: dateRange.from.toISOString(),
             dateTo: dateRange.to.toISOString(),
@@ -348,19 +346,26 @@ export default function BookingsManagementPage() {
       filtered = filtered.filter((lead: any) => lead.status === leadsStatusFilter);
     }
     
-    // Filter by source
-    if (leadsSourceFilter && leadsSourceFilter !== "all") {
-      filtered = filtered.filter((lead: any) => lead.source === leadsSourceFilter);
+    // Filter by source (multiple selection)
+    if (leadsSourceFilter && leadsSourceFilter.length > 0) {
+      filtered = filtered.filter((lead: any) => leadsSourceFilter.includes(lead.source));
     }
     
     return filtered;
   }, [unifiedLeads, searchTerm, leadsDateFilter, leadsStatusFilter, leadsSourceFilter]);
 
-  // Apply sorting to appointments
+  // Apply filtering and sorting to appointments
   const filteredAppointments = useMemo(() => {
     if (!appointments) return [];
     
-    let sorted = [...appointments];
+    let filtered = [...appointments];
+    
+    // Filter by source (multiple selection)
+    if (appointmentSourceFilter && appointmentSourceFilter.length > 0) {
+      filtered = filtered.filter((appointment: any) => appointmentSourceFilter.includes(appointment.source));
+    }
+    
+    let sorted = filtered;
     
     // Default sorting: newest first (by date desc)
     if (!appointmentSortField) {
@@ -417,7 +422,7 @@ export default function BookingsManagementPage() {
     }
     
     return sorted;
-  }, [appointments, appointmentSortField, appointmentSortDirection]);
+  }, [appointments, appointmentSourceFilter, appointmentSortField, appointmentSortDirection]);
 
   const appointmentStats = useMemo(() => {
     if (!appointments) return { total: 0, pending: 0, confirmed: 0, cancelled: 0 };
@@ -672,19 +677,13 @@ export default function BookingsManagementPage() {
                         <SelectItem value="no_answer">لم يرد</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Select value={leadsSourceFilter} onValueChange={setLeadsSourceFilter}>
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder="كل المصادر" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">كل المصادر</SelectItem>
-                        {SOURCE_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <MultiSelect
+                      options={SOURCE_OPTIONS}
+                      selected={leadsSourceFilter}
+                      onChange={setLeadsSourceFilter}
+                      placeholder="كل المصادر"
+                      className="h-9"
+                    />
                     <Button
                       variant="outline"
                       size="sm"
@@ -934,19 +933,13 @@ export default function BookingsManagementPage() {
                         <SelectItem value="completed">مكتمل</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Select value={appointmentSourceFilter} onValueChange={setAppointmentSourceFilter}>
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder="كل المصادر" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">كل المصادر</SelectItem>
-                        {SOURCE_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <MultiSelect
+                      options={SOURCE_OPTIONS}
+                      selected={appointmentSourceFilter}
+                      onChange={setAppointmentSourceFilter}
+                      placeholder="كل المصادر"
+                      className="h-9"
+                    />
                     <Button
                       variant="outline"
                       size="sm"

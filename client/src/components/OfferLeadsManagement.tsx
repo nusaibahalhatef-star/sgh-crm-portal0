@@ -4,6 +4,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
 import ActionButtons from "@/components/ActionButtons";
 import EmptyState from "@/components/EmptyState";
+import MultiSelect from "@/components/MultiSelect";
 import TableSkeleton from "@/components/TableSkeleton";
 import QuickFilters from "@/components/QuickFilters";
 import InlineStatusEditor from "@/components/InlineStatusEditor";
@@ -105,7 +106,7 @@ export default function OfferLeadsManagement({
   const [newStatus, setNewStatus] = useState("");
   const [dateFilter, setDateFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [sourceFilter, setSourceFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [bulkUpdateDialogOpen, setBulkUpdateDialogOpen] = useState(false);
   // Removed pagination - using date range instead
@@ -123,7 +124,6 @@ export default function OfferLeadsManagement({
     limit: 10000, // Get all records within date range
     searchTerm: debouncedSearch,
     offerId: selectedOffer !== "all" ? parseInt(selectedOffer) : undefined,
-    source: sourceFilter !== "all" ? sourceFilter : undefined,
     status: statusFilter !== "all" ? statusFilter : undefined,
     dateFrom: dateRange.from.toISOString(),
     dateTo: dateRange.to.toISOString(),
@@ -158,7 +158,6 @@ export default function OfferLeadsManagement({
           limit: 10000,
           searchTerm: debouncedSearch,
           offerId: selectedOffer !== "all" ? parseInt(selectedOffer) : undefined,
-          source: sourceFilter !== "all" ? sourceFilter : undefined,
           status: statusFilter !== "all" ? statusFilter : undefined,
           dateFrom: dateRange.from.toISOString(),
           dateTo: dateRange.to.toISOString(),
@@ -192,7 +191,6 @@ export default function OfferLeadsManagement({
             limit: 10000,
             searchTerm: debouncedSearch,
             offerId: selectedOffer !== "all" ? parseInt(selectedOffer) : undefined,
-            source: sourceFilter !== "all" ? sourceFilter : undefined,
             status: statusFilter !== "all" ? statusFilter : undefined,
             dateFrom: dateRange.from.toISOString(),
             dateTo: dateRange.to.toISOString(),
@@ -229,11 +227,18 @@ export default function OfferLeadsManagement({
     return unique;
   }, [offerLeads]);
 
-  // Apply sorting to offer leads
+  // Apply filtering and sorting to offer leads
   const filteredLeads = useMemo(() => {
     if (!offerLeads) return [];
     
-    let sorted = [...offerLeads];
+    let filtered = [...offerLeads];
+    
+    // Filter by source (multiple selection)
+    if (sourceFilter && sourceFilter.length > 0) {
+      filtered = filtered.filter((lead: any) => sourceFilter.includes(lead.source));
+    }
+    
+    let sorted = filtered;
     
     if (sortField) {
       sorted.sort((a: any, b: any) => {
@@ -283,7 +288,7 @@ export default function OfferLeadsManagement({
     }
     
     return sorted;
-  }, [offerLeads, sortField, sortDirection]);
+  }, [offerLeads, sourceFilter, sortField, sortDirection]);
 
   const handleStatusUpdate = () => {
     if (!selectedLead || !newStatus) return;
@@ -459,19 +464,13 @@ export default function OfferLeadsManagement({
                 <SelectItem value="no_answer">لم يرد</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={sourceFilter} onValueChange={setSourceFilter}>
-              <SelectTrigger className="w-full sm:w-[180px] h-9 md:h-10">
-                <SelectValue placeholder="كل المصادر" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">كل المصادر</SelectItem>
-                {SOURCE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <MultiSelect
+              options={SOURCE_OPTIONS}
+              selected={sourceFilter}
+              onChange={setSourceFilter}
+              placeholder="كل المصادر"
+              className="w-full sm:w-[180px] h-9 md:h-10"
+            />
           </div>
 
           {/* Mobile Cards View */}

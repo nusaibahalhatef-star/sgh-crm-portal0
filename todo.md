@@ -2531,3 +2531,21 @@
 - [x] إضافة sorting logic لجدول تسجيلات المخيمات
 - [x] إضافة أيقونات الترتيب (↑↓) في جميع الأعمدة
 - [x] hover effect على الأعمدة القابلة للترتيب
+
+### تحسين فلتر المصادر - Multi-Select 🔄 جاري العمل
+- [ ] إنشاء MultiSelect component قابل لإعادة الاستخدام
+- [ ] تطبيق Multi-Select في جدول مواعيد الأطباء (Leads + Appointments)
+- [ ] تطبيق Multi-Select في جدول حجوزات العروض
+- [ ] تطبيق Multi-Select في جدول تسجيلات المخيمات
+- [ ] تحديث filtering logic لدعم multiple sources
+- [ ] إضافة عرض المصادر المحددة كـ badges
+- [ ] إضافة زر "مسح الكل" لإزالة جميع الفلاتر
+
+### تحسين فلتر المصادر - Multi-Select ✅ مكتمل
+- [x] إنشاء MultiSelect component مع Popover و Checkbox
+- [x] تطبيق Multi-Select في جدول مواعيد الأطباء (Leads و Appointments)
+- [x] تطبيق Multi-Select في جدول حجوزات العروض
+- [x] تطبيق Multi-Select في جدول تسجيلات المخيمات
+- [x] تحديث filtering logic لدعم مصادر متعددة
+- [x] إزالة source من server-side queries (استخدام client-side filtering)
+- [x] عرض عدد المصادر المختارة في الزر

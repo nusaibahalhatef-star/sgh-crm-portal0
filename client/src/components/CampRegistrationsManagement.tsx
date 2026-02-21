@@ -4,6 +4,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
 import ActionButtons from "@/components/ActionButtons";
 import EmptyState from "@/components/EmptyState";
+import MultiSelect from "@/components/MultiSelect";
 import TableSkeleton from "@/components/TableSkeleton";
 import QuickFilters from "@/components/QuickFilters";
 import InlineStatusEditor from "@/components/InlineStatusEditor";
@@ -107,7 +108,7 @@ export default function CampRegistrationsManagement({
   const [attendanceDate, setAttendanceDate] = useState("");
   const [dateFilter, setDateFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [sourceFilter, setSourceFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [bulkUpdateDialogOpen, setBulkUpdateDialogOpen] = useState(false);
   // Removed pagination - using date range instead
@@ -125,7 +126,6 @@ export default function CampRegistrationsManagement({
     limit: 10000, // Get all records within date range
     searchTerm: debouncedSearch,
     campId: selectedCamp !== "all" ? parseInt(selectedCamp) : undefined,
-    source: sourceFilter !== "all" ? sourceFilter : undefined,
     status: statusFilter !== "all" ? statusFilter : undefined,
     dateFrom: dateRange.from.toISOString(),
     dateTo: dateRange.to.toISOString(),
@@ -172,7 +172,6 @@ export default function CampRegistrationsManagement({
           limit: 10000,
           searchTerm: debouncedSearch,
           campId: selectedCamp !== "all" ? parseInt(selectedCamp) : undefined,
-          source: sourceFilter !== "all" ? sourceFilter : undefined,
           status: statusFilter !== "all" ? statusFilter : undefined,
           dateFrom: dateRange.from.toISOString(),
           dateTo: dateRange.to.toISOString(),
@@ -206,7 +205,6 @@ export default function CampRegistrationsManagement({
             limit: 10000,
             searchTerm: debouncedSearch,
             campId: selectedCamp !== "all" ? parseInt(selectedCamp) : undefined,
-            source: sourceFilter !== "all" ? sourceFilter : undefined,
             status: statusFilter !== "all" ? statusFilter : undefined,
             dateFrom: dateRange.from.toISOString(),
             dateTo: dateRange.to.toISOString(),
@@ -224,11 +222,18 @@ export default function CampRegistrationsManagement({
   // Get all camps for filter from database
   const { data: allCamps } = trpc.camps.getAll.useQuery();
 
-  // Apply sorting to camp registrations
+  // Apply filtering and sorting to camp registrations
   const filteredRegistrations = useMemo(() => {
     if (!registrations) return [];
     
-    let sorted = [...registrations];
+    let filtered = [...registrations];
+    
+    // Filter by source (multiple selection)
+    if (sourceFilter && sourceFilter.length > 0) {
+      filtered = filtered.filter((registration: any) => sourceFilter.includes(registration.source));
+    }
+    
+    let sorted = filtered;
     
     if (sortField) {
       sorted.sort((a: any, b: any) => {
@@ -282,7 +287,7 @@ export default function CampRegistrationsManagement({
     }
     
     return sorted;
-  }, [registrations, sortField, sortDirection]);
+  }, [registrations, sourceFilter, sortField, sortDirection]);
 
   const handleSelectAll = () => {
     if (selectedIds.length === filteredRegistrations.length) {
@@ -460,19 +465,13 @@ export default function CampRegistrationsManagement({
                 <SelectItem value="cancelled">ملغي</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={sourceFilter} onValueChange={setSourceFilter}>
-              <SelectTrigger className="w-full sm:w-[180px] h-9 md:h-10">
-                <SelectValue placeholder="كل المصادر" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">كل المصادر</SelectItem>
-                {SOURCE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <MultiSelect
+              options={SOURCE_OPTIONS}
+              selected={sourceFilter}
+              onChange={setSourceFilter}
+              placeholder="كل المصادر"
+              className="w-full sm:w-[180px] h-9 md:h-10"
+            />
           </div>
 
           {/* Mobile Cards View */}
