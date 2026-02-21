@@ -310,8 +310,9 @@ export default function CampRegistrationsManagement({
       // تحضير نطاق التاريخ
       const dateRangeStr = `${dateRange.from.toLocaleDateString('ar-SA')} - ${dateRange.to.toLocaleDateString('ar-SA')}`;
 
-      // تحضير تعريفات الأعمدة
+      // تحضير تعريفات جميع الأعمدة الـ 13
       const columnDefinitions = [
+        { key: 'checkbox', label: 'تحديد' },
         { key: 'receiptNumber', label: 'رقم السند' },
         { key: 'name', label: 'الاسم الكامل' },
         { key: 'phone', label: 'رقم الهاتف' },
@@ -321,10 +322,14 @@ export default function CampRegistrationsManagement({
         { key: 'source', label: 'المصدر' },
         { key: 'status', label: 'الحالة' },
         { key: 'date', label: 'تاريخ التسجيل' },
+        { key: 'comments', label: 'التعليقات' },
+        { key: 'tasks', label: 'المهام' },
+        { key: 'actions', label: 'الإجراءات' },
       ];
 
-      // تحويل البيانات للطباعة
+      // تحويل البيانات للطباعة مع جميع الأعمدة
       const dataToExport = filteredRegistrations.map((reg: any) => ({
+        checkbox: '-',
         receiptNumber: reg.receiptNumber || '-',
         name: reg.fullName,
         phone: reg.phone,
@@ -334,6 +339,9 @@ export default function CampRegistrationsManagement({
         source: SOURCE_LABELS[reg.source] || reg.source || '-',
         status: statusLabels[reg.status as keyof typeof statusLabels] || reg.status,
         date: new Date(reg.createdAt).toLocaleDateString('ar-SA'),
+        comments: reg.commentCount > 0 ? `${reg.commentCount} تعليق` : '-',
+        tasks: reg.taskCount > 0 ? `${reg.taskCount} مهمة` : '-',
+        actions: '-',
       }));
 
       // تحضير metadata

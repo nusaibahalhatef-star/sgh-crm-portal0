@@ -428,8 +428,11 @@ export function printTable(options: ExportOptions): void {
         // طباعة تلقائية عند تحميل الصفحة
         window.onload = function() {
           window.print();
-          // إغلاق النافذة بعد الطباعة (اختياري)
-          // window.onafterprint = function() { window.close(); };
+        };
+        
+        // إغلاق النافذة تلقائياً بعد الطباعة أو الإلغاء
+        window.onafterprint = function() {
+          window.close();
         };
       </script>
     </body>

@@ -636,7 +636,7 @@ export default function BookingsManagementPage() {
       // تحضير نطاق التاريخ
       const dateRangeStr = `${dateRange.from.toLocaleDateString('ar-SA')} - ${dateRange.to.toLocaleDateString('ar-SA')}`;
 
-      // تحضير تعريفات الأعمدة
+      // تحضير تعريفات جميع الأعمدة الـ 11
       const columnDefinitions = [
         { key: 'date', label: 'التاريخ' },
         { key: 'name', label: 'اسم المريض' },
@@ -646,9 +646,12 @@ export default function BookingsManagementPage() {
         { key: 'source', label: 'المصدر' },
         { key: 'receiptNumber', label: 'رقم السند' },
         { key: 'status', label: 'الحالة' },
+        { key: 'comments', label: 'التعليقات' },
+        { key: 'tasks', label: 'المهام' },
+        { key: 'actions', label: 'الإجراءات' },
       ];
 
-      // تحويل البيانات للطباعة
+      // تحويل البيانات للطباعة مع جميع الأعمدة
       const dataToExport = filteredAppointments.map((appointment: any) => ({
         date: new Date(appointment.appointmentDate).toLocaleDateString('ar-SA'),
         name: appointment.name,
@@ -658,6 +661,9 @@ export default function BookingsManagementPage() {
         source: SOURCE_LABELS[appointment.source] || appointment.source || '-',
         receiptNumber: appointment.receiptNumber || '-',
         status: statusLabels[appointment.status as keyof typeof statusLabels] || appointment.status,
+        comments: appointment.commentCount > 0 ? `${appointment.commentCount} تعليق` : '-',
+        tasks: appointment.taskCount > 0 ? `${appointment.taskCount} مهمة` : '-',
+        actions: '-',
       }));
 
       // تحضير metadata
