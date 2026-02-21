@@ -114,7 +114,7 @@ export default function CampRegistrationsManagement({
   const [campRegistrationsSearchTerm, setCampRegistrationsSearchTerm] = useState("");
   
   // Sorting state
-  const [sortField, setSortField] = useState<'date' | 'name' | 'status' | null>(null);
+  const [sortField, setSortField] = useState<'date' | 'name' | 'phone' | 'email' | 'age' | 'camp' | 'source' | 'receiptNumber' | 'status' | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   
   // Debounced search for better performance
@@ -242,6 +242,30 @@ export default function CampRegistrationsManagement({
           case 'name':
             aValue = a.fullName.toLowerCase();
             bValue = b.fullName.toLowerCase();
+            break;
+          case 'phone':
+            aValue = (a.phone || '').toLowerCase();
+            bValue = (b.phone || '').toLowerCase();
+            break;
+          case 'email':
+            aValue = (a.email || '').toLowerCase();
+            bValue = (b.email || '').toLowerCase();
+            break;
+          case 'age':
+            aValue = a.age || 0;
+            bValue = b.age || 0;
+            break;
+          case 'camp':
+            aValue = (a.campName || '').toLowerCase();
+            bValue = (b.campName || '').toLowerCase();
+            break;
+          case 'source':
+            aValue = (a.source || '').toLowerCase();
+            bValue = (b.source || '').toLowerCase();
+            break;
+          case 'receiptNumber':
+            aValue = (a.receiptNumber || '').toLowerCase();
+            bValue = (b.receiptNumber || '').toLowerCase();
             break;
           case 'status':
             aValue = a.status;
@@ -541,7 +565,24 @@ export default function CampRegistrationsManagement({
                       onCheckedChange={handleSelectAll}
                     />
                   </TableHead>
-                  <TableHead className="text-right">رقم السند</TableHead>
+                  <TableHead 
+                    className="text-right cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => {
+                      if (sortField === 'receiptNumber') {
+                        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                      } else {
+                        setSortField('receiptNumber');
+                        setSortDirection('asc');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-1 justify-end">
+                      رقم السند
+                      {sortField === 'receiptNumber' && (
+                        <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </TableHead>
                   <TableHead 
                     className="text-right cursor-pointer hover:bg-muted/50 select-none"
                     onClick={() => {
@@ -560,11 +601,96 @@ export default function CampRegistrationsManagement({
                       )}
                     </div>
                   </TableHead>
-                  <TableHead className="text-right">رقم الهاتف</TableHead>
-                  <TableHead className="text-right">البريد الإلكتروني</TableHead>
-                  <TableHead className="text-right">العمر</TableHead>
-                  <TableHead className="text-right">المخيم</TableHead>
-                  <TableHead className="text-right">المصدر</TableHead>
+                  <TableHead 
+                    className="text-right cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => {
+                      if (sortField === 'phone') {
+                        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                      } else {
+                        setSortField('phone');
+                        setSortDirection('asc');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-1 justify-end">
+                      رقم الهاتف
+                      {sortField === 'phone' && (
+                        <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="text-right cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => {
+                      if (sortField === 'email') {
+                        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                      } else {
+                        setSortField('email');
+                        setSortDirection('asc');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-1 justify-end">
+                      البريد الإلكتروني
+                      {sortField === 'email' && (
+                        <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="text-right cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => {
+                      if (sortField === 'age') {
+                        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                      } else {
+                        setSortField('age');
+                        setSortDirection('asc');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-1 justify-end">
+                      العمر
+                      {sortField === 'age' && (
+                        <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="text-right cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => {
+                      if (sortField === 'camp') {
+                        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                      } else {
+                        setSortField('camp');
+                        setSortDirection('asc');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-1 justify-end">
+                      المخيم
+                      {sortField === 'camp' && (
+                        <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="text-right cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => {
+                      if (sortField === 'source') {
+                        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                      } else {
+                        setSortField('source');
+                        setSortDirection('asc');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-1 justify-end">
+                      المصدر
+                      {sortField === 'source' && (
+                        <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </TableHead>
                   <TableHead 
                     className="text-right cursor-pointer hover:bg-muted/50 select-none"
                     onClick={() => {
