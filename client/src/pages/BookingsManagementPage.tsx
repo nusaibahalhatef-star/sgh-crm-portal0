@@ -67,6 +67,7 @@ import { exportToExcel, formatLeadsForExport, formatAppointmentsForExport } from
 import { printReceipt } from "@/components/PrintReceipt";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const statusLabels = {
   new: "جديد",
@@ -168,6 +169,10 @@ export default function BookingsManagementPage() {
   // Sorting state
   const [appointmentSortField, setAppointmentSortField] = useState<'date' | 'name' | 'status' | null>(null);
   const [appointmentSortDirection, setAppointmentSortDirection] = useState<'asc' | 'desc'>('asc');
+  
+  // Debounced search terms for better performance
+  const debouncedAppointmentSearch = useDebounce(appointmentSearchTerm, 500);
+  const debouncedLeadsSearch = useDebounce(searchTerm, 500);
 
   // Data queries
   const { data: unifiedLeads, isLoading: leadsLoading, refetch: refetchLeads } = trpc.leads.list.useQuery();
@@ -175,7 +180,7 @@ export default function BookingsManagementPage() {
   const { data: appointmentsData, isLoading: appointmentsLoading, refetch: refetchAppointments } = trpc.appointments.listPaginated.useQuery({
     page: 1,
     limit: 10000, // Get all records within date range
-    searchTerm: appointmentSearchTerm,
+    searchTerm: debouncedAppointmentSearch,
     doctorId: selectedDoctor !== "all" ? parseInt(selectedDoctor) : undefined,
     source: appointmentSourceFilter !== "all" ? appointmentSourceFilter : undefined,
     status: appointmentStatusFilter !== "all" ? appointmentStatusFilter : undefined,
@@ -217,17 +222,72 @@ export default function BookingsManagementPage() {
     },
   });
 
+  const utils = trpc.useUtils();
+  
   const updateAppointmentStatusMutation = trpc.appointments.updateStatus.useMutation({
+    onMutate: async (variables) => {
+      // Cancel outgoing refetches to avoid overwriting optimistic update
+      await utils.appointments.listPaginated.cancel();
+      
+      // Snapshot previous value
+      const previousData = utils.appointments.listPaginated.getData();
+      
+      // Optimistically update the cache
+      utils.appointments.listPaginated.setData(
+        {
+          page: 1,
+          limit: 10000,
+          searchTerm: debouncedAppointmentSearch,
+          doctorId: selectedDoctor !== "all" ? parseInt(selectedDoctor) : undefined,
+          source: appointmentSourceFilter !== "all" ? appointmentSourceFilter : undefined,
+          status: appointmentStatusFilter !== "all" ? appointmentStatusFilter : undefined,
+          dateFrom: dateRange.from.toISOString(),
+          dateTo: dateRange.to.toISOString(),
+        },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map((apt: any) =>
+              apt.id === variables.id
+                ? { ...apt, status: variables.status }
+                : apt
+            ),
+          };
+        }
+      );
+      
+      return { previousData };
+    },
     onSuccess: () => {
       toast.success("تم تحديث حالة الموعد بنجاح");
-      refetchAppointments();
       setAppointmentStatusDialogOpen(false);
       setSelectedAppointment(null);
       setNewAppointmentStatus("");
       setAppointmentStatusNotes("");
     },
-    onError: () => {
+    onError: (error, variables, context) => {
+      // Rollback on error
+      if (context?.previousData) {
+        utils.appointments.listPaginated.setData(
+          {
+            page: 1,
+            limit: 10000,
+            searchTerm: debouncedAppointmentSearch,
+            doctorId: selectedDoctor !== "all" ? parseInt(selectedDoctor) : undefined,
+            source: appointmentSourceFilter !== "all" ? appointmentSourceFilter : undefined,
+            status: appointmentStatusFilter !== "all" ? appointmentStatusFilter : undefined,
+            dateFrom: dateRange.from.toISOString(),
+            dateTo: dateRange.to.toISOString(),
+          },
+          context.previousData
+        );
+      }
       toast.error("حدث خطأ أثناء تحديث الحالة");
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure sync
+      utils.appointments.listPaginated.invalidate();
     },
   });
 
