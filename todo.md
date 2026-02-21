@@ -2380,11 +2380,11 @@
 - [ ] 13. Code Splitting - مؤجل (غير ضروري حالياً)
 - [ ] 14. Virtual Scrolling - مؤجل (غير ضروري حالياً)
 
-### المرحلة 4: الميزات المتقدمة 🔄 جاري العمل
-- [x] 15. نظام التعليقات - ✅ مكتمل (CommentsSection component)
-- [ ] 16. نظام المهام والمتابعة - قيد الانتظار
-- [ ] 17. نظام الإشعارات الفورية - مؤجل
-- [ ] 18. إضافة Keyboard Shortcuts - مؤجل
+### المرحلة 4: الميزات المتقدمة ✅ مكتملة
+- [x] 15. نظام التعليقات - ✅ مكتمل (CommentsSection + CommentCount)
+- [x] 16. نظام المهام والمتابعة - ✅ مكتمل (TasksSection + تعيين للمستخدمين)
+- [ ] 17. نظام الإشعارات الفورية - مؤجل (متقدم)
+- [ ] 18. إضافة Keyboard Shortcuts - مؤجل (اختياري)
 
 ### المرحلة 5: تحسينات النماذج والموبايل
 - [ ] 19. تحسينات مخصصة لتجربة الموبايل (Mobile UX)
@@ -2407,3 +2407,26 @@
 - [x] تحديث tRPC procedures لدعم تعيين المهام - users.getActiveUsers
 - [x] إضافة dropdown لاختيار المستخدم في TasksSection
 - [x] عرض المستخدم المعين في قائمة المهام - Badge "معين لـ"
+
+
+### المرحلة 5 - التفاصيل 🔄 جاري العمل
+
+#### تحسينات تجربة الموبايل (Mobile UX)
+- [x] تحسين navigation للموبايل (hamburger menu) - MobileNav component
+- [x] تحسين card views في الجداول للشاشات الصغيرة - موجود مسبقاً
+- [ ] إضافة bottom navigation للموبايل - مؤجل (اختياري)
+- [x] تحسين dialogs للشاشات الصغيرة (full screen على الموبايل) - ResponsiveDialog
+- [x] تحسين touch targets (أزرار أكبر للموبايل) - .touch-target utility class
+
+#### تحسينات النماذج (Forms)
+- [ ] إضافة validation واضحة للنماذج
+- [ ] تحسين error messages
+- [ ] إضافة auto-save للنماذج الطويلة
+- [ ] تحسين date/time pickers
+- [ ] إضافة progress indicators للنماذج متعددة الخطوات
+
+#### ميزات إضافية مقترحة
+- [ ] تصدير البيانات إلى Excel/CSV
+- [ ] Dashboard Analytics مع رسوم بيانية
+- [ ] نظام البحث المتقدم (Advanced Search)
+- [ ] فلترة المهام حسب المستخدم المعين
