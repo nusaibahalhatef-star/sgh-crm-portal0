@@ -2566,3 +2566,12 @@
 - [x] إزالة status من server-side queries واستخدام client-side filtering
 - [x] إزالة QuickFilters للحالات (استخدام MultiSelect فقط)
 - [x] تحديث زر "المعلقة فقط" ليعمل مع Multi-Select
+
+### إضافة ميزة اختيار الأعمدة المعروضة (Column Visibility) 🔄 جاري العمل
+- [ ] إنشاء ColumnVisibility component مع Popover و Checkbox
+- [ ] حفظ تفضيلات الأعمدة في localStorage
+- [ ] تطبيق في جدول مواعيد الأطباء (Leads & Appointments)
+- [ ] تطبيق في جدول حجوزات العروض
+- [ ] تطبيق في جدول تسجيلات المخيمات
+- [ ] إضافة زر "إعادة تعيين" لاستعادة الأعمدة الافتراضية
+- [ ] إخفاء/إظهار الأعمدة ديناميكياً في headers و rows
