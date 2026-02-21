@@ -378,8 +378,8 @@ export default function BookingsManagementPage() {
             bValue = new Date(b.appointmentDate).getTime();
             break;
           case 'name':
-            aValue = a.patientName.toLowerCase();
-            bValue = b.patientName.toLowerCase();
+            aValue = (a.fullName || a.patientName || '').toLowerCase();
+            bValue = (b.fullName || b.patientName || '').toLowerCase();
             break;
           case 'status':
             aValue = a.status;
@@ -1053,7 +1053,7 @@ export default function BookingsManagementPage() {
                               {new Date(appointment.appointmentDate).toLocaleDateString("ar-EG")}
                             </TableCell>
                             {/* اسم المريض */}
-                            <TableCell className="font-medium">{appointment.patientName}</TableCell>
+                            <TableCell className="font-medium">{appointment.fullName || appointment.patientName || '-'}</TableCell>
                             {/* الهاتف */}
                             <TableCell>
                               <div className="flex items-center gap-2">
@@ -1061,7 +1061,7 @@ export default function BookingsManagementPage() {
                                 <ActionButtons
                                   phoneNumber={appointment.phone}
                                   showWhatsApp={true}
-                                  whatsAppMessage={`مرحباً ${appointment.patientName}، هذه رسالة من المستشفى السعودي الألماني - صنعاء بخصوص موعدك مع ${appointment.doctorName}.`}
+                                  whatsAppMessage={`مرحباً ${appointment.fullName || appointment.patientName}، هذه رسالة من المستشفى السعودي الألماني - صنعاء بخصوص موعدك مع ${appointment.doctorName}.`}
                                   size="sm"
                                   variant="ghost"
                                 />
