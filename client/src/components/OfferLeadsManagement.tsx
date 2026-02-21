@@ -307,8 +307,9 @@ export default function OfferLeadsManagement({
       // تحضير نطاق التاريخ
       const dateRangeStr = `${dateRange.from.toLocaleDateString('ar-SA')} - ${dateRange.to.toLocaleDateString('ar-SA')}`;
 
-      // تحضير تعريفات الأعمدة
+      // تحضير تعريفات جميع الأعمدة الـ 12
       const columnDefinitions = [
+        { key: 'checkbox', label: 'تحديد' },
         { key: 'receiptNumber', label: 'رقم السند' },
         { key: 'name', label: 'الاسم الكامل' },
         { key: 'phone', label: 'رقم الهاتف' },
@@ -317,10 +318,14 @@ export default function OfferLeadsManagement({
         { key: 'source', label: 'المصدر' },
         { key: 'status', label: 'الحالة' },
         { key: 'date', label: 'تاريخ التسجيل' },
+        { key: 'comments', label: 'التعليقات' },
+        { key: 'tasks', label: 'المهام' },
+        { key: 'actions', label: 'الإجراءات' },
       ];
 
-      // تحويل البيانات للطباعة
+      // تحويل البيانات للطباعة مع جميع الأعمدة
       const dataToExport = filteredLeads.map((lead: any) => ({
+        checkbox: '-',
         receiptNumber: lead.receiptNumber || '-',
         name: lead.fullName,
         phone: lead.phone,
@@ -329,6 +334,9 @@ export default function OfferLeadsManagement({
         source: SOURCE_LABELS[lead.source] || lead.source || '-',
         status: statusLabels[lead.status as keyof typeof statusLabels] || lead.status,
         date: new Date(lead.createdAt).toLocaleDateString('ar-SA'),
+        comments: lead.commentCount > 0 ? `${lead.commentCount} تعليق` : '-',
+        tasks: lead.taskCount > 0 ? `${lead.taskCount} مهمة` : '-',
+        actions: '-',
       }));
 
       // تحضير metadata
