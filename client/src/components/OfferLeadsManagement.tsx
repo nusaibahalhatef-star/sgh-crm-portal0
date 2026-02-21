@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
 import ActionButtons from "@/components/ActionButtons";
 import EmptyState from "@/components/EmptyState";
@@ -108,11 +109,14 @@ export default function OfferLeadsManagement({
   // Sorting state
   const [sortField, setSortField] = useState<'date' | 'name' | 'status' | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  
+  // Debounced search for better performance
+  const debouncedSearch = useDebounce(offerLeadsSearchTerm, 500);
 
   const { data: offerLeadsData, isLoading, refetch } = trpc.offerLeads.listPaginated.useQuery({
     page: 1,
     limit: 10000, // Get all records within date range
-    searchTerm: offerLeadsSearchTerm,
+    searchTerm: debouncedSearch,
     offerId: selectedOffer !== "all" ? parseInt(selectedOffer) : undefined,
     source: sourceFilter !== "all" ? sourceFilter : undefined,
     status: statusFilter !== "all" ? statusFilter : undefined,
@@ -136,16 +140,65 @@ export default function OfferLeadsManagement({
     }
   }, [pendingCount, onPendingCountChange]);
 
+  const utils = trpc.useUtils();
+  
   const updateStatusMutation = trpc.offerLeads.updateStatus.useMutation({
+    onMutate: async (variables) => {
+      await utils.offerLeads.listPaginated.cancel();
+      const previousData = utils.offerLeads.listPaginated.getData();
+      
+      utils.offerLeads.listPaginated.setData(
+        {
+          page: 1,
+          limit: 10000,
+          searchTerm: debouncedSearch,
+          offerId: selectedOffer !== "all" ? parseInt(selectedOffer) : undefined,
+          source: sourceFilter !== "all" ? sourceFilter : undefined,
+          status: statusFilter !== "all" ? statusFilter : undefined,
+          dateFrom: dateRange.from.toISOString(),
+          dateTo: dateRange.to.toISOString(),
+        },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map((lead: any) =>
+              lead.id === variables.id
+                ? { ...lead, status: variables.status }
+                : lead
+            ),
+          };
+        }
+      );
+      
+      return { previousData };
+    },
     onSuccess: () => {
       toast.success("تم تحديث حالة الحجز بنجاح");
-      refetch();
       setStatusDialogOpen(false);
       setSelectedLead(null);
       setNewStatus("");
     },
-    onError: () => {
+    onError: (error, variables, context) => {
+      if (context?.previousData) {
+        utils.offerLeads.listPaginated.setData(
+          {
+            page: 1,
+            limit: 10000,
+            searchTerm: debouncedSearch,
+            offerId: selectedOffer !== "all" ? parseInt(selectedOffer) : undefined,
+            source: sourceFilter !== "all" ? sourceFilter : undefined,
+            status: statusFilter !== "all" ? statusFilter : undefined,
+            dateFrom: dateRange.from.toISOString(),
+            dateTo: dateRange.to.toISOString(),
+          },
+          context.previousData
+        );
+      }
       toast.error("حدث خطأ أثناء تحديث الحالة");
+    },
+    onSettled: () => {
+      utils.offerLeads.listPaginated.invalidate();
     },
   });
 

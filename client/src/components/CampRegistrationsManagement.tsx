@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
 import ActionButtons from "@/components/ActionButtons";
 import EmptyState from "@/components/EmptyState";
@@ -110,11 +111,14 @@ export default function CampRegistrationsManagement({
   // Sorting state
   const [sortField, setSortField] = useState<'date' | 'name' | 'status' | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  
+  // Debounced search for better performance
+  const debouncedSearch = useDebounce(campRegistrationsSearchTerm, 500);
 
   const { data: registrationsData, isLoading, refetch } = trpc.campRegistrations.listPaginated.useQuery({
     page: 1,
     limit: 10000, // Get all records within date range
-    searchTerm: campRegistrationsSearchTerm,
+    searchTerm: debouncedSearch,
     campId: selectedCamp !== "all" ? parseInt(selectedCamp) : undefined,
     source: sourceFilter !== "all" ? sourceFilter : undefined,
     status: statusFilter !== "all" ? statusFilter : undefined,
@@ -150,16 +154,65 @@ export default function CampRegistrationsManagement({
     },
   });
 
+  const utils = trpc.useUtils();
+  
   const updateStatusMutation = trpc.campRegistrations.updateStatus.useMutation({
+    onMutate: async (variables) => {
+      await utils.campRegistrations.listPaginated.cancel();
+      const previousData = utils.campRegistrations.listPaginated.getData();
+      
+      utils.campRegistrations.listPaginated.setData(
+        {
+          page: 1,
+          limit: 10000,
+          searchTerm: debouncedSearch,
+          campId: selectedCamp !== "all" ? parseInt(selectedCamp) : undefined,
+          source: sourceFilter !== "all" ? sourceFilter : undefined,
+          status: statusFilter !== "all" ? statusFilter : undefined,
+          dateFrom: dateRange.from.toISOString(),
+          dateTo: dateRange.to.toISOString(),
+        },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map((reg: any) =>
+              reg.id === variables.id
+                ? { ...reg, status: variables.status }
+                : reg
+            ),
+          };
+        }
+      );
+      
+      return { previousData };
+    },
     onSuccess: () => {
       toast.success("تم تحديث حالة التسجيل بنجاح");
-      refetch();
       setStatusDialogOpen(false);
       setSelectedRegistration(null);
       setNewStatus("");
     },
-    onError: () => {
+    onError: (error, variables, context) => {
+      if (context?.previousData) {
+        utils.campRegistrations.listPaginated.setData(
+          {
+            page: 1,
+            limit: 10000,
+            searchTerm: debouncedSearch,
+            campId: selectedCamp !== "all" ? parseInt(selectedCamp) : undefined,
+            source: sourceFilter !== "all" ? sourceFilter : undefined,
+            status: statusFilter !== "all" ? statusFilter : undefined,
+            dateFrom: dateRange.from.toISOString(),
+            dateTo: dateRange.to.toISOString(),
+          },
+          context.previousData
+        );
+      }
       toast.error("حدث خطأ أثناء تحديث الحالة");
+    },
+    onSettled: () => {
+      utils.campRegistrations.listPaginated.invalidate();
     },
   });
 
