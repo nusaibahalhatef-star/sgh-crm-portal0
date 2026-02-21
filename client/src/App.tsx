@@ -39,6 +39,7 @@ const CampStatsPage = lazy(() => import("./pages/CampStatsPage"));
 const BookingsManagementPage = lazy(() => import("./pages/BookingsManagementPage"));
 import PWAManager from "./components/PWAManager";
 import OfflineIndicator from "./components/OfflineIndicator";
+import MobileNav from "./components/MobileNav";
 const DigitalMarketingTeamPage = lazy(() => import("./pages/DigitalMarketingTeamPage"));
 const MediaTeamPage = lazy(() => import("./pages/MediaTeamPage"));
 const FieldMarketingTeamPage = lazy(() => import("./pages/FieldMarketingTeamPage"));
@@ -135,6 +136,7 @@ function App() {
           <Toaster />
           <PWAManager />
           <OfflineIndicator />
+          <MobileNav />
           <Router />
         </TooltipProvider>
       </ThemeProvider>
