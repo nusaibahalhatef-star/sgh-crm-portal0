@@ -12,6 +12,7 @@ import TableSkeleton from "@/components/TableSkeleton";
 import QuickFilters from "@/components/QuickFilters";
 import InlineStatusEditor from "@/components/InlineStatusEditor";
 import CommentsSection from "@/components/CommentsSection";
+import CommentCount from "@/components/CommentCount";
 import { DateRangePicker } from "@/components/DateRangePicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -998,6 +999,7 @@ export default function BookingsManagementPage() {
                             )}
                           </div>
                         </TableHead>
+                        <TableHead>التعليقات</TableHead>
                         <TableHead>الإجراءات</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1067,6 +1069,12 @@ export default function BookingsManagementPage() {
                                     staffNotes: '',
                                   });
                                 }}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <CommentCount
+                                entityType="appointment"
+                                entityId={appointment.id}
                               />
                             </TableCell>
                             <TableCell>
