@@ -2618,3 +2618,10 @@
 - [ ] إنشاء tRPC endpoint: export.generatePDF
 - [ ] تحديث advancedExport.ts لاستخدام الخدمة الجديدة
 - [ ] اختبار التصدير على جميع الجداول
+
+### إصلاح أخطاء تصدير PDF ✅ مكتمل
+- [x] تحديد المشكلة: PDFKit يستخدم Helvetica الذي لا يدعم العربية
+- [x] تنزيل خط Amiri العربي (Regular & Bold) من Google Fonts
+- [x] تحديث pdfService.ts لاستخدام الخط العربي
+- [x] إصلاح مسار الخطوط ليعمل في ES modules
+- [x] اختبار الخادم والتأكد من عمله بشكل صحيح
