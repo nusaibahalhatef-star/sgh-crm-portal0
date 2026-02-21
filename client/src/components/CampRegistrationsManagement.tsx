@@ -1,6 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
+import ActionButtons from "@/components/ActionButtons";
+import EmptyState from "@/components/EmptyState";
+import TableSkeleton from "@/components/TableSkeleton";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +45,14 @@ import {
   MessageCircle,
   Download,
   Printer,
+  Settings,
+  TentTree,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { exportToExcel, formatCampRegistrationsForExport } from "@/lib/exportToExcel";
 import { printReceipt } from "@/components/PrintReceipt";
@@ -353,17 +363,13 @@ export default function CampRegistrationsManagement({
           {/* Mobile Cards View */}
           <div className="md:hidden">
             {isLoading ? (
-              <>
-                <CardSkeleton />
-                <CardSkeleton />
-                <CardSkeleton />
-              </>
+              <TableSkeleton rows={3} columns={4} />
             ) : filteredRegistrations.length === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center text-muted-foreground">
-                  لا توجد تسجيلات متاحة
-                </CardContent>
-              </Card>
+              <EmptyState
+                icon={TentTree}
+                title="لا توجد تسجيلات"
+                description="لم يتم العثور على أي تسجيلات للمخيمات في الفترة المحددة. جرب تغيير الفلاتر."
+              />
             ) : (
               filteredRegistrations.map((reg: any) => (
                 <CampRegistrationCard
@@ -457,10 +463,20 @@ export default function CampRegistrationsManagement({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRegistrations.length === 0 ? (
+                {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
-                      لا توجد تسجيلات متاحة
+                    <TableCell colSpan={11} className="p-0">
+                      <TableSkeleton rows={5} columns={11} />
+                    </TableCell>
+                  </TableRow>
+                ) : filteredRegistrations.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={11} className="py-12">
+                      <EmptyState
+                        icon={TentTree}
+                        title="لا توجد تسجيلات"
+                        description="لم يتم العثور على أي تسجيلات للمخيمات في الفترة المحددة. جرب تغيير الفلاتر."
+                      />
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -478,10 +494,14 @@ export default function CampRegistrationsManagement({
                       <TableCell className="font-medium">{reg.fullName}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <a href={`tel:${reg.phone}`} className="hover:text-primary">
-                            {reg.phone}
-                          </a>
+                          <span className="font-mono">{reg.phone}</span>
+                          <ActionButtons
+                            phoneNumber={reg.phone}
+                            showWhatsApp={true}
+                            whatsAppMessage={`مرحباً ${reg.fullName}، شكراً لتسجيلك في مخيمنا الطبي. نتطلع لرؤيتك.`}
+                            size="sm"
+                            variant="ghost"
+                          />
                         </div>
                       </TableCell>
                       <TableCell>
@@ -523,60 +543,60 @@ export default function CampRegistrationsManagement({
                         {new Date(reg.createdAt).toLocaleDateString("ar-SA")}
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedRegistration(reg);
-                              setNewStatus(reg.status);
-                              setEditedName(reg.fullName);
-                              setEditedPhone(reg.phone);
-                              setAttendanceDate(reg.attendanceDate ? new Date(reg.attendanceDate).toISOString().slice(0, 16) : "");
-                              setStatusDialogOpen(true);
-                            }}
-                          >
-                            <Eye className="h-4 w-4 ml-2" />
-                            عرض التفاصيل
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                            onClick={() => {
-                              const message = `مرحباً ${reg.fullName}،\n\nشكراً لتسجيلك في المخيم الطبي الخيري. نود التواصل معك لتأكيد تسجيلك.\n\nالمستشفى السعودي الألماني - صنعاء`;
-                              window.open(`https://wa.me/${reg.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
-                            }}
-                          >
-                            <MessageCircle className="h-4 w-4 ml-2" />
-                            واتساب
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                            onClick={async () => {
-                              try {
-                                const result = await generateReceiptNumberMutation.mutateAsync({ id: reg.id });
-                                const campName = reg.campName || `مخيم #${reg.campId}`;
-                                printReceipt({
-                                  fullName: reg.fullName,
-                                  phone: reg.phone,
-                                  age: reg.age ?? undefined,
-                                  registrationDate: new Date(reg.createdAt),
-                                  type: "camp",
-                                  typeName: campName,
-                                  receiptNumber: result.receiptNumber,
-                                }, user?.name || "مستخدم");
-                              } catch (error) {
-                                console.error('Error generating receipt number:', error);
-                                toast.error('فشل في توليد رقم السند');
-                              }
-                            }}
-                          >
-                            <Printer className="h-4 w-4 ml-2" />
-                            طباعة
-                          </Button>
+                        <div className="flex gap-1">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedRegistration(reg);
+                                  setNewStatus(reg.status);
+                                  setEditedName(reg.fullName);
+                                  setEditedPhone(reg.phone);
+                                  setAttendanceDate(reg.attendanceDate ? new Date(reg.attendanceDate).toISOString().slice(0, 16) : "");
+                                  setStatusDialogOpen(true);
+                                }}
+                              >
+                                <Settings className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>تحديث الحالة</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                onClick={async () => {
+                                  try {
+                                    const result = await generateReceiptNumberMutation.mutateAsync({ id: reg.id });
+                                    const campName = reg.campName || `مخيم #${reg.campId}`;
+                                    printReceipt({
+                                      fullName: reg.fullName,
+                                      phone: reg.phone,
+                                      age: reg.age ?? undefined,
+                                      registrationDate: new Date(reg.createdAt),
+                                      type: "camp",
+                                      typeName: campName,
+                                      receiptNumber: result.receiptNumber,
+                                    }, user?.name || "مستخدم");
+                                  } catch (error) {
+                                    console.error('Error generating receipt number:', error);
+                                    toast.error('فشل في توليد رقم السند');
+                                  }
+                                }}
+                              >
+                                <Printer className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>طباعة السند</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                       </TableCell>
                     </TableRow>

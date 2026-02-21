@@ -6,6 +6,9 @@ import CampRegistrationsManagement from "@/components/CampRegistrationsManagemen
 import ManualRegistrationForm from "@/components/ManualRegistrationForm";
 import LeadCard from "@/components/LeadCard";
 import AppointmentCard from "@/components/AppointmentCard";
+import ActionButtons from "@/components/ActionButtons";
+import EmptyState from "@/components/EmptyState";
+import TableSkeleton from "@/components/TableSkeleton";
 import { DateRangePicker } from "@/components/DateRangePicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +38,11 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { 
   Users, 
   UserCheck, 
@@ -49,6 +57,8 @@ import {
   Plus,
   Settings,
   BarChart3,
+  Printer,
+  CalendarOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { exportToExcel, formatLeadsForExport, formatAppointmentsForExport } from "@/lib/exportToExcel";
@@ -796,13 +806,13 @@ export default function BookingsManagementPage() {
                 {/* Mobile Cards View */}
                 <div className="md:hidden space-y-4">
                   {appointmentsLoading ? (
-                    <div className="flex justify-center py-8">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
+                    <TableSkeleton rows={3} columns={4} />
                   ) : filteredAppointments.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      لا توجد مواعيد
-                    </div>
+                    <EmptyState
+                      icon={CalendarOff}
+                      title="لا توجد مواعيد"
+                      description="لم يتم العثور على أي مواعيد في الفترة المحددة. جرب تغيير الفلاتر أو إضافة موعد جديد."
+                    />
                   ) : (
                     filteredAppointments.map((appointment: any) => (
                       <AppointmentCard
@@ -849,14 +859,18 @@ export default function BookingsManagementPage() {
                     <TableBody>
                       {appointmentsLoading ? (
                         <TableRow>
-                          <TableCell colSpan={8} className="text-center py-8">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+                          <TableCell colSpan={9} className="p-0">
+                            <TableSkeleton rows={5} columns={9} />
                           </TableCell>
                         </TableRow>
                       ) : filteredAppointments.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                            لا توجد مواعيد
+                          <TableCell colSpan={9} className="py-12">
+                            <EmptyState
+                              icon={CalendarOff}
+                              title="لا توجد مواعيد"
+                              description="لم يتم العثور على أي مواعيد في الفترة المحددة. جرب تغيير الفلاتر أو إضافة موعد جديد."
+                            />
                           </TableCell>
                         </TableRow>
                       ) : (
@@ -872,9 +886,13 @@ export default function BookingsManagementPage() {
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <span className="font-mono">{appointment.phone}</span>
-                                <a href={`tel:${appointment.phone}`} className="text-primary hover:underline">
-                                  <Phone className="h-4 w-4" />
-                                </a>
+                                <ActionButtons
+                                  phoneNumber={appointment.phone}
+                                  showWhatsApp={true}
+                                  whatsAppMessage={`مرحباً ${appointment.patientName}، هذه رسالة من المستشفى السعودي الألماني - صنعاء بخصوص موعدك مع ${appointment.doctorName}.`}
+                                  size="sm"
+                                  variant="ghost"
+                                />
                               </div>
                             </TableCell>
                             <TableCell>{appointment.doctorName}</TableCell>
@@ -905,37 +923,51 @@ export default function BookingsManagementPage() {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedAppointment(appointment);
-                                    setNewAppointmentStatus(appointment.status);
-                                    setAppointmentDate(appointment.appointmentDate);
-                                    setAppointmentStatusDialogOpen(true);
-                                  }}
-                                >
-                                  تحديث الحالة
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                  onClick={() => {
-                                    const doctorName = appointment.doctorName || `طبيب #${appointment.doctorId}`;
-                                    printReceipt({
-                                      fullName: appointment.fullName || appointment.patientName,
-                                      phone: appointment.phone,
-                                      age: appointment.age ?? undefined,
-                                      registrationDate: new Date(appointment.createdAt || appointment.appointmentDate),
-                                      type: "appointment",
-                                      typeName: doctorName
-                                    }, user?.name || "مستخدم");
-                                  }}
-                                >
-                                  طباعة
-                                </Button>
+                              <div className="flex gap-1">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedAppointment(appointment);
+                                        setNewAppointmentStatus(appointment.status);
+                                        setAppointmentDate(appointment.appointmentDate);
+                                        setAppointmentStatusDialogOpen(true);
+                                      }}
+                                    >
+                                      <Settings className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>تحديث الحالة</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                      onClick={() => {
+                                        const doctorName = appointment.doctorName || `طبيب #${appointment.doctorId}`;
+                                        printReceipt({
+                                          fullName: appointment.fullName || appointment.patientName,
+                                          phone: appointment.phone,
+                                          age: appointment.age ?? undefined,
+                                          registrationDate: new Date(appointment.createdAt || appointment.appointmentDate),
+                                          type: "appointment",
+                                          typeName: doctorName
+                                        }, user?.name || "مستخدم");
+                                      }}
+                                    >
+                                      <Printer className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>طباعة السند</p>
+                                  </TooltipContent>
+                                </Tooltip>
                               </div>
                             </TableCell>
                           </TableRow>
