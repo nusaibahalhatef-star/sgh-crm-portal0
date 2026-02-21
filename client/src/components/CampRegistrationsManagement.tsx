@@ -8,6 +8,7 @@ import TableSkeleton from "@/components/TableSkeleton";
 import QuickFilters from "@/components/QuickFilters";
 import InlineStatusEditor from "@/components/InlineStatusEditor";
 import CommentsSection from "@/components/CommentsSection";
+import CommentCount from "@/components/CommentCount";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -597,6 +598,7 @@ export default function CampRegistrationsManagement({
                       )}
                     </div>
                   </TableHead>
+                  <TableHead className="text-right">التعليقات</TableHead>
                   <TableHead className="text-right">الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
@@ -692,6 +694,12 @@ export default function CampRegistrationsManagement({
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {new Date(reg.createdAt).toLocaleDateString("ar-SA")}
+                      </TableCell>
+                      <TableCell>
+                        <CommentCount
+                          entityType="campRegistration"
+                          entityId={reg.id}
+                        />
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">

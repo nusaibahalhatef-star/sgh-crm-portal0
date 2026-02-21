@@ -2393,4 +2393,4 @@
 ### المرحلة 4 - المتابعة: دمج التعليقات في باقي الجداول ✅ مكتمل
 - [x] دمج CommentsSection في OfferLeadsManagement
 - [x] دمج CommentsSection في CampRegistrationsManagement
-- [ ] إضافة عداد التعليقات في الجداول الرئيسية (مؤجل)
+- [x] إضافة عداد التعليقات في الجداول الرئيسية - ✅ مكتمل (CommentCount component)
