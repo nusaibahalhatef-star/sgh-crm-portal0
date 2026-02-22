@@ -618,7 +618,7 @@ export default function UsersManagementPage() {
                       })}
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
+                  <TableBody className={filteredUsers && filteredUsers.length > 0 ? 'stagger-rows' : ''}>
                     {filteredUsers && filteredUsers.length > 0 ? (
                       filteredUsers.map((user) => (
                         <TableRow key={user.id}>
@@ -832,7 +832,7 @@ export default function UsersManagementPage() {
                         })}
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <TableBody className={sortedRequests.length > 0 ? 'stagger-rows' : ''}>
                       {sortedRequests.map((request) => (
                         <TableRow key={request.id}>
                           {requestTable.visibleColumnOrder.map(colKey => {

@@ -8,6 +8,7 @@ import SourceAnalytics from "@/components/SourceAnalytics";
 import RecentActivity from "@/components/RecentActivity";
 import QuickPatientSearch from "@/components/QuickPatientSearch";
 import DetailedStatsCards from "@/components/DetailedStatsCards";
+import { AnimatedCounter } from "@/components/animations";
 import DashboardLayout from "@/components/DashboardLayout";
 import DoctorsManagement from "@/components/DoctorsManagement";
 import LeadCard from "@/components/LeadCard";
@@ -498,7 +499,7 @@ export default function AdminDashboard() {
                         <TableHead className="text-right">الإجراءات</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <TableBody className="stagger-rows">
                       {filteredLeads.map((lead) => (
                         <TableRow key={lead.id} className={lead.status === 'pending' ? 'bg-red-50 hover:bg-red-100' : ''}>
                           <TableCell className="font-medium">{lead.fullName}</TableCell>
@@ -700,13 +701,13 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
-              <Card>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6 stagger-cards">
+              <Card className="stat-card-animated">
                 <CardContent className="pt-4 pb-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">إجمالي المواعيد</p>
-                      <p className="text-lg md:text-xl font-bold text-primary">{appointmentStats.total}</p>
+                      <p className="text-lg md:text-xl font-bold text-primary"><AnimatedCounter value={appointmentStats.total} duration={800} /></p>
                     </div>
                     <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
                       <Calendar className="w-5 h-5 text-primary" />
@@ -715,12 +716,12 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="stat-card-animated">
                 <CardContent className="pt-4 pb-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">قيد الانتظار</p>
-                      <p className="text-lg md:text-xl font-bold text-yellow-600">{appointmentStats.pending}</p>
+                      <p className="text-lg md:text-xl font-bold text-yellow-600"><AnimatedCounter value={appointmentStats.pending} duration={800} /></p>
                     </div>
                     <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
                       <Calendar className="w-5 h-5 text-yellow-600" />
@@ -729,12 +730,12 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="stat-card-animated">
                 <CardContent className="pt-4 pb-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">مؤكد</p>
-                      <p className="text-lg md:text-xl font-bold text-green-600">{appointmentStats.confirmed}</p>
+                      <p className="text-lg md:text-xl font-bold text-green-600"><AnimatedCounter value={appointmentStats.confirmed} duration={800} /></p>
                     </div>
                     <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
                       <Calendar className="w-5 h-5 text-green-600" />
@@ -743,12 +744,12 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="stat-card-animated">
                 <CardContent className="pt-4 pb-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">ملغي</p>
-                      <p className="text-lg md:text-xl font-bold text-red-600">{appointmentStats.cancelled}</p>
+                      <p className="text-lg md:text-xl font-bold text-red-600"><AnimatedCounter value={appointmentStats.cancelled} duration={800} /></p>
                     </div>
                     <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
                       <Calendar className="w-5 h-5 text-red-600" />
@@ -810,7 +811,7 @@ export default function AdminDashboard() {
                         <TableHead className="text-right">الإجراءات</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <TableBody className="stagger-rows">
                       {filteredAppointments.map((appointment) => (
                         <TableRow key={appointment.id} className={appointment.status === 'pending' ? 'bg-red-50 hover:bg-red-100' : ''}>
                           <TableCell className="font-medium">{appointment.fullName}</TableCell>
@@ -1284,8 +1285,8 @@ function OffersManagement() {
         </div>
         
         {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-3 mt-4">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+        <div className="grid grid-cols-3 gap-3 mt-4 stagger-cards">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 stat-card-animated">
             <CardContent className="p-3 md:p-4">
               <div className="text-xs md:text-sm text-blue-700 mb-1">إجمالي العروض</div>
               <div className="text-xl md:text-2xl font-bold text-blue-900">{totalOffers}</div>
@@ -1321,7 +1322,7 @@ function OffersManagement() {
                   <TableHead className="text-right">الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
+              <TableBody className="stagger-rows">
                 {offers.map((offer) => (
                   <TableRow key={offer.id}>
                     <TableCell className="font-medium table-sticky-col">{offer.title}</TableCell>
@@ -1590,8 +1591,8 @@ function CampsManagement() {
         </div>
         
         {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-3 mt-4">
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+        <div className="grid grid-cols-3 gap-3 mt-4 stagger-cards">
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 stat-card-animated">
             <CardContent className="p-3 md:p-4">
               <div className="text-xs md:text-sm text-purple-700 mb-1">إجمالي المخيمات</div>
               <div className="text-xl md:text-2xl font-bold text-purple-900">{totalCamps}</div>
@@ -1629,7 +1630,7 @@ function CampsManagement() {
                   <TableHead className="text-right">الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
+              <TableBody className="stagger-rows">
                 {camps.map((camp) => (
                   <TableRow key={camp.id}>
                     <TableCell className="font-medium">{camp.name}</TableCell>

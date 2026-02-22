@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, UserPlus, PhoneCall, CalendarCheck, TrendingUp, TrendingDown } from "lucide-react";
+import { AnimatedCounter } from "@/components/animations";
 
 interface LeadStatsCardsProps {
   stats: {
@@ -53,7 +54,7 @@ export default function LeadStatsCards({ stats }: LeadStatsCardsProps) {
   const total = stats?.total || 0;
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 stagger-cards">
       {statConfig.map((config) => {
         const Icon = config.icon;
         const value = stats?.[config.key] || 0;
@@ -64,7 +65,7 @@ export default function LeadStatsCards({ stats }: LeadStatsCardsProps) {
         return (
           <Card
             key={config.key}
-            className="group relative overflow-hidden border-0 shadow-sm hover:shadow-md transition-all duration-300"
+            className="group relative overflow-hidden border-0 shadow-sm stat-card-animated"
           >
             {/* Top gradient bar */}
             <div className={`absolute top-0 inset-x-0 h-1 bg-gradient-to-r ${config.gradient}`} />
@@ -76,7 +77,7 @@ export default function LeadStatsCards({ stats }: LeadStatsCardsProps) {
                     {config.label}
                   </p>
                   <p className="text-2xl md:text-3xl font-bold tracking-tight">
-                    {value.toLocaleString("ar-SA")}
+                    <AnimatedCounter value={value} duration={900} />
                   </p>
                   {percentage !== null && (
                     <div className="flex items-center gap-1 mt-2">

@@ -3008,3 +3008,20 @@
 - [x] حفظ تفضيل المستخدم في localStorage
 - [x] دعم إشعار منبثق (toast) مع الصوت
 - [x] 67 اختبار vitest ناجح
+
+### تعزيز تجربة المستخدم بتأثيرات حركية (Animations) ✅ مكتمل
+- [x] إنشاء نظام تأثيرات حركية موحد (5 مكونات + 15 CSS animation)
+- [x] إنشاء مكون AnimatedCounter لعد الأرقام بتأثير easeOutExpo
+- [x] إنشاء مكون FadeIn + StaggeredList للظهور التدريجي مع IntersectionObserver
+- [x] إنشاء مكون AnimatedBadge مع تأثير نبض وتكبير
+- [x] إنشاء مكون FlashUpdate للوميض عند تحديث البيانات
+- [x] إنشاء مكون AnimatedProgressBar لشريط تقدم متحرك
+- [x] تطبيق AnimatedCounter على LeadStatsCards, AppointmentStatsCards, DetailedStatsCards, AdminDashboard
+- [x] تطبيق تأثير نبض (badge-pulse) على شارات الشريط الجانبي
+- [x] تطبيق ظهور متتابع (stagger-rows) على جميع الجداول (6 صفحات)
+- [x] تطبيق ظهور متتابع (stagger-cards) على جميع بطاقات الإحصائيات
+- [x] تطبيق تأثيرات على رسائل ومحادثات WhatsApp
+- [x] تأثير hover محسن (stat-card-animated) مع رفع وظل
+- [x] تأثير dot-pulse على نقاط الحالة الحمراء
+- [x] 15 CSS @keyframes animation في index.css
+- [x] 372 اختبار vitest ناجح (17 ملف)
