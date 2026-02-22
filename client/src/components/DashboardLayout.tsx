@@ -36,7 +36,7 @@ export default function DashboardLayout({
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5">
         <div className="flex flex-col items-center gap-6 p-8 max-w-sm w-full">
           <img
-            src="/assets/new-logo.png"
+            src="/icon-72x72.png"
             alt={APP_TITLE}
             className="h-20 w-auto object-contain"
           />
@@ -73,7 +73,7 @@ export default function DashboardLayout({
             {/* Page Title */}
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <img
-                src="/assets/new-logo.png"
+                src="/icon-72x72.png"
                 alt="المستشفى السعودي الألماني"
                 className="h-9 md:h-10 w-auto object-contain flex-shrink-0 lg:hidden"
               />
