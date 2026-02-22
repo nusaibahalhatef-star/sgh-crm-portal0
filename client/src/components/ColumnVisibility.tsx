@@ -48,6 +48,79 @@ export interface ColumnConfig {
   key: string;
   label: string;
   defaultVisible: boolean;
+  /** Default width in pixels for this column */
+  defaultWidth?: number;
+  /** Minimum width in pixels */
+  minWidth?: number;
+  /** Maximum width in pixels */
+  maxWidth?: number;
+}
+
+// Smart default widths based on column content type
+export const COLUMN_WIDTH_PRESETS: Record<string, { width: number; min: number; max: number }> = {
+  // IDs & Numbers
+  receiptNumber: { width: 100, min: 60, max: 200 },
+  ticketNumber: { width: 100, min: 60, max: 200 },
+  id: { width: 60, min: 40, max: 120 },
+  // Names
+  name: { width: 160, min: 80, max: 400 },
+  fullName: { width: 180, min: 80, max: 400 },
+  doctor: { width: 150, min: 80, max: 350 },
+  doctorName: { width: 150, min: 80, max: 350 },
+  // Contact
+  phone: { width: 140, min: 90, max: 250 },
+  email: { width: 180, min: 100, max: 400 },
+  // Dates
+  date: { width: 110, min: 70, max: 200 },
+  createdAt: { width: 110, min: 70, max: 200 },
+  preferredDate: { width: 110, min: 70, max: 200 },
+  appointmentDate: { width: 110, min: 70, max: 200 },
+  attendanceDate: { width: 110, min: 70, max: 200 },
+  registrationDate: { width: 110, min: 70, max: 200 },
+  // Status & Badges
+  status: { width: 120, min: 70, max: 220 },
+  source: { width: 110, min: 60, max: 220 },
+  // Short text
+  age: { width: 70, min: 40, max: 150 },
+  gender: { width: 70, min: 40, max: 150 },
+  specialty: { width: 130, min: 70, max: 300 },
+  procedure: { width: 130, min: 70, max: 300 },
+  preferredTime: { width: 100, min: 60, max: 200 },
+  camp: { width: 140, min: 80, max: 300 },
+  offer: { width: 140, min: 80, max: 300 },
+  // Long text (notes)
+  notes: { width: 180, min: 80, max: 500 },
+  additionalNotes: { width: 180, min: 80, max: 500 },
+  staffNotes: { width: 180, min: 80, max: 500 },
+  statusNotes: { width: 180, min: 80, max: 500 },
+  medicalCondition: { width: 160, min: 80, max: 400 },
+  procedures: { width: 160, min: 80, max: 400 },
+  // UTM fields
+  utmSource: { width: 110, min: 60, max: 250 },
+  utmMedium: { width: 110, min: 60, max: 250 },
+  utmCampaign: { width: 130, min: 60, max: 300 },
+  utmTerm: { width: 110, min: 60, max: 250 },
+  utmContent: { width: 110, min: 60, max: 250 },
+  utmPlacement: { width: 110, min: 60, max: 250 },
+  referrer: { width: 140, min: 60, max: 300 },
+  fbclid: { width: 120, min: 60, max: 250 },
+  gclid: { width: 120, min: 60, max: 250 },
+  // Actions & interactive
+  comments: { width: 80, min: 50, max: 150 },
+  tasks: { width: 80, min: 50, max: 150 },
+  actions: { width: 140, min: 80, max: 250 },
+};
+
+/** Get width config for a column key */
+export function getColumnWidth(key: string, config?: ColumnConfig): { width: number; min: number; max: number } {
+  if (config?.defaultWidth) {
+    return {
+      width: config.defaultWidth,
+      min: config.minWidth || Math.max(50, config.defaultWidth - 40),
+      max: config.maxWidth || config.defaultWidth + 100,
+    };
+  }
+  return COLUMN_WIDTH_PRESETS[key] || { width: 120, min: 60, max: 250 };
 }
 
 export interface ColumnTemplate {
@@ -55,6 +128,7 @@ export interface ColumnTemplate {
   name: string;
   columns: Record<string, boolean>;
   columnOrder?: string[]; // ordered column keys
+  columnWidths?: Record<string, number>; // custom column widths
   isDefault?: boolean;
   isShared?: boolean;
   createdByName?: string | null;
@@ -72,13 +146,15 @@ interface ColumnVisibilityProps {
   templates?: ColumnTemplate[];
   activeTemplateId?: string | null;
   onApplyTemplate?: (template: ColumnTemplate) => void;
-  onSaveTemplate?: (name: string, columns: Record<string, boolean>, columnOrder: string[]) => void;
+  onSaveTemplate?: (name: string, columns: Record<string, boolean>, columnOrder: string[], columnWidths?: Record<string, number>) => void;
   onDeleteTemplate?: (templateId: string) => void;
   tableKey?: string;
+  // Column widths support
+  columnWidths?: Record<string, number>;
   // Shared template support (admin only)
   isAdmin?: boolean;
   sharedTemplates?: ColumnTemplate[];
-  onSaveSharedTemplate?: (name: string, columns: Record<string, boolean>, columnOrder: string[]) => void;
+  onSaveSharedTemplate?: (name: string, columns: Record<string, boolean>, columnOrder: string[], columnWidths?: Record<string, number>) => void;
   onDeleteSharedTemplate?: (dbId: number) => void;
 }
 
@@ -185,6 +261,7 @@ export function ColumnVisibility({
   onSaveTemplate,
   onDeleteTemplate,
   tableKey,
+  columnWidths,
   isAdmin = false,
   sharedTemplates = [],
   onSaveSharedTemplate,
@@ -241,7 +318,7 @@ export function ColumnVisibility({
       return;
     }
     if (onSaveTemplate) {
-      onSaveTemplate(newTemplateName.trim(), { ...visibleColumns }, [...columnOrder]);
+      onSaveTemplate(newTemplateName.trim(), { ...visibleColumns }, [...columnOrder], columnWidths ? { ...columnWidths } : undefined);
       setNewTemplateName('');
       setSaveDialogOpen(false);
       toast.success(`تم حفظ القالب "${newTemplateName.trim()}" بنجاح`);
@@ -254,7 +331,7 @@ export function ColumnVisibility({
       return;
     }
     if (onSaveSharedTemplate) {
-      onSaveSharedTemplate(newSharedTemplateName.trim(), { ...visibleColumns }, [...columnOrder]);
+      onSaveSharedTemplate(newSharedTemplateName.trim(), { ...visibleColumns }, [...columnOrder], columnWidths ? { ...columnWidths } : undefined);
       setNewSharedTemplateName('');
       setSaveSharedDialogOpen(false);
       toast.success(`تم حفظ القالب المشترك "${newSharedTemplateName.trim()}" بنجاح - سيظهر لجميع المستخدمين`);
