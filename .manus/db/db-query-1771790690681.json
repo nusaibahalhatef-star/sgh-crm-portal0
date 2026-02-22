@@ -1,0 +1,30 @@
+{
+  "query": "SHOW CREATE TABLE patients;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2xtgvXGdr7mxJSP.root --database HgGpRPs4xs9xrzjfX4xmFY --execute SHOW CREATE TABLE patients;",
+  "rows": [
+    {
+      "Table": "patients",
+      "Create Table": "CREATE TABLE `patients` ("
+    }
+  ],
+  "messages": [
+    "  `id` int(11) NOT NULL AUTO_INCREMENT,",
+    "  `fullName` varchar(255) NOT NULL,",
+    "  `phone` varchar(20) NOT NULL,",
+    "  `address` text DEFAULT NULL,",
+    "  `age` int(11) DEFAULT NULL,",
+    "  `gender` enum('male','female') NOT NULL,",
+    "  `email` varchar(320) DEFAULT NULL,",
+    "  `isActive` tinyint(1) NOT NULL DEFAULT '1',",
+    "  `lastLoginAt` timestamp NULL DEFAULT NULL,",
+    "  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,",
+    "  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,",
+    "  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,",
+    "  KEY `patients_phone_idx` (`phone`),",
+    "  UNIQUE KEY `phone` (`phone`)",
+    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin"
+  ],
+  "stdout": "Table\tCreate Table\npatients\tCREATE TABLE `patients` (\n  `id` int(11) NOT NULL AUTO_INCREMENT,\n  `fullName` varchar(255) NOT NULL,\n  `phone` varchar(20) NOT NULL,\n  `address` text DEFAULT NULL,\n  `age` int(11) DEFAULT NULL,\n  `gender` enum('male','female') NOT NULL,\n  `email` varchar(320) DEFAULT NULL,\n  `isActive` tinyint(1) NOT NULL DEFAULT '1',\n  `lastLoginAt` timestamp NULL DEFAULT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,\n  KEY `patients_phone_idx` (`phone`),\n  UNIQUE KEY `phone` (`phone`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin\n",
+  "stderr": "",
+  "execution_time_ms": 343
+}

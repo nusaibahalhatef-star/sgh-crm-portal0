@@ -38,6 +38,7 @@ import { customersRouter } from "./routers/customers";
 import { auditLogsRouter } from "./routers/auditLogs";
 import { savedFiltersRouter } from "./routers/savedFilters";
 import { chartsRouter } from "./routers/charts";
+import { patientPortalRouter } from "./routers/patientPortal";
 import { generatePDF, type ExportMetadata } from "./pdfService";
 
 export const appRouter = router({
@@ -45,6 +46,7 @@ export const appRouter = router({
   tasks: tasksRouter,
   system: systemRouter,
   charts: chartsRouter,
+  patientPortal: patientPortalRouter,
   whatsapp: whatsappRouter,
   messageSettings: messageSettingsRouter,
   webhooks: webhooksRouter,
