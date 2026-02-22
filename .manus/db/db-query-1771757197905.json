@@ -1,0 +1,16 @@
+{
+  "query": "SELECT (SELECT COUNT(*) FROM leads) as leads_count, (SELECT COUNT(*) FROM appointments) as appointments_count, (SELECT COUNT(*) FROM offerLeads) as offer_leads_count, (SELECT COUNT(*) FROM campRegistrations) as camp_reg_count",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2xtgvXGdr7mxJSP.root --database HgGpRPs4xs9xrzjfX4xmFY --execute SELECT (SELECT COUNT(*) FROM leads) as leads_count, (SELECT COUNT(*) FROM appointments) as appointments_count, (SELECT COUNT(*) FROM offerLeads) as offer_leads_count, (SELECT COUNT(*) FROM campRegistrations) as camp_reg_count",
+  "rows": [
+    {
+      "leads_count": "0",
+      "appointments_count": "36",
+      "offer_leads_count": "1",
+      "camp_reg_count": "2013"
+    }
+  ],
+  "messages": [],
+  "stdout": "leads_count\tappointments_count\toffer_leads_count\tcamp_reg_count\n0\t36\t1\t2013\n",
+  "stderr": "",
+  "execution_time_ms": 383
+}

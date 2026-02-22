@@ -1,0 +1,25 @@
+{
+  "query": "SELECT id, fullName, phone FROM appointments LIMIT 3",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2xtgvXGdr7mxJSP.root --database HgGpRPs4xs9xrzjfX4xmFY --execute SELECT id, fullName, phone FROM appointments LIMIT 3",
+  "rows": [
+    {
+      "id": "270001",
+      "fullName": "يحي ماجد عبد الله قاسم ",
+      "phone": "737235798"
+    },
+    {
+      "id": "300001",
+      "fullName": "يسرا عبدالله محمد دهمان ",
+      "phone": "770662551"
+    },
+    {
+      "id": "330001",
+      "fullName": "محمد علي محمد الحيمي ",
+      "phone": "777993304"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tfullName\tphone\n270001\tيحي ماجد عبد الله قاسم \t737235798\n300001\tيسرا عبدالله محمد دهمان \t770662551\n330001\tمحمد علي محمد الحيمي \t777993304\n",
+  "stderr": "",
+  "execution_time_ms": 366
+}

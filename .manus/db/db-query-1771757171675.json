@@ -1,0 +1,26 @@
+{
+  "query": "SELECT 'appointments' as tbl, COUNT(*) as cnt FROM appointments UNION ALL SELECT 'leads', COUNT(*) FROM leads UNION ALL SELECT 'offerLeads', COUNT(*) FROM offerLeads UNION ALL SELECT 'campRegistrations', COUNT(*) FROM campRegistrations;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2xtgvXGdr7mxJSP.root --database HgGpRPs4xs9xrzjfX4xmFY --execute SELECT 'appointments' as tbl, COUNT(*) as cnt FROM appointments UNION ALL SELECT 'leads', COUNT(*) FROM leads UNION ALL SELECT 'offerLeads', COUNT(*) FROM offerLeads UNION ALL SELECT 'campRegistrations', COUNT(*) FROM campRegistrations;",
+  "rows": [
+    {
+      "tbl": "offerLeads",
+      "cnt": "1"
+    },
+    {
+      "tbl": "leads",
+      "cnt": "0"
+    },
+    {
+      "tbl": "appointments",
+      "cnt": "36"
+    },
+    {
+      "tbl": "campRegistrations",
+      "cnt": "2013"
+    }
+  ],
+  "messages": [],
+  "stdout": "tbl\tcnt\nofferLeads\t1\nleads\t0\nappointments\t36\ncampRegistrations\t2013\n",
+  "stderr": "",
+  "execution_time_ms": 406
+}

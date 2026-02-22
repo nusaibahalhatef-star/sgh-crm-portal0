@@ -123,105 +123,64 @@ async function getCustomersPaginated(params: {
   const { page, limit, searchTerm } = params;
   const offset = (page - 1) * limit;
 
-  // Use UNION to get all unique phone numbers with latest info
-  // We'll use a subquery approach for better performance
-  let searchCondition = '';
-  const searchParams: string[] = [];
-  if (searchTerm && searchTerm.trim()) {
-    searchCondition = `WHERE name LIKE ? OR phone LIKE ?`;
-    searchParams.push(`%${searchTerm.trim()}%`, `%${searchTerm.trim()}%`);
+  try {
+    // Use parameterized SQL queries for safety
+    const searchFilter = searchTerm && searchTerm.trim()
+      ? sql`HAVING name LIKE ${`%${searchTerm.trim()}%`} OR phone LIKE ${`%${searchTerm.trim()}%`}`
+      : sql``;
+
+    const customersResult = await db.execute(
+      sql`SELECT phone, fullName as name, email, MAX(createdAt) as lastSeen, MIN(createdAt) as firstSeen, COUNT(*) as totalRecords
+      FROM (
+        SELECT phone, fullName, email, createdAt FROM appointments
+        UNION ALL
+        SELECT phone, fullName, email, createdAt FROM leads
+        UNION ALL
+        SELECT phone, fullName, email, createdAt FROM offerLeads
+        UNION ALL
+        SELECT phone, fullName, email, createdAt FROM campRegistrations
+      ) AS all_records
+      GROUP BY phone
+      ${searchFilter}
+      ORDER BY lastSeen DESC
+      LIMIT ${limit} OFFSET ${offset}`
+    );
+
+    const countResult = await db.execute(
+      sql`SELECT COUNT(*) as total FROM (
+        SELECT phone
+        FROM (
+          SELECT phone, fullName as name FROM appointments
+          UNION ALL
+          SELECT phone, fullName as name FROM leads
+          UNION ALL
+          SELECT phone, fullName as name FROM offerLeads
+          UNION ALL
+          SELECT phone, fullName as name FROM campRegistrations
+        ) AS all_records
+        GROUP BY phone
+        ${searchFilter}
+      ) AS unique_customers`
+    );
+
+    // drizzle mysql2 returns [rows, fields] tuple
+    const rows = Array.isArray(customersResult) ? customersResult[0] : customersResult;
+    const customers = Array.isArray(rows) ? rows : [];
+    
+    const countRows = Array.isArray(countResult) ? countResult[0] : countResult;
+    const countArr = Array.isArray(countRows) ? countRows : [];
+    const total = countArr.length > 0 ? Number((countArr[0] as any)?.total || 0) : 0;
+
+    console.log(`[Customers] Found ${customers.length} customers, total: ${total}`);
+
+    return {
+      customers,
+      total,
+    };
+  } catch (error) {
+    console.error('[Customers] Error fetching customers:', error);
+    return { customers: [], total: 0 };
   }
-
-  // Get unique customers from all tables using raw SQL for UNION
-  const unionQuery = `
-    SELECT phone, fullName as name, email, MAX(createdAt) as lastSeen, MIN(createdAt) as firstSeen, COUNT(*) as totalRecords
-    FROM (
-      SELECT phone, fullName, email, createdAt FROM appointments
-      UNION ALL
-      SELECT phone, fullName, email, createdAt FROM leads
-      UNION ALL
-      SELECT phone, fullName, email, createdAt FROM offerLeads
-      UNION ALL
-      SELECT phone, fullName, email, createdAt FROM campRegistrations
-    ) AS all_records
-    GROUP BY phone
-    ${searchCondition ? `HAVING name LIKE ? OR phone LIKE ?` : ''}
-    ORDER BY lastSeen DESC
-    LIMIT ? OFFSET ?
-  `;
-
-  const countQuery = `
-    SELECT COUNT(*) as total FROM (
-      SELECT phone
-      FROM (
-        SELECT phone, fullName as name FROM appointments
-        UNION ALL
-        SELECT phone, fullName as name FROM leads
-        UNION ALL
-        SELECT phone, fullName as name FROM offerLeads
-        UNION ALL
-        SELECT phone, fullName as name FROM campRegistrations
-      ) AS all_records
-      GROUP BY phone
-      ${searchCondition ? `HAVING name LIKE ? OR phone LIKE ?` : ''}
-    ) AS unique_customers
-  `;
-
-  const queryParams = searchTerm && searchTerm.trim()
-    ? [`%${searchTerm.trim()}%`, `%${searchTerm.trim()}%`, limit, offset]
-    : [limit, offset];
-
-  const countParams = searchTerm && searchTerm.trim()
-    ? [`%${searchTerm.trim()}%`, `%${searchTerm.trim()}%`]
-    : [];
-
-  const [customersResult, countResult] = await Promise.all([
-    db.execute(sql.raw(unionQuery + ';').append(sql``)),
-    db.execute(sql.raw(countQuery + ';').append(sql``)),
-  ]);
-
-  // Use parameterized queries for safety
-  const customersRows = await db.execute(
-    sql`SELECT phone, fullName as name, email, MAX(createdAt) as lastSeen, MIN(createdAt) as firstSeen, COUNT(*) as totalRecords
-    FROM (
-      SELECT phone, fullName, email, createdAt FROM appointments
-      UNION ALL
-      SELECT phone, fullName, email, createdAt FROM leads
-      UNION ALL
-      SELECT phone, fullName, email, createdAt FROM offerLeads
-      UNION ALL
-      SELECT phone, fullName, email, createdAt FROM campRegistrations
-    ) AS all_records
-    GROUP BY phone
-    ${searchTerm && searchTerm.trim() ? sql`HAVING name LIKE ${`%${searchTerm.trim()}%`} OR phone LIKE ${`%${searchTerm.trim()}%`}` : sql``}
-    ORDER BY lastSeen DESC
-    LIMIT ${limit} OFFSET ${offset}`
-  );
-
-  const countRows = await db.execute(
-    sql`SELECT COUNT(*) as total FROM (
-      SELECT phone
-      FROM (
-        SELECT phone, fullName as name FROM appointments
-        UNION ALL
-        SELECT phone, fullName as name FROM leads
-        UNION ALL
-        SELECT phone, fullName as name FROM offerLeads
-        UNION ALL
-        SELECT phone, fullName as name FROM campRegistrations
-      ) AS all_records
-      GROUP BY phone
-      ${searchTerm && searchTerm.trim() ? sql`HAVING name LIKE ${`%${searchTerm.trim()}%`} OR phone LIKE ${`%${searchTerm.trim()}%`}` : sql``}
-    ) AS unique_customers`
-  );
-
-  const customers = (customersRows as any)[0] || [];
-  const total = ((countRows as any)[0] as any)?.[0]?.total || 0;
-
-  return {
-    customers: Array.isArray(customers) ? customers : [],
-    total: Number(total),
-  };
 }
 
 export const customersRouter = router({
