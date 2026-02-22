@@ -161,9 +161,9 @@ export default function Navbar() {
             <Phone className="h-4 w-4 sm:h-5 sm:w-5" />
             <span>اتصل بنا: 8000018</span>
           </a>
-          <Link href="/dashboard">
+          <Link href="/patient-portal">
             <div className="flex items-center justify-center gap-2 w-full mt-2 border border-green-600 dark:border-green-500 text-green-700 dark:text-green-400 py-2.5 sm:py-3 rounded-lg sm:rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors font-medium cursor-pointer text-xs sm:text-sm">
-              لوحة التحكم
+              بوابة المريض
             </div>
           </Link>
         </div>

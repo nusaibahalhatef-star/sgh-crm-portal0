@@ -53,6 +53,8 @@ const ProjectsManagementPage = lazy(() => import("./pages/ProjectsManagementPage
 const ReviewApprovalPage = lazy(() => import("./pages/ReviewApprovalPage"));
 const CampaignsPage = lazy(() => import("./pages/admin/CampaignsPage"));
 const DigitalMarketingTasksPage = lazy(() => import("./pages/admin/DigitalMarketingTasksPage"));
+const PatientPortalLogin = lazy(() => import("./pages/PatientPortalLogin"));
+const PatientDashboard = lazy(() => import("./pages/PatientDashboard"));
 import MessageSettingsPage from "./pages/MessageSettingsPage";
 import QueueDashboard from "./pages/QueueDashboard";
 
@@ -116,6 +118,8 @@ function Router() {
       <Route path={"/dashboard/review-approval"} component={ReviewApprovalPage} />
       <Route path={"/admin"} component={AdminDashboard} />
 
+      <Route path={"/patient-portal"} component={PatientPortalLogin} />
+      <Route path={"/patient-portal/dashboard"} component={PatientDashboard} />
       <Route path={"/offline"} component={OfflinePage} />
       <Route path={"/settings"} component={SettingsPage} />
       <Route path={"/404"} component={NotFound} />
