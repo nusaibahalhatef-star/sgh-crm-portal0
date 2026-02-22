@@ -2940,3 +2940,13 @@
 - [x] تحسين أزرار الإجراءات (Actions) - اتصال + واتساب في الحوارات
 - [x] ضمان التوافق مع الجوال وسطح المكتب
 - [x] اختبارات vitest للتحسينات (40 اختبار ناجح)
+
+### تحسين صفحات التفاصيل الفردية ✅ مكتمل
+- [x] فحص DoctorDetailPage وتحديد مجالات التحسين
+- [x] فحص OfferDetailPage وتحديد مجالات التحسين
+- [x] فحص CampDetailPage وتحديد مجالات التحسين
+- [x] تحسين DoctorDetailPage - skeleton loading, breadcrumb, hero section, بطاقة الطبيب, نموذج الحجز
+- [x] تحسين OfferDetailPage - skeleton loading, breadcrumb, hero section, تفاصيل العرض, نموذج التسجيل
+- [x] تحسين CampDetailPage - skeleton loading, breadcrumb, hero section, تفاصيل المخيم, نموذج التسجيل
+- [x] تحسين RTL والاستجابة للجوال في جميع الصفحات
+- [x] اختبارات vitest للتحسينات (40 اختبار ناجح)
