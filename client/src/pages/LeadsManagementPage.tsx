@@ -328,7 +328,7 @@ export default function LeadsManagementPage() {
                   <TableHead className="font-semibold text-center">الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
+              <TableBody className={!leadsLoading && paginatedLeads.length > 0 ? 'stagger-rows' : ''}>
                 {leadsLoading ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-12">

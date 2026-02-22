@@ -845,7 +845,7 @@ export default function BookingsManagementPage() {
                         <TableHead>الإجراءات</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <TableBody className={!leadsLoading && filteredLeads.length > 0 ? 'stagger-rows' : ''}>
                       {leadsLoading ? (
                         <TableRow>
                           <TableCell colSpan={7} className="text-center py-8">
@@ -1187,7 +1187,7 @@ export default function BookingsManagementPage() {
                         })}
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <TableBody className={!appointmentsLoading && filteredAppointments.length > 0 ? 'stagger-rows' : ''}>
                       {appointmentsLoading ? (
                         <TableRow>
                           <TableCell colSpan={appointmentTable.columnOrder.filter(k => appointmentTable.visibleColumns[k]).length || 1} className="p-0">

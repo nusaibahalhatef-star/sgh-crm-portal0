@@ -569,7 +569,7 @@ export default function AppointmentsManagementPage() {
                     })}
                   </TableRow>
                 </TableHeader>
-                <TableBody>
+                <TableBody className={!appointmentsLoading && filteredAppointments.length > 0 ? 'stagger-rows' : ''}>
                   {appointmentsLoading ? (
                     <TableRow>
                       <TableCell colSpan={appointmentTable.columnOrder.filter(key => appointmentTable.visibleColumns[key]).length} className="text-center py-8">

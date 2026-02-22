@@ -339,17 +339,31 @@ interface DashboardSidebarProps {
   currentPath: string;
 }
 
-// Badge component for sidebar icons
+// Badge component for sidebar icons with pulse animation
 function SidebarBadge({ count, className }: { count: number; className?: string }) {
+  const prevCountRef = useRef(count);
+  const [isPulsing, setIsPulsing] = useState(false);
+
+  useEffect(() => {
+    if (count > prevCountRef.current && prevCountRef.current >= 0) {
+      setIsPulsing(true);
+      const timer = setTimeout(() => setIsPulsing(false), 600);
+      prevCountRef.current = count;
+      return () => clearTimeout(timer);
+    }
+    prevCountRef.current = count;
+  }, [count]);
+
   if (!count || count <= 0) return null;
   const display = count > 99 ? '99+' : String(count);
   return (
     <span
       className={cn(
-        "absolute flex items-center justify-center rounded-full bg-red-500 text-white font-bold shadow-sm border border-white",
+        "absolute flex items-center justify-center rounded-full bg-red-500 text-white font-bold shadow-sm border border-white transition-transform duration-300",
         count > 99 ? "min-w-[18px] h-[14px] text-[7px] px-0.5 -top-1 -left-1.5" :
         count > 9 ? "min-w-[16px] h-[14px] text-[7px] px-0.5 -top-1 -left-1" :
         "h-[14px] w-[14px] text-[7px] -top-0.5 -left-0.5",
+        isPulsing && "badge-pulse",
         className
       )}
     >
@@ -599,7 +613,7 @@ export default function DashboardSidebar({ currentPath }: DashboardSidebarProps)
                       <Icon className={cn("h-[18px] w-[18px]", isActive && "stroke-[2.5]")} />
                       <SidebarBadge count={getBadgeCount(item.id)} />
                       {!getBadgeCount(item.id) && item.hasDot && (
-                        <span className="absolute -top-0.5 -left-0.5 h-1.5 w-1.5 bg-red-500 rounded-full" />
+                        <span className="absolute -top-0.5 -left-0.5 h-1.5 w-1.5 bg-red-500 rounded-full dot-pulse" />
                       )}
                     </div>
                     <span className={cn(
@@ -991,7 +1005,7 @@ export default function DashboardSidebar({ currentPath }: DashboardSidebarProps)
           <div className="relative">
             <Menu className="h-5 w-5" />
             {((badgeCounts?.tasks || 0) + (badgeCounts?.whatsapp || 0) + (badgeCounts?.management || 0)) > 0 && (
-              <span className="absolute -top-0.5 -left-0.5 h-2 w-2 bg-red-500 rounded-full" />
+              <span className="absolute -top-0.5 -left-0.5 h-2 w-2 bg-red-500 rounded-full dot-pulse" />
             )}
           </div>
           <span className="font-medium">المزيد</span>

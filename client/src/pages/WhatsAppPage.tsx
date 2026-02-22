@@ -273,10 +273,14 @@ export default function WhatsAppPage() {
                   <div className="p-4 text-center text-gray-500">جاري التحميل...</div>
                 ) : filteredConversations && filteredConversations.length > 0 ? (
                   <div className="divide-y">
-                    {filteredConversations.map((conv: any) => (
+                    {filteredConversations.map((conv: any, index: number) => (
                       <div
                         key={conv.id}
                         onClick={() => setSelectedConversation(conv.id)}
+                        style={{
+                          opacity: 0,
+                          animation: `row-enter 0.35s ease-out ${Math.min(index * 60, 600)}ms forwards`,
+                        }}
                         className={`p-4 cursor-pointer transition-colors hover:bg-green-50 ${
                           selectedConversation === conv.id ? "bg-green-100 border-r-4 border-green-600" : ""
                         }`}
@@ -291,7 +295,7 @@ export default function WhatsAppPage() {
                                 {conv.customerName || "عميل جديد"}
                               </h3>
                               {conv.unreadCount > 0 && (
-                                <Badge variant="destructive" className="rounded-full px-2">
+                                <Badge variant="destructive" className="rounded-full px-2 badge-pulse">
                                   {conv.unreadCount}
                                 </Badge>
                               )}
@@ -349,10 +353,14 @@ export default function WhatsAppPage() {
                       <div className="text-center text-gray-500">جاري تحميل الرسائل...</div>
                     ) : messages && messages.length > 0 ? (
                       <div className="space-y-4">
-                        {messages.map((msg: any) => (
+                        {messages.map((msg: any, index: number) => (
                           <div
                             key={msg.id}
                             className={`flex ${msg.direction === "outbound" ? "justify-start" : "justify-end"}`}
+                            style={{
+                              opacity: 0,
+                              animation: `row-enter 0.3s ease-out ${Math.min(index * 50, 500)}ms forwards`,
+                            }}
                           >
                             <div
                               className={`max-w-[70%] rounded-lg p-3 ${

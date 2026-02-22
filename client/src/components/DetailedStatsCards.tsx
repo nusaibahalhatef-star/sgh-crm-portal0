@@ -11,6 +11,7 @@ import {
   XCircle,
   UserCheck,
 } from "lucide-react";
+import { AnimatedCounter } from "@/components/animations";
 
 export default function DetailedStatsCards() {
   const { data: leads } = trpc.leads.unifiedList.useQuery();
@@ -20,7 +21,6 @@ export default function DetailedStatsCards() {
 
   // Calculate statistics
   const stats = useMemo(() => {
-    // Camp registrations stats
     const campStats = {
       total: campRegistrations?.length || 0,
       pending: campRegistrations?.filter((r: any) => r.status === 'pending').length || 0,
@@ -29,7 +29,6 @@ export default function DetailedStatsCards() {
       cancelled: campRegistrations?.filter((r: any) => r.status === 'cancelled').length || 0,
     };
 
-    // Appointments stats
     const appointmentStats = {
       total: appointments?.length || 0,
       pending: appointments?.filter((a: any) => a.status === 'pending').length || 0,
@@ -38,7 +37,6 @@ export default function DetailedStatsCards() {
       cancelled: appointments?.filter((a: any) => a.status === 'cancelled').length || 0,
     };
 
-    // Offer leads stats
     const offerStats = {
       total: offerLeads?.length || 0,
       pending: offerLeads?.filter((o: any) => o.status === 'pending').length || 0,
@@ -47,8 +45,6 @@ export default function DetailedStatsCards() {
       cancelled: offerLeads?.filter((o: any) => o.status === 'cancelled').length || 0,
     };
 
-    // Total stats (all bookings combined)
-    // Note: leads are the same people who made registrations, so we don't add them to total
     const totalStats = {
       total: campStats.total + appointmentStats.total + offerStats.total,
       camps: campStats.total,
@@ -66,9 +62,9 @@ export default function DetailedStatsCards() {
   }, [leads, appointments, offerLeads, campRegistrations]);
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8 stagger-cards">
       {/* Card 1: Total Stats */}
-      <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+      <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 stat-card-animated">
         <CardHeader className="pb-2 md:pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm md:text-lg text-blue-900">إجمالي التسجيلات</CardTitle>
@@ -79,31 +75,31 @@ export default function DetailedStatsCards() {
         </CardHeader>
         <CardContent className="space-y-1 md:space-y-2">
           <div className="text-2xl md:text-4xl font-bold text-blue-900">
-            {stats.total.total}
+            <AnimatedCounter value={stats.total.total} duration={1000} />
           </div>
           <div className="space-y-0.5 md:space-y-1 text-[10px] md:text-sm">
             <div className="flex justify-between items-center">
               <span className="text-blue-700">تسجيلات المخيمات</span>
-              <span className="font-semibold text-blue-900">{stats.total.camps}</span>
+              <span className="font-semibold text-blue-900"><AnimatedCounter value={stats.total.camps} duration={800} /></span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-blue-700">مواعيد الأطباء</span>
-              <span className="font-semibold text-blue-900">{stats.total.appointments}</span>
+              <span className="font-semibold text-blue-900"><AnimatedCounter value={stats.total.appointments} duration={800} /></span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-blue-700">حجوزات العروض</span>
-              <span className="font-semibold text-blue-900">{stats.total.offers}</span>
+              <span className="font-semibold text-blue-900"><AnimatedCounter value={stats.total.offers} duration={800} /></span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-blue-700">العملاء المسجلين</span>
-              <span className="font-semibold text-blue-900">{stats.total.leads}</span>
+              <span className="font-semibold text-blue-900"><AnimatedCounter value={stats.total.leads} duration={800} /></span>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Card 2: Camp Registrations */}
-      <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+      <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 stat-card-animated">
         <CardHeader className="pb-2 md:pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm md:text-lg text-purple-900">تسجيلات المخيمات</CardTitle>
@@ -114,7 +110,7 @@ export default function DetailedStatsCards() {
         </CardHeader>
         <CardContent className="space-y-1 md:space-y-2">
           <div className="text-2xl md:text-4xl font-bold text-purple-900">
-            {stats.camps.total}
+            <AnimatedCounter value={stats.camps.total} duration={1000} />
           </div>
           <div className="space-y-0.5 md:space-y-1 text-[10px] md:text-sm">
             <div className="flex justify-between items-center">
@@ -122,35 +118,35 @@ export default function DetailedStatsCards() {
                 <Clock className="w-3 h-3 text-yellow-600" />
                 <span className="text-purple-700">قيد الانتظار</span>
               </div>
-              <span className="font-semibold text-yellow-600">{stats.camps.pending}</span>
+              <span className="font-semibold text-yellow-600"><AnimatedCounter value={stats.camps.pending} duration={700} /></span>
             </div>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-1">
                 <CheckCircle className="w-3 h-3 text-blue-600" />
                 <span className="text-purple-700">مؤكد</span>
               </div>
-              <span className="font-semibold text-blue-600">{stats.camps.confirmed}</span>
+              <span className="font-semibold text-blue-600"><AnimatedCounter value={stats.camps.confirmed} duration={700} /></span>
             </div>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-1">
                 <UserCheck className="w-3 h-3 text-green-600" />
                 <span className="text-purple-700">حضر</span>
               </div>
-              <span className="font-semibold text-green-600">{stats.camps.attended}</span>
+              <span className="font-semibold text-green-600"><AnimatedCounter value={stats.camps.attended} duration={700} /></span>
             </div>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-1">
                 <XCircle className="w-3 h-3 text-red-600" />
                 <span className="text-purple-700">ملغي</span>
               </div>
-              <span className="font-semibold text-red-600">{stats.camps.cancelled}</span>
+              <span className="font-semibold text-red-600"><AnimatedCounter value={stats.camps.cancelled} duration={700} /></span>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Card 3: Appointments */}
-      <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+      <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 stat-card-animated">
         <CardHeader className="pb-2 md:pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm md:text-lg text-green-900">مواعيد الأطباء</CardTitle>
@@ -161,7 +157,7 @@ export default function DetailedStatsCards() {
         </CardHeader>
         <CardContent className="space-y-1 md:space-y-2">
           <div className="text-2xl md:text-4xl font-bold text-green-900">
-            {stats.appointments.total}
+            <AnimatedCounter value={stats.appointments.total} duration={1000} />
           </div>
           <div className="space-y-0.5 md:space-y-1 text-[10px] md:text-sm">
             <div className="flex justify-between items-center">
@@ -169,35 +165,35 @@ export default function DetailedStatsCards() {
                 <Clock className="w-3 h-3 text-yellow-600" />
                 <span className="text-green-700">قيد الانتظار</span>
               </div>
-              <span className="font-semibold text-yellow-600">{stats.appointments.pending}</span>
+              <span className="font-semibold text-yellow-600"><AnimatedCounter value={stats.appointments.pending} duration={700} /></span>
             </div>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-1">
                 <CheckCircle className="w-3 h-3 text-blue-600" />
                 <span className="text-green-700">مؤكد</span>
               </div>
-              <span className="font-semibold text-blue-600">{stats.appointments.confirmed}</span>
+              <span className="font-semibold text-blue-600"><AnimatedCounter value={stats.appointments.confirmed} duration={700} /></span>
             </div>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-1">
                 <UserCheck className="w-3 h-3 text-green-600" />
                 <span className="text-green-700">مكتمل</span>
               </div>
-              <span className="font-semibold text-green-600">{stats.appointments.completed}</span>
+              <span className="font-semibold text-green-600"><AnimatedCounter value={stats.appointments.completed} duration={700} /></span>
             </div>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-1">
                 <XCircle className="w-3 h-3 text-red-600" />
                 <span className="text-green-700">ملغي</span>
               </div>
-              <span className="font-semibold text-red-600">{stats.appointments.cancelled}</span>
+              <span className="font-semibold text-red-600"><AnimatedCounter value={stats.appointments.cancelled} duration={700} /></span>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Card 4: Offer Leads */}
-      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 stat-card-animated">
         <CardHeader className="pb-2 md:pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm md:text-lg text-orange-900">حجوزات العروض</CardTitle>
@@ -208,7 +204,7 @@ export default function DetailedStatsCards() {
         </CardHeader>
         <CardContent className="space-y-1 md:space-y-2">
           <div className="text-2xl md:text-4xl font-bold text-orange-900">
-            {stats.offers.total}
+            <AnimatedCounter value={stats.offers.total} duration={1000} />
           </div>
           <div className="space-y-0.5 md:space-y-1 text-[10px] md:text-sm">
             <div className="flex justify-between items-center">
@@ -216,28 +212,28 @@ export default function DetailedStatsCards() {
                 <Clock className="w-3 h-3 text-yellow-600" />
                 <span className="text-orange-700">قيد الانتظار</span>
               </div>
-              <span className="font-semibold text-yellow-600">{stats.offers.pending}</span>
+              <span className="font-semibold text-yellow-600"><AnimatedCounter value={stats.offers.pending} duration={700} /></span>
             </div>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-1">
                 <CheckCircle className="w-3 h-3 text-blue-600" />
                 <span className="text-orange-700">مؤكد</span>
               </div>
-              <span className="font-semibold text-blue-600">{stats.offers.confirmed}</span>
+              <span className="font-semibold text-blue-600"><AnimatedCounter value={stats.offers.confirmed} duration={700} /></span>
             </div>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-1">
                 <UserCheck className="w-3 h-3 text-green-600" />
                 <span className="text-orange-700">مكتمل</span>
               </div>
-              <span className="font-semibold text-green-600">{stats.offers.completed}</span>
+              <span className="font-semibold text-green-600"><AnimatedCounter value={stats.offers.completed} duration={700} /></span>
             </div>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-1">
                 <XCircle className="w-3 h-3 text-red-600" />
                 <span className="text-orange-700">ملغي</span>
               </div>
-              <span className="font-semibold text-red-600">{stats.offers.cancelled}</span>
+              <span className="font-semibold text-red-600"><AnimatedCounter value={stats.offers.cancelled} duration={700} /></span>
             </div>
           </div>
         </CardContent>
