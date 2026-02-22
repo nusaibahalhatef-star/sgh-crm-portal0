@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Settings, Save, Trash2, BookTemplate, ChevronDown, Check, Plus, Globe, User, GripVertical } from "lucide-react";
+import { Settings, Save, Trash2, BookTemplate, ChevronDown, Check, Plus, Globe, User, GripVertical, Snowflake } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -129,6 +129,7 @@ export interface ColumnTemplate {
   columns: Record<string, boolean>;
   columnOrder?: string[]; // ordered column keys
   columnWidths?: Record<string, number>; // custom column widths
+  frozenColumns?: string[]; // frozen/sticky column keys
   isDefault?: boolean;
   isShared?: boolean;
   createdByName?: string | null;
@@ -146,15 +147,18 @@ interface ColumnVisibilityProps {
   templates?: ColumnTemplate[];
   activeTemplateId?: string | null;
   onApplyTemplate?: (template: ColumnTemplate) => void;
-  onSaveTemplate?: (name: string, columns: Record<string, boolean>, columnOrder: string[], columnWidths?: Record<string, number>) => void;
+  onSaveTemplate?: (name: string, columns: Record<string, boolean>, columnOrder: string[], columnWidths?: Record<string, number>, frozenColumns?: string[]) => void;
   onDeleteTemplate?: (templateId: string) => void;
   tableKey?: string;
   // Column widths support
   columnWidths?: Record<string, number>;
+  // Frozen columns support
+  frozenColumns?: string[];
+  onToggleFrozen?: (columnKey: string) => void;
   // Shared template support (admin only)
   isAdmin?: boolean;
   sharedTemplates?: ColumnTemplate[];
-  onSaveSharedTemplate?: (name: string, columns: Record<string, boolean>, columnOrder: string[], columnWidths?: Record<string, number>) => void;
+  onSaveSharedTemplate?: (name: string, columns: Record<string, boolean>, columnOrder: string[], columnWidths?: Record<string, number>, frozenColumns?: string[]) => void;
   onDeleteSharedTemplate?: (dbId: number) => void;
 }
 
@@ -192,14 +196,12 @@ export function getDefaultTemplates(columns: ColumnConfig[], tableKey: string): 
 }
 
 // Sortable column item component
-function SortableColumnItem({
-  column,
-  isVisible,
-  onVisibilityChange,
-}: {
+function SortableColumnItem({ column, isVisible, onVisibilityChange, isFrozen, onToggleFrozen }: {
   column: ColumnConfig;
   isVisible: boolean;
   onVisibilityChange: (key: string, visible: boolean) => void;
+  isFrozen?: boolean;
+  onToggleFrozen?: (key: string) => void;
 }) {
   const {
     attributes,
@@ -244,6 +246,22 @@ function SortableColumnItem({
       >
         {column.label}
       </Label>
+      {onToggleFrozen && isVisible && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFrozen(column.key);
+          }}
+          className={`p-0.5 rounded transition-colors ${
+            isFrozen 
+              ? 'text-blue-600 bg-blue-100 hover:bg-blue-200' 
+              : 'text-muted-foreground/40 hover:text-muted-foreground hover:bg-accent'
+          }`}
+          title={isFrozen ? 'إلغاء تجميد العمود' : 'تجميد العمود'}
+        >
+          <Snowflake className="h-3 w-3" />
+        </button>
+      )}
     </div>
   );
 }
@@ -262,6 +280,8 @@ export function ColumnVisibility({
   onDeleteTemplate,
   tableKey,
   columnWidths,
+  frozenColumns = [],
+  onToggleFrozen,
   isAdmin = false,
   sharedTemplates = [],
   onSaveSharedTemplate,
@@ -318,7 +338,7 @@ export function ColumnVisibility({
       return;
     }
     if (onSaveTemplate) {
-      onSaveTemplate(newTemplateName.trim(), { ...visibleColumns }, [...columnOrder], columnWidths ? { ...columnWidths } : undefined);
+      onSaveTemplate(newTemplateName.trim(), { ...visibleColumns }, [...columnOrder], columnWidths ? { ...columnWidths } : undefined, frozenColumns.length > 0 ? [...frozenColumns] : undefined);
       setNewTemplateName('');
       setSaveDialogOpen(false);
       toast.success(`تم حفظ القالب "${newTemplateName.trim()}" بنجاح`);
@@ -331,7 +351,7 @@ export function ColumnVisibility({
       return;
     }
     if (onSaveSharedTemplate) {
-      onSaveSharedTemplate(newSharedTemplateName.trim(), { ...visibleColumns }, [...columnOrder], columnWidths ? { ...columnWidths } : undefined);
+      onSaveSharedTemplate(newSharedTemplateName.trim(), { ...visibleColumns }, [...columnOrder], columnWidths ? { ...columnWidths } : undefined, frozenColumns.length > 0 ? [...frozenColumns] : undefined);
       setNewSharedTemplateName('');
       setSaveSharedDialogOpen(false);
       toast.success(`تم حفظ القالب المشترك "${newSharedTemplateName.trim()}" بنجاح - سيظهر لجميع المستخدمين`);
@@ -548,7 +568,7 @@ export function ColumnVisibility({
                 </div>
               </div>
               <p className="text-[11px] text-muted-foreground -mt-1">
-                اسحب <GripVertical className="h-3 w-3 inline" /> لإعادة ترتيب الأعمدة
+                اسحب <GripVertical className="h-3 w-3 inline" /> لإعادة الترتيب • انقر <Snowflake className="h-3 w-3 inline text-blue-500" /> للتجميد
               </p>
               <div className="max-h-[350px] overflow-y-auto -mx-1 px-1">
                 <DndContext
@@ -566,6 +586,8 @@ export function ColumnVisibility({
                         column={column}
                         isVisible={visibleColumns[column.key] ?? column.defaultVisible}
                         onVisibilityChange={onVisibilityChange}
+                        isFrozen={frozenColumns.includes(column.key)}
+                        onToggleFrozen={onToggleFrozen}
                       />
                     ))}
                   </SortableContext>

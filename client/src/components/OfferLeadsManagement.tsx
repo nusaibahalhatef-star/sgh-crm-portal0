@@ -6,7 +6,7 @@ import ActionButtons from "@/components/ActionButtons";
 import EmptyState from "@/components/EmptyState";
 import MultiSelect from "@/components/MultiSelect";
 import { ColumnVisibility, getDefaultTemplates, getColumnWidth, type ColumnConfig, type ColumnTemplate } from "@/components/ColumnVisibility";
-import { ResizableTable, ResizableHeaderCell, useColumnWidths } from "@/components/ResizableTable";
+import { ResizableTable, ResizableHeaderCell, useColumnWidths, useFrozenColumns, FrozenTableCell } from "@/components/ResizableTable";
 import TableSkeleton from "@/components/TableSkeleton";
 import QuickFilters from "@/components/QuickFilters";
 import InlineStatusEditor from "@/components/InlineStatusEditor";
@@ -229,6 +229,21 @@ export default function OfferLeadsManagement({
     saveOfferColumnWidthsFn, savedOfferColumnWidths as Record<string, number> | null
   );
 
+  // Frozen columns - with database sync
+  const { data: savedOfferFrozenColumns } = trpc.preferences.get.useQuery(
+    { key: 'offerLeadFrozenColumns' },
+    { retry: false }
+  );
+  const saveOfferFrozenColumnsFn = useCallback((frozen: string[]) => {
+    saveOfferPreferencesMutation.mutate({ key: 'offerLeadFrozenColumns', value: frozen });
+  }, [saveOfferPreferencesMutation]);
+  const offerFrozenColumns = useFrozenColumns(
+    'offerLeads',
+    [],
+    saveOfferFrozenColumnsFn,
+    savedOfferFrozenColumns as string[] | null
+  );
+
   const handleOfferLeadColumnsReset = () => {
     const defaultVisible: Record<string, boolean> = {};
     offerLeadColumns.forEach(col => {
@@ -238,6 +253,7 @@ export default function OfferLeadsManagement({
     setActiveOfferTemplateId(null);
     setOfferColumnOrder(defaultOfferColumnOrder);
     offerColumnWidths.resetWidths();
+    offerFrozenColumns.resetFrozen();
     localStorage.setItem('offerLeadVisibleColumns', JSON.stringify(defaultVisible));
     localStorage.removeItem('activeOfferTemplateId');
     localStorage.setItem('offerLeadColumnOrder', JSON.stringify(defaultOfferColumnOrder));
@@ -312,13 +328,14 @@ export default function OfferLeadsManagement({
     dbId: t.id,
   }));
 
-  const handleSaveSharedOfferTemplate = (name: string, columns: Record<string, boolean>, columnOrder?: string[], columnWidths?: Record<string, number>) => {
+  const handleSaveSharedOfferTemplate = (name: string, columns: Record<string, boolean>, columnOrder?: string[], columnWidths?: Record<string, number>, frozenCols?: string[]) => {
     createSharedOfferTemplateMutation.mutate({
       name,
       tableKey: 'offerLeads',
       columns,
       columnOrder: columnOrder || offerColumnOrder,
       columnWidths: columnWidths || offerColumnWidths.columnWidths,
+      frozenColumns: frozenCols || offerFrozenColumns.frozenColumns,
     } as any);
   };
 
@@ -340,19 +357,23 @@ export default function OfferLeadsManagement({
       offerColumnWidths.applyWidths(template.columnWidths);
       saveOfferPreferencesMutation.mutate({ key: 'offerLeadColumnWidths', value: template.columnWidths });
     }
+    if (template.frozenColumns) {
+      offerFrozenColumns.setFrozen(template.frozenColumns);
+    }
     localStorage.setItem('offerLeadVisibleColumns', JSON.stringify(template.columns));
     localStorage.setItem('activeOfferTemplateId', template.id);
     saveOfferPreferencesMutation.mutate({ key: 'offerLeadVisibleColumns', value: template.columns });
     saveOfferPreferencesMutation.mutate({ key: 'activeOfferTemplateId', value: template.id });
   };
 
-  const handleSaveOfferTemplate = (name: string, columns: Record<string, boolean>, columnOrder?: string[], columnWidths?: Record<string, number>) => {
+  const handleSaveOfferTemplate = (name: string, columns: Record<string, boolean>, columnOrder?: string[], columnWidths?: Record<string, number>, frozenCols?: string[]) => {
     const newTemplate: ColumnTemplate = {
       id: `offerLeads_custom_${Date.now()}`,
       name,
       columns,
       columnOrder: columnOrder || offerColumnOrder,
       columnWidths: columnWidths || offerColumnWidths.columnWidths,
+      frozenColumns: frozenCols || offerFrozenColumns.frozenColumns,
       isDefault: false,
     };
     const updated = [...customOfferTemplates, newTemplate];
@@ -837,12 +858,14 @@ export default function OfferLeadsManagement({
                  onSaveTemplate={handleSaveOfferTemplate}
                  onDeleteTemplate={handleDeleteOfferTemplate}
                  tableKey="offerLeads"
-                 columnWidths={offerColumnWidths.columnWidths}
-                 isAdmin={user?.role === 'admin'}
-                 sharedTemplates={sharedOfferTemplates}
-                 onSaveSharedTemplate={handleSaveSharedOfferTemplate}
-                 onDeleteSharedTemplate={handleDeleteSharedOfferTemplate}
-               />
+                  columnWidths={offerColumnWidths.columnWidths}
+                  frozenColumns={offerFrozenColumns.frozenColumns}
+                  onToggleFrozen={offerFrozenColumns.toggleFrozen}
+                  isAdmin={user?.role === 'admin'}
+                  sharedTemplates={sharedOfferTemplates}
+                  onSaveSharedTemplate={handleSaveSharedOfferTemplate}
+                  onDeleteSharedTemplate={handleDeleteSharedOfferTemplate}
+                />
               <Button
                 variant="outline"
                 onClick={handlePrintOfferLeads}
@@ -976,7 +999,11 @@ export default function OfferLeadsManagement({
 
           {/* Desktop Table View */}
           <div className="hidden md:block border rounded-lg">
-            <ResizableTable>
+             <ResizableTable
+               frozenColumns={offerFrozenColumns.frozenColumns}
+               columnWidths={offerColumnWidths.columnWidths}
+               visibleColumnOrder={offerColumnOrder.filter(key => offerLeadVisibleColumns[key])}
+             >
               <TableHeader>
                 <TableRow>
                   {offerColumnOrder.filter(key => offerLeadVisibleColumns[key]).map(colKey => {
@@ -1056,7 +1083,7 @@ export default function OfferLeadsManagement({
                         switch(colKey) {
                           case 'checkbox':
                             return (
-                              <TableCell key={colKey}>
+                              <FrozenTableCell key={colKey} columnKey={colKey}>
                                 <input
                                   type="checkbox"
                                   checked={selectedIds.includes(lead.id)}
@@ -1069,15 +1096,15 @@ export default function OfferLeadsManagement({
                                   }}
                                   className="rounded border-gray-300"
                                 />
-                              </TableCell>
+                              </FrozenTableCell>
                             );
                           case 'receiptNumber':
-                            return <TableCell key={colKey} className="text-sm text-muted-foreground font-mono">{lead.receiptNumber || "-"}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm text-muted-foreground font-mono">{lead.receiptNumber || "-"}</FrozenTableCell>;
                           case 'name':
-                            return <TableCell key={colKey} className="font-medium">{lead.fullName}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="font-medium">{lead.fullName}</FrozenTableCell>;
                           case 'phone':
                             return (
-                              <TableCell key={colKey}>
+                              <FrozenTableCell key={colKey} columnKey={colKey}>
                                 <div className="flex items-center gap-2">
                                   <span className="font-mono">{lead.phone}</span>
                                   <ActionButtons
@@ -1088,33 +1115,33 @@ export default function OfferLeadsManagement({
                                     variant="ghost"
                                   />
                                 </div>
-                              </TableCell>
+                              </FrozenTableCell>
                             );
                           case 'email':
                             return (
-                              <TableCell key={colKey}>
+                              <FrozenTableCell key={colKey} columnKey={colKey}>
                                 {lead.email ? (
                                   <div className="flex items-center gap-2">
                                     <Mail className="h-4 w-4 text-muted-foreground" />
                                     <a href={`mailto:${lead.email}`} className="hover:text-primary text-sm">{lead.email}</a>
                                   </div>
                                 ) : (<span className="text-muted-foreground">-</span>)}
-                              </TableCell>
+                              </FrozenTableCell>
                             );
                           case 'age':
-                            return <TableCell key={colKey}>{lead.age ? `${lead.age} سنة` : '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey}>{lead.age ? `${lead.age} سنة` : '-'}</FrozenTableCell>;
                           case 'offer':
                             return (
-                              <TableCell key={colKey}>
+                              <FrozenTableCell key={colKey} columnKey={colKey}>
                                 <div className="flex items-center gap-2">
                                   <Tag className="h-4 w-4 text-muted-foreground" />
                                   <span className="text-sm">{lead.offerTitle || "غير محدد"}</span>
                                 </div>
-                              </TableCell>
+                              </FrozenTableCell>
                             );
                           case 'source':
                             return (
-                              <TableCell key={colKey}>
+                              <FrozenTableCell key={colKey} columnKey={colKey}>
                                 {lead.source ? (
                                   <Badge variant="outline" className="text-xs font-medium" style={{
                                     backgroundColor: SOURCE_COLORS[lead.source] ? `${SOURCE_COLORS[lead.source]}15` : undefined,
@@ -1124,11 +1151,11 @@ export default function OfferLeadsManagement({
                                     {SOURCE_LABELS[lead.source] || lead.source}
                                   </Badge>
                                 ) : (<Badge variant="outline" className="text-xs">غير محدد</Badge>)}
-                              </TableCell>
+                              </FrozenTableCell>
                             );
                           case 'status':
                             return (
-                              <TableCell key={colKey}>
+                              <FrozenTableCell key={colKey} columnKey={colKey}>
                                 <InlineStatusEditor
                                   currentStatus={lead.status}
                                   statusOptions={[
@@ -1146,37 +1173,37 @@ export default function OfferLeadsManagement({
                                     });
                                   }}
                                 />
-                              </TableCell>
+                              </FrozenTableCell>
                             );
                           case 'statusNotes':
-                            return <TableCell key={colKey} className="max-w-[200px] truncate" title={lead.statusNotes}>{lead.statusNotes || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="max-w-[200px] truncate" title={lead.statusNotes}>{lead.statusNotes || '-'}</FrozenTableCell>;
                           case 'date':
-                            return <TableCell key={colKey} className="text-sm text-muted-foreground">{new Date(lead.createdAt).toLocaleDateString("ar-SA")}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm text-muted-foreground">{new Date(lead.createdAt).toLocaleDateString("ar-SA")}</FrozenTableCell>;
                           case 'utmSource':
-                            return <TableCell key={colKey} className="text-xs">{lead.utmSource || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{lead.utmSource || '-'}</FrozenTableCell>;
                           case 'utmMedium':
-                            return <TableCell key={colKey} className="text-xs">{lead.utmMedium || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{lead.utmMedium || '-'}</FrozenTableCell>;
                           case 'utmCampaign':
-                            return <TableCell key={colKey} className="text-xs">{lead.utmCampaign || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{lead.utmCampaign || '-'}</FrozenTableCell>;
                           case 'utmTerm':
-                            return <TableCell key={colKey} className="text-xs">{lead.utmTerm || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{lead.utmTerm || '-'}</FrozenTableCell>;
                           case 'utmContent':
-                            return <TableCell key={colKey} className="text-xs">{lead.utmContent || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{lead.utmContent || '-'}</FrozenTableCell>;
                           case 'utmPlacement':
-                            return <TableCell key={colKey} className="text-xs">{lead.utmPlacement || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{lead.utmPlacement || '-'}</FrozenTableCell>;
                           case 'referrer':
-                            return <TableCell key={colKey} className="text-xs">{lead.referrer || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{lead.referrer || '-'}</FrozenTableCell>;
                           case 'fbclid':
-                            return <TableCell key={colKey} className="text-xs font-mono">{lead.fbclid || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs font-mono">{lead.fbclid || '-'}</FrozenTableCell>;
                           case 'gclid':
-                            return <TableCell key={colKey} className="text-xs font-mono">{lead.gclid || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs font-mono">{lead.gclid || '-'}</FrozenTableCell>;
                           case 'comments':
-                            return <TableCell key={colKey}><CommentCount entityType="offerLead" entityId={lead.id} /></TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey}><CommentCount entityType="offerLead" entityId={lead.id} /></FrozenTableCell>;
                           case 'tasks':
-                            return <TableCell key={colKey}><TaskCount entityType="offerLead" entityId={lead.id} /></TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey}><TaskCount entityType="offerLead" entityId={lead.id} /></FrozenTableCell>;
                           case 'actions':
                             return (
-                              <TableCell key={colKey}>
+                              <FrozenTableCell key={colKey} columnKey={colKey}>
                                 <div className="flex gap-1">
                                   <Tooltip>
                                     <TooltipTrigger asChild>
@@ -1210,10 +1237,10 @@ export default function OfferLeadsManagement({
                                     <TooltipContent><p>طباعة السند</p></TooltipContent>
                                   </Tooltip>
                                 </div>
-                              </TableCell>
+                              </FrozenTableCell>
                             );
                           default:
-                            return <TableCell key={colKey}>-</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey}>-</FrozenTableCell>;
                         }
                       })}
                     </TableRow>

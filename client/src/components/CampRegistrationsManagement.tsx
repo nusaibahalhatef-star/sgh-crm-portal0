@@ -6,7 +6,7 @@ import ActionButtons from "@/components/ActionButtons";
 import EmptyState from "@/components/EmptyState";
 import MultiSelect from "@/components/MultiSelect";
 import { ColumnVisibility, getDefaultTemplates, getColumnWidth, type ColumnConfig, type ColumnTemplate } from "@/components/ColumnVisibility";
-import { ResizableTable, ResizableHeaderCell, useColumnWidths } from "@/components/ResizableTable";
+import { ResizableTable, ResizableHeaderCell, useColumnWidths, useFrozenColumns, FrozenTableCell } from "@/components/ResizableTable";
 import TableSkeleton from "@/components/TableSkeleton";
 import QuickFilters from "@/components/QuickFilters";
 import InlineStatusEditor from "@/components/InlineStatusEditor";
@@ -235,6 +235,21 @@ export default function CampRegistrationsManagement({
     saveCampColumnWidthsFn, savedCampColumnWidths as Record<string, number> | null
   );
 
+  // Frozen columns - with database sync
+  const { data: savedCampFrozenColumns } = trpc.preferences.get.useQuery(
+    { key: 'campRegFrozenColumns' },
+    { retry: false }
+  );
+  const saveCampFrozenColumnsFn = useCallback((frozen: string[]) => {
+    saveCampPreferencesMutation.mutate({ key: 'campRegFrozenColumns', value: frozen });
+  }, [saveCampPreferencesMutation]);
+  const campFrozenColumns = useFrozenColumns(
+    'campRegistrations',
+    [],
+    saveCampFrozenColumnsFn,
+    savedCampFrozenColumns as string[] | null
+  );
+
   const handleCampRegColumnsReset = () => {
     const defaultVisible: Record<string, boolean> = {};
     campRegColumns.forEach(col => {
@@ -244,6 +259,7 @@ export default function CampRegistrationsManagement({
     setActiveCampTemplateId(null);
     setCampColumnOrder(defaultCampColumnOrder);
     campColumnWidths.resetWidths();
+    campFrozenColumns.resetFrozen();
     localStorage.setItem('campRegVisibleColumns', JSON.stringify(defaultVisible));
     localStorage.removeItem('activeCampTemplateId');
     localStorage.setItem('campRegColumnOrder', JSON.stringify(defaultCampColumnOrder));
@@ -318,13 +334,14 @@ export default function CampRegistrationsManagement({
     dbId: t.id,
   }));
 
-  const handleSaveSharedCampTemplate = (name: string, columns: Record<string, boolean>, columnOrder?: string[], columnWidths?: Record<string, number>) => {
+  const handleSaveSharedCampTemplate = (name: string, columns: Record<string, boolean>, columnOrder?: string[], columnWidths?: Record<string, number>, frozenCols?: string[]) => {
     createSharedCampTemplateMutation.mutate({
       name,
       tableKey: 'campRegistrations',
       columns,
       columnOrder: columnOrder || campColumnOrder,
       columnWidths: columnWidths || campColumnWidths.columnWidths,
+      frozenColumns: frozenCols || campFrozenColumns.frozenColumns,
     } as any);
   };
 
@@ -346,19 +363,23 @@ export default function CampRegistrationsManagement({
       campColumnWidths.applyWidths(template.columnWidths);
       saveCampPreferencesMutation.mutate({ key: 'campRegColumnWidths', value: template.columnWidths });
     }
+    if (template.frozenColumns) {
+      campFrozenColumns.setFrozen(template.frozenColumns);
+    }
     localStorage.setItem('campRegVisibleColumns', JSON.stringify(template.columns));
     localStorage.setItem('activeCampTemplateId', template.id);
     saveCampPreferencesMutation.mutate({ key: 'campRegVisibleColumns', value: template.columns });
     saveCampPreferencesMutation.mutate({ key: 'activeCampTemplateId', value: template.id });
   };
 
-  const handleSaveCampTemplate = (name: string, columns: Record<string, boolean>, columnOrder?: string[], columnWidths?: Record<string, number>) => {
+  const handleSaveCampTemplate = (name: string, columns: Record<string, boolean>, columnOrder?: string[], columnWidths?: Record<string, number>, frozenCols?: string[]) => {
     const newTemplate: ColumnTemplate = {
       id: `campRegistrations_custom_${Date.now()}`,
       name,
       columns,
       columnOrder: columnOrder || campColumnOrder,
       columnWidths: columnWidths || campColumnWidths.columnWidths,
+      frozenColumns: frozenCols || campFrozenColumns.frozenColumns,
       isDefault: false,
     };
     const updated = [...customCampTemplates, newTemplate];
@@ -849,12 +870,14 @@ export default function CampRegistrationsManagement({
                  onSaveTemplate={handleSaveCampTemplate}
                  onDeleteTemplate={handleDeleteCampTemplate}
                  tableKey="campRegistrations"
-                 columnWidths={campColumnWidths.columnWidths}
-                 isAdmin={user?.role === 'admin'}
-                 sharedTemplates={sharedCampTemplates}
-                 onSaveSharedTemplate={handleSaveSharedCampTemplate}
-                 onDeleteSharedTemplate={handleDeleteSharedCampTemplate}
-               />
+                  columnWidths={campColumnWidths.columnWidths}
+                  frozenColumns={campFrozenColumns.frozenColumns}
+                  onToggleFrozen={campFrozenColumns.toggleFrozen}
+                  isAdmin={user?.role === 'admin'}
+                  sharedTemplates={sharedCampTemplates}
+                  onSaveSharedTemplate={handleSaveSharedCampTemplate}
+                  onDeleteSharedTemplate={handleDeleteSharedCampTemplate}
+                />
               <Button
                 variant="outline"
                 onClick={handlePrintCampRegistrations}
@@ -1016,7 +1039,11 @@ export default function CampRegistrationsManagement({
 
           {/* Desktop Table View */}
           <div className="hidden md:block border rounded-lg">
-            <ResizableTable>
+             <ResizableTable
+               frozenColumns={campFrozenColumns.frozenColumns}
+               columnWidths={campColumnWidths.columnWidths}
+               visibleColumnOrder={campColumnOrder.filter(key => campRegVisibleColumns[key])}
+             >
               <TableHeader>
                 <TableRow>
                   {campColumnOrder.filter(key => campRegVisibleColumns[key]).map(colKey => {
@@ -1088,52 +1115,52 @@ export default function CampRegistrationsManagement({
                         switch(colKey) {
                           case 'checkbox':
                             return (
-                              <TableCell key={colKey}>
+                              <FrozenTableCell key={colKey} columnKey={colKey}>
                                 <Checkbox checked={selectedIds.includes(reg.id)} onCheckedChange={() => handleSelectOne(reg.id)} />
-                              </TableCell>
+                              </FrozenTableCell>
                             );
                           case 'receiptNumber':
-                            return <TableCell key={colKey} className="text-sm text-muted-foreground font-mono">{reg.receiptNumber || "-"}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm text-muted-foreground font-mono">{reg.receiptNumber || "-"}</FrozenTableCell>;
                           case 'name':
-                            return <TableCell key={colKey} className="font-medium">{reg.fullName}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="font-medium">{reg.fullName}</FrozenTableCell>;
                           case 'phone':
                             return (
-                              <TableCell key={colKey}>
+                              <FrozenTableCell key={colKey} columnKey={colKey}>
                                 <div className="flex items-center gap-2">
                                   <span className="font-mono">{reg.phone}</span>
                                   <ActionButtons phoneNumber={reg.phone} showWhatsApp={true}
                                     whatsAppMessage={`مرحباً ${reg.fullName}، شكراً لتسجيلك في مخيمنا الطبي. نتطلع لرؤيتك.`}
                                     size="sm" variant="ghost" />
                                 </div>
-                              </TableCell>
+                              </FrozenTableCell>
                             );
                           case 'email':
                             return (
-                              <TableCell key={colKey}>
+                              <FrozenTableCell key={colKey} columnKey={colKey}>
                                 {reg.email ? (
                                   <div className="flex items-center gap-2">
                                     <Mail className="h-4 w-4 text-muted-foreground" />
                                     <a href={`mailto:${reg.email}`} className="hover:text-primary text-sm">{reg.email}</a>
                                   </div>
                                 ) : (<span className="text-muted-foreground">-</span>)}
-                              </TableCell>
+                              </FrozenTableCell>
                             );
                           case 'age':
-                            return <TableCell key={colKey}>{reg.age ? <span className="text-sm">{reg.age} سنة</span> : <span className="text-muted-foreground">-</span>}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey}>{reg.age ? <span className="text-sm">{reg.age} سنة</span> : <span className="text-muted-foreground">-</span>}</FrozenTableCell>;
                           case 'gender':
-                            return <TableCell key={colKey}>{reg.gender === 'male' ? 'ذكر' : reg.gender === 'female' ? 'أنثى' : '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey}>{reg.gender === 'male' ? 'ذكر' : reg.gender === 'female' ? 'أنثى' : '-'}</FrozenTableCell>;
                           case 'camp':
                             return (
-                              <TableCell key={colKey}>
+                              <FrozenTableCell key={colKey} columnKey={colKey}>
                                 <div className="flex items-center gap-2">
                                   <Tent className="h-4 w-4 text-muted-foreground" />
                                   <span className="text-sm">{reg.campName || "غير محدد"}</span>
                                 </div>
-                              </TableCell>
+                              </FrozenTableCell>
                             );
                           case 'source':
                             return (
-                              <TableCell key={colKey}>
+                              <FrozenTableCell key={colKey} columnKey={colKey}>
                                 {reg.source ? (
                                   <Badge variant="outline" className="text-xs font-medium" style={{
                                     backgroundColor: SOURCE_COLORS[reg.source] ? `${SOURCE_COLORS[reg.source]}15` : undefined,
@@ -1143,11 +1170,11 @@ export default function CampRegistrationsManagement({
                                     {SOURCE_LABELS[reg.source] || reg.source}
                                   </Badge>
                                 ) : (<Badge variant="outline" className="text-xs">غير محدد</Badge>)}
-                              </TableCell>
+                              </FrozenTableCell>
                             );
                           case 'status':
                             return (
-                              <TableCell key={colKey}>
+                              <FrozenTableCell key={colKey} columnKey={colKey}>
                                 <InlineStatusEditor
                                   currentStatus={reg.status}
                                   statusOptions={[
@@ -1160,43 +1187,43 @@ export default function CampRegistrationsManagement({
                                     await updateStatusMutation.mutateAsync({ id: reg.id, status: newStatus as any, notes: '' });
                                   }}
                                 />
-                              </TableCell>
+                              </FrozenTableCell>
                             );
                           case 'statusNotes':
-                            return <TableCell key={colKey} className="max-w-[200px] truncate" title={reg.statusNotes}>{reg.statusNotes || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="max-w-[200px] truncate" title={reg.statusNotes}>{reg.statusNotes || '-'}</FrozenTableCell>;
                           case 'procedures':
-                            return <TableCell key={colKey} className="text-sm">{reg.procedures || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm">{reg.procedures || '-'}</FrozenTableCell>;
                           case 'medicalCondition':
-                            return <TableCell key={colKey} className="text-sm">{reg.medicalCondition || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm">{reg.medicalCondition || '-'}</FrozenTableCell>;
                           case 'attendanceDate':
-                            return <TableCell key={colKey} className="text-sm">{reg.attendanceDate ? new Date(reg.attendanceDate).toLocaleDateString('ar-SA') : '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm">{reg.attendanceDate ? new Date(reg.attendanceDate).toLocaleDateString('ar-SA') : '-'}</FrozenTableCell>;
                           case 'date':
-                            return <TableCell key={colKey} className="text-sm text-muted-foreground">{new Date(reg.createdAt).toLocaleDateString("ar-SA")}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm text-muted-foreground">{new Date(reg.createdAt).toLocaleDateString("ar-SA")}</FrozenTableCell>;
                           case 'utmSource':
-                            return <TableCell key={colKey} className="text-xs">{reg.utmSource || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{reg.utmSource || '-'}</FrozenTableCell>;
                           case 'utmMedium':
-                            return <TableCell key={colKey} className="text-xs">{reg.utmMedium || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{reg.utmMedium || '-'}</FrozenTableCell>;
                           case 'utmCampaign':
-                            return <TableCell key={colKey} className="text-xs">{reg.utmCampaign || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{reg.utmCampaign || '-'}</FrozenTableCell>;
                           case 'utmTerm':
-                            return <TableCell key={colKey} className="text-xs">{reg.utmTerm || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{reg.utmTerm || '-'}</FrozenTableCell>;
                           case 'utmContent':
-                            return <TableCell key={colKey} className="text-xs">{reg.utmContent || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{reg.utmContent || '-'}</FrozenTableCell>;
                           case 'utmPlacement':
-                            return <TableCell key={colKey} className="text-xs">{reg.utmPlacement || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{reg.utmPlacement || '-'}</FrozenTableCell>;
                           case 'referrer':
-                            return <TableCell key={colKey} className="text-xs">{reg.referrer || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{reg.referrer || '-'}</FrozenTableCell>;
                           case 'fbclid':
-                            return <TableCell key={colKey} className="text-xs font-mono">{reg.fbclid || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs font-mono">{reg.fbclid || '-'}</FrozenTableCell>;
                           case 'gclid':
-                            return <TableCell key={colKey} className="text-xs font-mono">{reg.gclid || '-'}</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs font-mono">{reg.gclid || '-'}</FrozenTableCell>;
                           case 'comments':
-                            return <TableCell key={colKey}><CommentCount entityType="campRegistration" entityId={reg.id} /></TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey}><CommentCount entityType="campRegistration" entityId={reg.id} /></FrozenTableCell>;
                           case 'tasks':
-                            return <TableCell key={colKey}><TaskCount entityType="campRegistration" entityId={reg.id} /></TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey}><TaskCount entityType="campRegistration" entityId={reg.id} /></FrozenTableCell>;
                           case 'actions':
                             return (
-                              <TableCell key={colKey}>
+                              <FrozenTableCell key={colKey} columnKey={colKey}>
                                 <div className="flex gap-1">
                                   <Tooltip>
                                     <TooltipTrigger asChild>
@@ -1233,10 +1260,10 @@ export default function CampRegistrationsManagement({
                                     <TooltipContent><p>طباعة السند</p></TooltipContent>
                                   </Tooltip>
                                 </div>
-                              </TableCell>
+                              </FrozenTableCell>
                             );
                           default:
-                            return <TableCell key={colKey}>-</TableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey}>-</FrozenTableCell>;
                         }
                       })}
                     </TableRow>

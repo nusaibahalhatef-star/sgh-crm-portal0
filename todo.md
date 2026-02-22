@@ -2747,3 +2747,13 @@
 - [x] توسيع نطاق أحجام الأعمدة (min/max) لمرونة أكبر في التحكم
 - [x] تحسين debounce لحفظ أحجام الأعمدة (500ms) لتقليل الطلبات
 - [x] كتابة اختبارات vitest لنظام أحجام الأعمدة
+
+### إضافة خاصية تجميد الأعمدة (Freeze/Sticky Columns) ✅ مكتمل
+- [x] تطوير نظام تجميد الأعمدة في ResizableTable (CSS sticky positioning)
+- [x] إضافة واجهة تحكم لاختيار الأعمدة المجمدة (في ColumnVisibility أو قائمة منفصلة)
+- [x] تطبيق التجميد في BookingsManagementPage مع حفظ التفضيلات
+- [x] تطبيق التجميد في OfferLeadsManagement مع حفظ التفضيلات
+- [x] تطبيق التجميد في CampRegistrationsManagement مع حفظ التفضيلات
+- [x] حفظ الأعمدة المجمدة مع القوالب (frozenColumns في ColumnTemplate)
+- [x] مزامنة تفضيلات التجميد مع قاعدة البيانات
+- [x] كتابة اختبارات vitest (14 اختبار ناجح)
