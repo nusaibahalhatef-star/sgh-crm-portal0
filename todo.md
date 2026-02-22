@@ -2805,3 +2805,8 @@
 - [x] إضافة عمود تاريخ الإنشاء (مخفي افتراضياً)
 - [x] التحقق من أن AdminDashboard لا يحتوي على جداول نشطة تحتاج تحديث (الجداول مخفية بـ false &&)
 - [x] التحقق من أن جميع المكونات الأخرى (Doctors, Offers, Camps, BookingsManagement, OfferLeads, CampRegistrations) تستخدم useTableFeatures بالفعل
+
+### تطبيق useTableFeatures على جدول طلبات الوصول ✅
+- [x] تطبيق useTableFeatures على جدول طلبات الوصول (Access Requests) في UsersManagementPage
+- [x] إضافة ResizableTable و ColumnVisibility والفرز
+- [x] التحقق من عمل التطبيق وحفظ checkpoint
