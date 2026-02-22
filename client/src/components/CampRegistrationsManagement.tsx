@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
@@ -72,8 +72,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { exportToExcel, formatCampRegistrationsForExport } from "@/lib/exportToExcel";
-import { exportData, printTable, type ExportMetadata } from "@/lib/advancedExport";
+import { useExportUtils } from "@/hooks/useExportUtils";
 import { printReceipt } from "@/components/PrintReceipt";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { SOURCE_OPTIONS, SOURCE_LABELS, SOURCE_COLORS } from "@shared/sources";
@@ -192,184 +191,6 @@ export default function CampRegistrationsManagement({
     }
   }, [pendingCount, onPendingCountChange]);
 
-  // دالة التصدير المتقدمة
-  const handleExportCampRegistrations = async (format: 'excel' | 'csv' | 'pdf') => {
-    if (!filteredRegistrations || filteredRegistrations.length === 0) {
-      toast.error("لا توجد بيانات للتصدير");
-      return;
-    }
-
-    try {
-      // تحضير الفلاتر المستخدمة
-      const activeFilters: Record<string, string> = {};
-      if (debouncedSearch) {
-        activeFilters['البحث'] = debouncedSearch;
-      }
-      if (statusFilter.length > 0) {
-        activeFilters['الحالة'] = statusFilter.map(s => statusLabels[s as keyof typeof statusLabels]).join(', ');
-      }
-      if (sourceFilter.length > 0) {
-        activeFilters['المصدر'] = sourceFilter.map(s => SOURCE_LABELS[s] || s).join(', ');
-      }
-      if (selectedCamp.length > 0) {
-        activeFilters['المخيم'] = selectedCamp.join(', ');
-      }
-
-      // تحضير نطاق التاريخ
-      const dateRangeStr = `${dateRange.from.toLocaleDateString('ar-SA')} - ${dateRange.to.toLocaleDateString('ar-SA')}`;
-
-      // تحضير تعريفات الأعمدة
-      const columnDefinitions = [
-        { key: 'receiptNumber', label: 'رقم السند' },
-        { key: 'name', label: 'الاسم الكامل' },
-        { key: 'phone', label: 'رقم الهاتف' },
-        { key: 'email', label: 'البريد الإلكتروني' },
-        { key: 'age', label: 'العمر' },
-        { key: 'camp', label: 'المخيم' },
-        { key: 'source', label: 'المصدر' },
-        { key: 'status', label: 'الحالة' },
-        { key: 'date', label: 'تاريخ التسجيل' },
-      ];
-
-      // تحويل البيانات للتصدير
-      const dataToExport = filteredRegistrations.map((reg: any) => ({
-        receiptNumber: reg.receiptNumber || '-',
-        name: reg.fullName,
-        phone: reg.phone,
-        email: reg.email || '-',
-        age: reg.age || '-',
-        camp: reg.campTitle || '-',
-        source: SOURCE_LABELS[reg.source] || reg.source || '-',
-        status: statusLabels[reg.status as keyof typeof statusLabels] || reg.status,
-        date: new Date(reg.createdAt).toLocaleDateString('ar-SA'),
-      }));
-
-      // تحضير metadata
-      const metadata: ExportMetadata = {
-        tableName: 'تسجيلات المخيمات',
-        dateRange: dateRangeStr,
-        filters: Object.keys(activeFilters).length > 0 ? activeFilters : undefined,
-        totalRecords: dataToExport.length,
-        exportedRecords: dataToExport.length,
-        exportDate: new Date().toLocaleString('ar-SA'),
-        exportedBy: user?.name || 'مستخدم',
-      };
-
-      // تحضير الأعمدة المرئية
-      const visibleCols = Object.entries(campTable.visibleColumns)
-        .filter(([_, visible]) => visible)
-        .map(([key]) => {
-          const col = columnDefinitions.find(c => c.key === key);
-          return { key, label: col?.label || key };
-        });
-
-      // تصدير بالتنسيق المحدد
-      await exportData({
-        format,
-        metadata,
-        columns: visibleCols,
-        data: dataToExport,
-        filename: `تسجيلات_المخيمات_${Date.now()}.${format === 'excel' ? 'xlsx' : format}`,
-      });
-
-      toast.success(`تم تصدير البيانات بنجاح بتنسيق ${format.toUpperCase()}`);
-    } catch (error) {
-      console.error('Export error:', error);
-      toast.error('حدث خطأ أثناء التصدير');
-    }
-  };
-
-  // دالة الطباعة
-  const handlePrintCampRegistrations = () => {
-    if (!filteredRegistrations || filteredRegistrations.length === 0) {
-      toast.error("لا توجد بيانات للطباعة");
-      return;
-    }
-
-    try {
-      // تحضير الفلاتر المستخدمة
-      const activeFilters: Record<string, string> = {};
-      if (debouncedSearch) {
-        activeFilters['البحث'] = debouncedSearch;
-      }
-      if (statusFilter.length > 0) {
-        activeFilters['الحالة'] = statusFilter.map(s => statusLabels[s as keyof typeof statusLabels]).join(', ');
-      }
-      if (sourceFilter.length > 0) {
-        activeFilters['المصدر'] = sourceFilter.map(s => SOURCE_LABELS[s] || s).join(', ');
-      }
-      if (selectedCamp.length > 0) {
-        activeFilters['المخيم'] = selectedCamp.join(', ');
-      }
-
-      // تحضير نطاق التاريخ
-      const dateRangeStr = `${dateRange.from.toLocaleDateString('ar-SA')} - ${dateRange.to.toLocaleDateString('ar-SA')}`;
-
-      // تحضير تعريفات جميع الأعمدة الـ 13
-      const columnDefinitions = [
-        { key: 'checkbox', label: 'تحديد' },
-        { key: 'receiptNumber', label: 'رقم السند' },
-        { key: 'name', label: 'الاسم الكامل' },
-        { key: 'phone', label: 'رقم الهاتف' },
-        { key: 'email', label: 'البريد الإلكتروني' },
-        { key: 'age', label: 'العمر' },
-        { key: 'camp', label: 'المخيم' },
-        { key: 'source', label: 'المصدر' },
-        { key: 'status', label: 'الحالة' },
-        { key: 'date', label: 'تاريخ التسجيل' },
-        { key: 'comments', label: 'التعليقات' },
-        { key: 'tasks', label: 'المهام' },
-        { key: 'actions', label: 'الإجراءات' },
-      ];
-
-      // تحويل البيانات للطباعة مع جميع الأعمدة
-      const dataToExport = filteredRegistrations.map((reg: any) => ({
-        checkbox: '-',
-        receiptNumber: reg.receiptNumber || '-',
-        name: reg.fullName,
-        phone: reg.phone,
-        email: reg.email || '-',
-        age: reg.age || '-',
-        camp: reg.campTitle || '-',
-        source: SOURCE_LABELS[reg.source] || reg.source || '-',
-        status: statusLabels[reg.status as keyof typeof statusLabels] || reg.status,
-        date: new Date(reg.createdAt).toLocaleDateString('ar-SA'),
-        comments: reg.commentCount > 0 ? `${reg.commentCount} تعليق` : '-',
-        tasks: reg.taskCount > 0 ? `${reg.taskCount} مهمة` : '-',
-        actions: '-',
-      }));
-
-      // تحضير metadata
-      const metadata: ExportMetadata = {
-        tableName: 'تسجيلات المخيمات',
-        dateRange: dateRangeStr,
-        filters: Object.keys(activeFilters).length > 0 ? activeFilters : undefined,
-        totalRecords: dataToExport.length,
-        exportedRecords: dataToExport.length,
-        exportDate: new Date().toLocaleString('ar-SA'),
-        exportedBy: user?.name || 'مستخدم',
-      };
-
-      // تحضير الأعمدة المرئية
-      const visibleCols = Object.entries(campTable.visibleColumns)
-        .filter(([_, visible]) => visible)
-        .map(([key]) => {
-          const col = columnDefinitions.find(c => c.key === key);
-          return { key, label: col?.label || key };
-        });
-
-      // استدعاء دالة الطباعة
-      printTable({
-        format: 'pdf',
-        metadata,
-        columns: visibleCols,
-        data: dataToExport,
-      });
-    } catch (error) {
-      console.error('Print error:', error);
-      toast.error('حدث خطأ أثناء الطباعة');
-    }
-  };
 
   const bulkUpdateMutation = trpc.campRegistrations.bulkUpdateStatus.useMutation({
     onSuccess: () => {
@@ -501,6 +322,87 @@ export default function CampRegistrationsManagement({
     
     return sorted;
   }, [registrations, selectedCamp, sourceFilter, statusFilter, campTable.sortState, campTable.sortData]);
+
+  // useExportUtils hook لتسجيلات المخيمات
+  const campExport = useExportUtils({
+    tableName: 'تسجيلات المخيمات',
+    filenamePrefix: 'تسجيلات_المخيمات',
+    exportColumns: [
+      { key: 'receiptNumber', label: 'رقم السند' },
+      { key: 'name', label: 'الاسم الكامل' },
+      { key: 'phone', label: 'رقم الهاتف' },
+      { key: 'email', label: 'البريد الإلكتروني' },
+      { key: 'age', label: 'العمر' },
+      { key: 'camp', label: 'المخيم' },
+      { key: 'source', label: 'المصدر' },
+      { key: 'status', label: 'الحالة' },
+      { key: 'date', label: 'تاريخ التسجيل' },
+    ],
+    printColumns: [
+      { key: 'checkbox', label: 'تحديد' },
+      { key: 'receiptNumber', label: 'رقم السند' },
+      { key: 'name', label: 'الاسم الكامل' },
+      { key: 'phone', label: 'رقم الهاتف' },
+      { key: 'email', label: 'البريد الإلكتروني' },
+      { key: 'age', label: 'العمر' },
+      { key: 'camp', label: 'المخيم' },
+      { key: 'source', label: 'المصدر' },
+      { key: 'status', label: 'الحالة' },
+      { key: 'date', label: 'تاريخ التسجيل' },
+      { key: 'comments', label: 'التعليقات' },
+      { key: 'tasks', label: 'المهام' },
+      { key: 'actions', label: 'الإجراءات' },
+    ],
+    mapToExportRow: (reg: any) => ({
+      receiptNumber: reg.receiptNumber || '-',
+      name: reg.fullName,
+      phone: reg.phone,
+      email: reg.email || '-',
+      age: reg.age || '-',
+      camp: reg.campTitle || '-',
+      source: SOURCE_LABELS[reg.source] || reg.source || '-',
+      status: statusLabels[reg.status as keyof typeof statusLabels] || reg.status,
+      date: new Date(reg.createdAt).toLocaleDateString('ar-SA'),
+    }),
+    mapToPrintRow: (reg: any) => ({
+      checkbox: '-',
+      receiptNumber: reg.receiptNumber || '-',
+      name: reg.fullName,
+      phone: reg.phone,
+      email: reg.email || '-',
+      age: reg.age || '-',
+      camp: reg.campTitle || '-',
+      source: SOURCE_LABELS[reg.source] || reg.source || '-',
+      status: statusLabels[reg.status as keyof typeof statusLabels] || reg.status,
+      date: new Date(reg.createdAt).toLocaleDateString('ar-SA'),
+      comments: reg.commentCount > 0 ? `${reg.commentCount} تعليق` : '-',
+      tasks: reg.taskCount > 0 ? `${reg.taskCount} مهمة` : '-',
+      actions: '-',
+    }),
+  });
+
+  const getCampExportOptions = useCallback(() => {
+    const activeFilters = campExport.buildActiveFilters([
+      { label: 'البحث', value: debouncedSearch || undefined },
+      { label: 'الحالة', value: statusFilter.length > 0 ? statusFilter.map(s => statusLabels[s as keyof typeof statusLabels]).join(', ') : undefined },
+      { label: 'المصدر', value: sourceFilter.length > 0 ? sourceFilter.map(s => SOURCE_LABELS[s] || s).join(', ') : undefined },
+      { label: 'المخيم', value: selectedCamp.length > 0 ? selectedCamp.join(', ') : undefined },
+    ]);
+    return {
+      data: filteredRegistrations,
+      activeFilters,
+      dateRangeStr: campExport.formatDateRange(dateRange.from, dateRange.to),
+      visibleColumns: campTable.visibleColumns,
+    };
+  }, [filteredRegistrations, debouncedSearch, statusFilter, sourceFilter, selectedCamp, dateRange, campTable.visibleColumns, campExport]);
+
+  const handleExportCampRegistrations = useCallback(async (format: 'excel' | 'csv' | 'pdf') => {
+    await campExport.handleExport(format, getCampExportOptions());
+  }, [campExport, getCampExportOptions]);
+
+  const handlePrintCampRegistrations = useCallback(() => {
+    campExport.handlePrint(getCampExportOptions());
+  }, [campExport, getCampExportOptions]);
 
   const handleSelectAll = () => {
     if (selectedIds.length === filteredRegistrations.length) {
