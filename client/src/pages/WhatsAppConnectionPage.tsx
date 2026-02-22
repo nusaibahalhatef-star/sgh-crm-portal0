@@ -13,13 +13,13 @@ export default function WhatsAppConnectionPage() {
   // Queries
   const { data: statusData, isLoading: statusLoading, refetch: refetchStatus } = 
     trpc.whatsapp.connection.status.useQuery(undefined, {
-      refetchInterval: 3000, // Poll every 3 seconds
+      refetchInterval: 3000,
     });
 
   const { data: qrData, refetch: refetchQR } = 
     trpc.whatsapp.connection.getQR.useQuery(undefined, {
       enabled: statusData?.hasQRCode || false,
-      refetchInterval: statusData?.hasQRCode ? 2000 : false, // Poll QR every 2 seconds if available
+      refetchInterval: statusData?.hasQRCode ? 2000 : false,
     });
 
   // Mutations
@@ -46,7 +46,6 @@ export default function WhatsAppConnectionPage() {
     },
   });
 
-  // Stop initializing state when ready or has QR
   useEffect(() => {
     if (statusData?.isReady || statusData?.hasQRCode) {
       setIsInitializing(false);
@@ -70,11 +69,11 @@ export default function WhatsAppConnectionPage() {
 
   const getStatusBadge = () => {
     if (statusLoading) {
-      return <Badge variant="secondary">جاري التحقق...</Badge>;
+      return <Badge variant="secondary" className="text-xs sm:text-sm">جاري التحقق...</Badge>;
     }
     if (statusData?.isReady) {
       return (
-        <Badge className="bg-green-500 hover:bg-green-600">
+        <Badge className="bg-green-500 hover:bg-green-600 text-xs sm:text-sm">
           <CheckCircle2 className="h-3 w-3 ml-1" />
           متصل
         </Badge>
@@ -82,14 +81,14 @@ export default function WhatsAppConnectionPage() {
     }
     if (statusData?.isConnecting) {
       return (
-        <Badge variant="secondary">
+        <Badge variant="secondary" className="text-xs sm:text-sm">
           <Loader2 className="h-3 w-3 ml-1 animate-spin" />
           جاري الاتصال...
         </Badge>
       );
     }
     return (
-      <Badge variant="destructive">
+      <Badge variant="destructive" className="text-xs sm:text-sm">
         <XCircle className="h-3 w-3 ml-1" />
         غير متصل
       </Badge>
@@ -97,18 +96,18 @@ export default function WhatsAppConnectionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50" dir="rtl">
-      <div className="container mx-auto p-4 md:p-6 max-w-4xl">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950" dir="rtl">
+      <div className="container mx-auto p-3 sm:p-4 md:p-6 max-w-4xl">
         {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-3 rounded-xl shadow-lg">
-                <Smartphone className="h-8 w-8 text-white" />
+        <div className="mb-4 sm:mb-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-2 sm:p-3 rounded-xl shadow-lg flex-shrink-0">
+                <Smartphone className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
               </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">اتصال WhatsApp Web</h1>
-                <p className="text-muted-foreground">امسح رمز QR للاتصال بحسابك</p>
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-foreground truncate">اتصال WhatsApp Web</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">امسح رمز QR للاتصال بحسابك</p>
               </div>
             </div>
             {getStatusBadge()}
@@ -116,61 +115,61 @@ export default function WhatsAppConnectionPage() {
         </div>
 
         {/* Main Content */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Status Card */}
           <Card className="shadow-lg border-0">
-            <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-t-lg">
-              <CardTitle className="text-xl">حالة الاتصال</CardTitle>
-              <CardDescription className="text-white/80">
+            <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-t-lg p-3 sm:p-6">
+              <CardTitle className="text-base sm:text-xl">حالة الاتصال</CardTitle>
+              <CardDescription className="text-white/80 text-xs sm:text-sm">
                 معلومات الاتصال الحالي بـ WhatsApp Web
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
-                  <div className={`p-2 rounded-full ${statusData?.isReady ? 'bg-green-100' : 'bg-muted'}`}>
-                    <Power className={`h-5 w-5 ${statusData?.isReady ? 'text-green-600' : 'text-muted-foreground'}`} />
+            <CardContent className="p-3 sm:p-6">
+              <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-1.5 sm:gap-3 p-2.5 sm:p-4 bg-muted/50 rounded-lg text-center sm:text-right">
+                  <div className={`p-1.5 sm:p-2 rounded-full flex-shrink-0 ${statusData?.isReady ? 'bg-green-100' : 'bg-muted'}`}>
+                    <Power className={`h-4 w-4 sm:h-5 sm:w-5 ${statusData?.isReady ? 'text-green-600' : 'text-muted-foreground'}`} />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">الحالة</p>
-                    <p className="font-semibold">{statusData?.isReady ? "متصل" : "غير متصل"}</p>
+                    <p className="text-[10px] sm:text-sm text-muted-foreground">الحالة</p>
+                    <p className="font-semibold text-xs sm:text-base">{statusData?.isReady ? "متصل" : "غير متصل"}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
-                  <div className={`p-2 rounded-full ${statusData?.isConnecting ? 'bg-blue-100' : 'bg-muted'}`}>
-                    <Loader2 className={`h-5 w-5 ${statusData?.isConnecting ? 'text-blue-600 animate-spin' : 'text-muted-foreground'}`} />
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-1.5 sm:gap-3 p-2.5 sm:p-4 bg-muted/50 rounded-lg text-center sm:text-right">
+                  <div className={`p-1.5 sm:p-2 rounded-full flex-shrink-0 ${statusData?.isConnecting ? 'bg-blue-100' : 'bg-muted'}`}>
+                    <Loader2 className={`h-4 w-4 sm:h-5 sm:w-5 ${statusData?.isConnecting ? 'text-blue-600 animate-spin' : 'text-muted-foreground'}`} />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">الاتصال</p>
-                    <p className="font-semibold">{statusData?.isConnecting ? "جاري..." : "غير نشط"}</p>
+                    <p className="text-[10px] sm:text-sm text-muted-foreground">الاتصال</p>
+                    <p className="font-semibold text-xs sm:text-base">{statusData?.isConnecting ? "جاري..." : "غير نشط"}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
-                  <div className={`p-2 rounded-full ${statusData?.hasQRCode ? 'bg-purple-100' : 'bg-muted'}`}>
-                    <QrCode className={`h-5 w-5 ${statusData?.hasQRCode ? 'text-purple-600' : 'text-muted-foreground'}`} />
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-1.5 sm:gap-3 p-2.5 sm:p-4 bg-muted/50 rounded-lg text-center sm:text-right">
+                  <div className={`p-1.5 sm:p-2 rounded-full flex-shrink-0 ${statusData?.hasQRCode ? 'bg-purple-100' : 'bg-muted'}`}>
+                    <QrCode className={`h-4 w-4 sm:h-5 sm:w-5 ${statusData?.hasQRCode ? 'text-purple-600' : 'text-muted-foreground'}`} />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">QR Code</p>
-                    <p className="font-semibold">{statusData?.hasQRCode ? "متوفر" : "غير متوفر"}</p>
+                    <p className="text-[10px] sm:text-sm text-muted-foreground">QR Code</p>
+                    <p className="font-semibold text-xs sm:text-base">{statusData?.hasQRCode ? "متوفر" : "غير متوفر"}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-2 sm:gap-3">
                 {!statusData?.isReady && !statusData?.isConnecting && (
                   <Button
                     onClick={handleInitialize}
                     disabled={initializeMutation.isPending || isInitializing}
-                    className="flex-1 bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                    className="flex-1 bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-xs sm:text-sm h-9 sm:h-10"
                   >
                     {initializeMutation.isPending || isInitializing ? (
                       <>
-                        <Loader2 className="h-5 w-5 ml-2 animate-spin" />
+                        <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 ml-1.5 sm:ml-2 animate-spin" />
                         جاري التهيئة...
                       </>
                     ) : (
                       <>
-                        <Power className="h-5 w-5 ml-2" />
+                        <Power className="h-4 w-4 sm:h-5 sm:w-5 ml-1.5 sm:ml-2" />
                         بدء الاتصال
                       </>
                     )}
@@ -181,23 +180,23 @@ export default function WhatsAppConnectionPage() {
                     onClick={handleDisconnect}
                     disabled={disconnectMutation.isPending}
                     variant="destructive"
-                    className="flex-1"
+                    className="flex-1 text-xs sm:text-sm h-9 sm:h-10"
                   >
                     {disconnectMutation.isPending ? (
                       <>
-                        <Loader2 className="h-5 w-5 ml-2 animate-spin" />
+                        <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 ml-1.5 sm:ml-2 animate-spin" />
                         جاري قطع الاتصال...
                       </>
                     ) : (
                       <>
-                        <PowerOff className="h-5 w-5 ml-2" />
+                        <PowerOff className="h-4 w-4 sm:h-5 sm:w-5 ml-1.5 sm:ml-2" />
                         قطع الاتصال
                       </>
                     )}
                   </Button>
                 )}
-                <Button onClick={handleRefresh} variant="outline">
-                  <RefreshCw className="h-5 w-5" />
+                <Button onClick={handleRefresh} variant="outline" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0">
+                  <RefreshCw className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
               </div>
             </CardContent>
@@ -206,25 +205,25 @@ export default function WhatsAppConnectionPage() {
           {/* QR Code Card */}
           {statusData?.hasQRCode && qrData?.qrCode && (
             <Card className="shadow-lg border-0">
-              <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-t-lg">
-                <CardTitle className="text-xl">امسح رمز QR</CardTitle>
-                <CardDescription className="text-white/80">
+              <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-t-lg p-3 sm:p-6">
+                <CardTitle className="text-base sm:text-xl">امسح رمز QR</CardTitle>
+                <CardDescription className="text-white/80 text-xs sm:text-sm">
                   استخدم تطبيق WhatsApp على هاتفك لمسح الرمز
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="flex flex-col items-center">
-                  <div className="bg-white dark:bg-card p-4 rounded-lg shadow-md mb-4">
+                  <div className="bg-white dark:bg-card p-3 sm:p-4 rounded-lg shadow-md mb-4">
                     <img
                       src={qrData.qrCode}
                       alt="WhatsApp QR Code"
-                      className="w-64 h-64"
+                      className="w-48 h-48 sm:w-64 sm:h-64"
                     />
                   </div>
                   <Alert className="bg-blue-50 border-blue-200">
                     <QrCode className="h-4 w-4 text-blue-600" />
-                    <AlertTitle className="text-blue-900">كيفية المسح</AlertTitle>
-                    <AlertDescription className="text-blue-800">
+                    <AlertTitle className="text-blue-900 text-sm sm:text-base">كيفية المسح</AlertTitle>
+                    <AlertDescription className="text-blue-800 text-xs sm:text-sm">
                       <ol className="list-decimal list-inside space-y-1 mt-2">
                         <li>افتح تطبيق WhatsApp على هاتفك</li>
                         <li>اضغط على القائمة (⋮) أو الإعدادات</li>
@@ -242,9 +241,9 @@ export default function WhatsAppConnectionPage() {
           {/* Connected Success Card */}
           {statusData?.isReady && (
             <Alert className="bg-green-50 border-green-200 shadow-lg">
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
-              <AlertTitle className="text-green-900 text-lg">تم الاتصال بنجاح!</AlertTitle>
-              <AlertDescription className="text-green-800">
+              <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+              <AlertTitle className="text-green-900 text-sm sm:text-lg">تم الاتصال بنجاح!</AlertTitle>
+              <AlertDescription className="text-green-800 text-xs sm:text-sm">
                 حسابك على WhatsApp متصل الآن. يمكنك البدء في إرسال واستقبال الرسائل من خلال المنصة.
               </AlertDescription>
             </Alert>
@@ -253,37 +252,37 @@ export default function WhatsAppConnectionPage() {
           {/* Instructions Card */}
           {!statusData?.isReady && !statusData?.isConnecting && !statusData?.hasQRCode && (
             <Card className="shadow-lg border-0">
-              <CardHeader>
-                <CardTitle>تعليمات الاتصال</CardTitle>
-                <CardDescription>اتبع الخطوات التالية للاتصال بـ WhatsApp Web</CardDescription>
+              <CardHeader className="p-3 sm:p-6">
+                <CardTitle className="text-base sm:text-xl">تعليمات الاتصال</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">اتبع الخطوات التالية للاتصال بـ WhatsApp Web</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="bg-green-100 text-green-700 rounded-full w-8 h-8 flex items-center justify-center font-bold flex-shrink-0">
+              <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="flex items-start gap-2.5 sm:gap-3">
+                    <div className="bg-green-100 text-green-700 rounded-full w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center font-bold flex-shrink-0 text-sm sm:text-base">
                       1
                     </div>
                     <div>
-                      <h3 className="font-semibold mb-1">اضغط على "بدء الاتصال"</h3>
-                      <p className="text-sm text-muted-foreground">سيتم تهيئة الاتصال وإنشاء رمز QR</p>
+                      <h3 className="font-semibold mb-0.5 text-sm sm:text-base">اضغط على "بدء الاتصال"</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground">سيتم تهيئة الاتصال وإنشاء رمز QR</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <div className="bg-green-100 text-green-700 rounded-full w-8 h-8 flex items-center justify-center font-bold flex-shrink-0">
+                  <div className="flex items-start gap-2.5 sm:gap-3">
+                    <div className="bg-green-100 text-green-700 rounded-full w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center font-bold flex-shrink-0 text-sm sm:text-base">
                       2
                     </div>
                     <div>
-                      <h3 className="font-semibold mb-1">امسح رمز QR</h3>
-                      <p className="text-sm text-muted-foreground">استخدم تطبيق WhatsApp على هاتفك لمسح الرمز</p>
+                      <h3 className="font-semibold mb-0.5 text-sm sm:text-base">امسح رمز QR</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground">استخدم تطبيق WhatsApp على هاتفك لمسح الرمز</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <div className="bg-green-100 text-green-700 rounded-full w-8 h-8 flex items-center justify-center font-bold flex-shrink-0">
+                  <div className="flex items-start gap-2.5 sm:gap-3">
+                    <div className="bg-green-100 text-green-700 rounded-full w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center font-bold flex-shrink-0 text-sm sm:text-base">
                       3
                     </div>
                     <div>
-                      <h3 className="font-semibold mb-1">ابدأ المراسلة</h3>
-                      <p className="text-sm text-muted-foreground">بعد الاتصال، يمكنك إرسال واستقبال الرسائل مباشرة</p>
+                      <h3 className="font-semibold mb-0.5 text-sm sm:text-base">ابدأ المراسلة</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground">بعد الاتصال، يمكنك إرسال واستقبال الرسائل مباشرة</p>
                     </div>
                   </div>
                 </div>
