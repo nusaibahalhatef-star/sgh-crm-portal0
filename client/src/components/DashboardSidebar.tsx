@@ -591,7 +591,7 @@ export default function DashboardSidebar({ currentPath }: DashboardSidebarProps)
       {/* Logo */}
       <div className="flex items-center justify-center py-2 border-b border-gray-100 dark:border-gray-700">
         <img
-          src="/assets/new-logo.png"
+          src="/icon-72x72.png"
           alt="المستشفى السعودي الألماني"
           className="h-8 w-8 object-contain"
         />
@@ -1069,7 +1069,7 @@ export default function DashboardSidebar({ currentPath }: DashboardSidebarProps)
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700">
           <div className="flex items-center gap-3">
             <img
-              src="/assets/new-logo.png"
+              src="/icon-72x72.png"
               alt="المستشفى السعودي الألماني"
               className="h-9 w-9 object-contain"
             />
