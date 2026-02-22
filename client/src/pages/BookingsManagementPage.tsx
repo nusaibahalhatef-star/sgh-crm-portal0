@@ -10,7 +10,7 @@ import ActionButtons from "@/components/ActionButtons";
 import EmptyState from "@/components/EmptyState";
 import MultiSelect from "@/components/MultiSelect";
 import { ColumnVisibility, getDefaultTemplates, getColumnWidth, type ColumnConfig, type ColumnTemplate } from "@/components/ColumnVisibility";
-import { ResizableTable, ResizableHeaderCell, useColumnWidths } from "@/components/ResizableTable";
+import { ResizableTable, ResizableHeaderCell, useColumnWidths, useFrozenColumns, FrozenTableCell } from "@/components/ResizableTable";
 import TableSkeleton from "@/components/TableSkeleton";
 import QuickFilters from "@/components/QuickFilters";
 import InlineStatusEditor from "@/components/InlineStatusEditor";
@@ -305,6 +305,21 @@ export default function BookingsManagementPage() {
     saveColumnWidthsFn, savedColumnWidths as Record<string, number> | null
   );
 
+  // Frozen columns - with database sync
+  const { data: savedFrozenColumns } = trpc.preferences.get.useQuery(
+    { key: 'appointmentFrozenColumns' },
+    { retry: false }
+  );
+  const saveFrozenColumnsFn = useCallback((frozen: string[]) => {
+    savePreferencesMutation.mutate({ key: 'appointmentFrozenColumns', value: frozen });
+  }, [savePreferencesMutation]);
+  const appointmentFrozenColumns = useFrozenColumns(
+    'appointments',
+    [],
+    saveFrozenColumnsFn,
+    savedFrozenColumns as string[] | null
+  );
+
   const handleAppointmentColumnsReset = () => {
     const defaultVisible: Record<string, boolean> = {};
     appointmentColumns.forEach(col => {
@@ -314,6 +329,7 @@ export default function BookingsManagementPage() {
     setActiveAppointmentTemplateId(null);
     setAppointmentColumnOrder(defaultColumnOrder);
     appointmentColumnWidths.resetWidths();
+    appointmentFrozenColumns.resetFrozen();
     // Save to both localStorage and database
     localStorage.setItem('appointmentVisibleColumns', JSON.stringify(defaultVisible));
     localStorage.removeItem('activeAppointmentTemplateId');
@@ -398,13 +414,14 @@ export default function BookingsManagementPage() {
     dbId: t.id,
   }));
 
-  const handleSaveSharedAppointmentTemplate = (name: string, columns: Record<string, boolean>, columnOrder?: string[], columnWidths?: Record<string, number>) => {
+  const handleSaveSharedAppointmentTemplate = (name: string, columns: Record<string, boolean>, columnOrder?: string[], columnWidths?: Record<string, number>, frozenCols?: string[]) => {
     createSharedTemplateMutation.mutate({
       name,
       tableKey: 'appointments',
       columns,
       columnOrder: columnOrder || appointmentColumnOrder,
       columnWidths: columnWidths || appointmentColumnWidths.columnWidths,
+      frozenColumns: frozenCols || appointmentFrozenColumns.frozenColumns,
     } as any);
   };
 
@@ -427,19 +444,24 @@ export default function BookingsManagementPage() {
       appointmentColumnWidths.applyWidths(template.columnWidths);
       savePreferencesMutation.mutate({ key: 'appointmentColumnWidths', value: template.columnWidths });
     }
+    // Apply frozen columns from template if available
+    if (template.frozenColumns) {
+      appointmentFrozenColumns.setFrozen(template.frozenColumns);
+    }
     localStorage.setItem('appointmentVisibleColumns', JSON.stringify(template.columns));
     localStorage.setItem('activeAppointmentTemplateId', template.id);
     savePreferencesMutation.mutate({ key: 'appointmentVisibleColumns', value: template.columns });
     savePreferencesMutation.mutate({ key: 'activeAppointmentTemplateId', value: template.id });
   };
 
-  const handleSaveAppointmentTemplate = (name: string, columns: Record<string, boolean>, columnOrder?: string[], columnWidths?: Record<string, number>) => {
+  const handleSaveAppointmentTemplate = (name: string, columns: Record<string, boolean>, columnOrder?: string[], columnWidths?: Record<string, number>, frozenCols?: string[]) => {
     const newTemplate: ColumnTemplate = {
       id: `appointments_custom_${Date.now()}`,
       name,
       columns,
       columnOrder: columnOrder || appointmentColumnOrder,
       columnWidths: columnWidths || appointmentColumnWidths.columnWidths,
+      frozenColumns: frozenCols || appointmentFrozenColumns.frozenColumns,
       isDefault: false,
     };
     const updated = [...customTemplates, newTemplate];
@@ -1417,12 +1439,14 @@ export default function BookingsManagementPage() {
                        onSaveTemplate={handleSaveAppointmentTemplate}
                        onDeleteTemplate={handleDeleteAppointmentTemplate}
                        tableKey="appointments"
-                       columnWidths={appointmentColumnWidths.columnWidths}
-                       isAdmin={user?.role === 'admin'}
-                       sharedTemplates={sharedAppointmentTemplates}
-                       onSaveSharedTemplate={handleSaveSharedAppointmentTemplate}
-                       onDeleteSharedTemplate={handleDeleteSharedAppointmentTemplate}
-                     />
+                        columnWidths={appointmentColumnWidths.columnWidths}
+                        frozenColumns={appointmentFrozenColumns.frozenColumns}
+                        onToggleFrozen={appointmentFrozenColumns.toggleFrozen}
+                        isAdmin={user?.role === 'admin'}
+                        sharedTemplates={sharedAppointmentTemplates}
+                        onSaveSharedTemplate={handleSaveSharedAppointmentTemplate}
+                        onDeleteSharedTemplate={handleDeleteSharedAppointmentTemplate}
+                      />
                   </div>
                 </div>
 
@@ -1465,7 +1489,11 @@ export default function BookingsManagementPage() {
 
                 {/* Desktop Table View */}
                 <div className="table-responsive">
-                  <ResizableTable>
+                   <ResizableTable
+                     frozenColumns={appointmentFrozenColumns.frozenColumns}
+                     columnWidths={appointmentColumnWidths.columnWidths}
+                     visibleColumnOrder={appointmentColumnOrder.filter(key => appointmentVisibleColumns[key])}
+                   >
                     <TableHeader>
                       <TableRow>
                         {appointmentColumnOrder.filter(key => appointmentVisibleColumns[key]).map(colKey => {
@@ -1529,12 +1557,12 @@ export default function BookingsManagementPage() {
                             {appointmentColumnOrder.filter(key => appointmentVisibleColumns[key]).map(colKey => {
                               switch(colKey) {
                                 case 'date':
-                                  return <TableCell key={colKey} className="font-medium">{new Date(appointment.createdAt).toLocaleDateString("ar-EG")}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey} className="font-medium">{new Date(appointment.createdAt).toLocaleDateString("ar-EG")}</FrozenTableCell>;
                                 case 'name':
-                                  return <TableCell key={colKey} className="font-medium">{appointment.fullName || appointment.patientName || '-'}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey} className="font-medium">{appointment.fullName || appointment.patientName || '-'}</FrozenTableCell>;
                                 case 'phone':
                                   return (
-                                    <TableCell key={colKey}>
+                                    <FrozenTableCell key={colKey} columnKey={colKey}>
                                       <div className="flex items-center gap-2">
                                         <span className="font-mono">{appointment.phone}</span>
                                         <ActionButtons
@@ -1545,33 +1573,33 @@ export default function BookingsManagementPage() {
                                           variant="ghost"
                                         />
                                       </div>
-                                    </TableCell>
+                                    </FrozenTableCell>
                                   );
                                 case 'email':
-                                  return <TableCell key={colKey}>{appointment.email || '-'}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey}>{appointment.email || '-'}</FrozenTableCell>;
                                 case 'age':
-                                  return <TableCell key={colKey}>{appointment.age ? `${appointment.age} سنة` : '-'}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey}>{appointment.age ? `${appointment.age} سنة` : '-'}</FrozenTableCell>;
                                 case 'doctor':
-                                  return <TableCell key={colKey}>{appointment.doctorName || '-'}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey}>{appointment.doctorName || '-'}</FrozenTableCell>;
                                 case 'specialty':
-                                  return <TableCell key={colKey}>{appointment.doctorSpecialty || '-'}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey}>{appointment.doctorSpecialty || '-'}</FrozenTableCell>;
                                 case 'procedure':
-                                  return <TableCell key={colKey}>{appointment.procedure || '-'}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey}>{appointment.procedure || '-'}</FrozenTableCell>;
                                 case 'preferredDate':
-                                  return <TableCell key={colKey}>{appointment.preferredDate ? new Date(appointment.preferredDate).toLocaleDateString('ar-EG') : '-'}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey}>{appointment.preferredDate ? new Date(appointment.preferredDate).toLocaleDateString('ar-EG') : '-'}</FrozenTableCell>;
                                 case 'preferredTime':
-                                  return <TableCell key={colKey}>{appointment.preferredTime || '-'}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey}>{appointment.preferredTime || '-'}</FrozenTableCell>;
                                 case 'appointmentDate':
-                                  return <TableCell key={colKey}>{appointment.appointmentDate ? new Date(appointment.appointmentDate).toLocaleDateString('ar-EG') : '-'}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey}>{appointment.appointmentDate ? new Date(appointment.appointmentDate).toLocaleDateString('ar-EG') : '-'}</FrozenTableCell>;
                                 case 'notes':
-                                  return <TableCell key={colKey} className="max-w-[200px] truncate" title={appointment.notes}>{appointment.notes || '-'}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey} className="max-w-[200px] truncate" title={appointment.notes}>{appointment.notes || '-'}</FrozenTableCell>;
                                 case 'additionalNotes':
-                                  return <TableCell key={colKey} className="max-w-[200px] truncate" title={appointment.additionalNotes}>{appointment.additionalNotes || '-'}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey} className="max-w-[200px] truncate" title={appointment.additionalNotes}>{appointment.additionalNotes || '-'}</FrozenTableCell>;
                                 case 'staffNotes':
-                                  return <TableCell key={colKey} className="max-w-[200px] truncate" title={appointment.staffNotes}>{appointment.staffNotes || '-'}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey} className="max-w-[200px] truncate" title={appointment.staffNotes}>{appointment.staffNotes || '-'}</FrozenTableCell>;
                                 case 'source':
                                   return (
-                                    <TableCell key={colKey}>
+                                    <FrozenTableCell key={colKey} columnKey={colKey}>
                                       {appointment.source ? (
                                         <Badge 
                                           variant="outline" 
@@ -1587,13 +1615,13 @@ export default function BookingsManagementPage() {
                                       ) : (
                                         <span className="text-muted-foreground">-</span>
                                       )}
-                                    </TableCell>
+                                    </FrozenTableCell>
                                   );
                                 case 'receiptNumber':
-                                  return <TableCell key={colKey} className="text-sm text-muted-foreground font-mono">{appointment.receiptNumber || "-"}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm text-muted-foreground font-mono">{appointment.receiptNumber || "-"}</FrozenTableCell>;
                                 case 'status':
                                   return (
-                                    <TableCell key={colKey}>
+                                    <FrozenTableCell key={colKey} columnKey={colKey}>
                                       <InlineStatusEditor
                                         currentStatus={appointment.status}
                                         statusOptions={[
@@ -1610,33 +1638,33 @@ export default function BookingsManagementPage() {
                                           });
                                         }}
                                       />
-                                    </TableCell>
+                                    </FrozenTableCell>
                                   );
                                 case 'utmSource':
-                                  return <TableCell key={colKey} className="text-xs">{appointment.utmSource || '-'}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{appointment.utmSource || '-'}</FrozenTableCell>;
                                 case 'utmMedium':
-                                  return <TableCell key={colKey} className="text-xs">{appointment.utmMedium || '-'}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{appointment.utmMedium || '-'}</FrozenTableCell>;
                                 case 'utmCampaign':
-                                  return <TableCell key={colKey} className="text-xs">{appointment.utmCampaign || '-'}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{appointment.utmCampaign || '-'}</FrozenTableCell>;
                                 case 'utmTerm':
-                                  return <TableCell key={colKey} className="text-xs">{appointment.utmTerm || '-'}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{appointment.utmTerm || '-'}</FrozenTableCell>;
                                 case 'utmContent':
-                                  return <TableCell key={colKey} className="text-xs">{appointment.utmContent || '-'}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{appointment.utmContent || '-'}</FrozenTableCell>;
                                 case 'utmPlacement':
-                                  return <TableCell key={colKey} className="text-xs">{appointment.utmPlacement || '-'}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{appointment.utmPlacement || '-'}</FrozenTableCell>;
                                 case 'referrer':
-                                  return <TableCell key={colKey} className="text-xs">{appointment.referrer || '-'}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{appointment.referrer || '-'}</FrozenTableCell>;
                                 case 'fbclid':
-                                  return <TableCell key={colKey} className="text-xs font-mono">{appointment.fbclid || '-'}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs font-mono">{appointment.fbclid || '-'}</FrozenTableCell>;
                                 case 'gclid':
-                                  return <TableCell key={colKey} className="text-xs font-mono">{appointment.gclid || '-'}</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs font-mono">{appointment.gclid || '-'}</FrozenTableCell>;
                                 case 'comments':
-                                  return <TableCell key={colKey}><CommentCount entityType="appointment" entityId={appointment.id} /></TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey}><CommentCount entityType="appointment" entityId={appointment.id} /></FrozenTableCell>;
                                 case 'tasks':
-                                  return <TableCell key={colKey}><TaskCount entityType="appointment" entityId={appointment.id} /></TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey}><TaskCount entityType="appointment" entityId={appointment.id} /></FrozenTableCell>;
                                 case 'actions':
                                   return (
-                                    <TableCell key={colKey}>
+                                    <FrozenTableCell key={colKey} columnKey={colKey}>
                                       <div className="flex gap-1">
                                         <Tooltip>
                                           <TooltipTrigger asChild>
@@ -1683,10 +1711,10 @@ export default function BookingsManagementPage() {
                                           </TooltipContent>
                                         </Tooltip>
                                       </div>
-                                    </TableCell>
+                                    </FrozenTableCell>
                                   );
                                 default:
-                                  return <TableCell key={colKey}>-</TableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey}>-</FrozenTableCell>;
                               }
                             })}
                           </TableRow>
