@@ -103,6 +103,16 @@ const exportToCSV = (users: any[]) => {
   link.click();
 };
 
+// === تعريف أعمدة جدول طلبات الوصول ===
+const requestColumns: ColumnConfig[] = [
+  { key: "name", label: "الاسم", defaultVisible: true, defaultWidth: 180, minWidth: 120, maxWidth: 350, sortType: 'string' },
+  { key: "email", label: "البريد الإلكتروني", defaultVisible: true, defaultWidth: 220, minWidth: 140, maxWidth: 400, sortType: 'string' },
+  { key: "phone", label: "الهاتف", defaultVisible: true, defaultWidth: 150, minWidth: 100, maxWidth: 250, sortType: 'string' },
+  { key: "reason", label: "السبب", defaultVisible: true, defaultWidth: 200, minWidth: 120, maxWidth: 400, sortType: 'string' },
+  { key: "requestedAt", label: "تاريخ الطلب", defaultVisible: true, defaultWidth: 140, minWidth: 100, maxWidth: 250, sortType: 'date' },
+  { key: "actions", label: "الإجراءات", defaultVisible: true, defaultWidth: 180, minWidth: 140, maxWidth: 280, sortable: false },
+];
+
 // === تعريف أعمدة جدول المستخدمين ===
 const userColumns: ColumnConfig[] = [
   { key: "user", label: "المستخدم", defaultVisible: true, defaultWidth: 220, minWidth: 150, maxWidth: 400, sortType: 'string' },
@@ -135,6 +145,13 @@ export default function UsersManagementPage() {
     tableKey: 'users',
     columns: userColumns,
     defaultFrozenColumns: ['user'],
+  });
+
+  // === useTableFeatures hook لجدول طلبات الوصول ===
+  const requestTable = useTableFeatures({
+    tableKey: 'accessRequests',
+    columns: requestColumns,
+    defaultFrozenColumns: ['name'],
   });
 
   const { data: users, isLoading, refetch } = trpc.users.getAll.useQuery();
@@ -283,6 +300,21 @@ export default function UsersManagementPage() {
       }
     });
   }, [users, searchQuery, roleFilter, statusFilter, userTable.sortState, userTable.sortData]);
+
+  // Sort access requests using useTableFeatures
+  const sortedRequests = useMemo(() => {
+    if (!accessRequests) return [];
+    return requestTable.sortData(accessRequests, (item: any, key: string) => {
+      switch (key) {
+        case 'name': return item.name;
+        case 'email': return item.email;
+        case 'phone': return item.phone;
+        case 'reason': return item.reason;
+        case 'requestedAt': return item.requestedAt;
+        default: return item[key];
+      }
+    });
+  }, [accessRequests, requestTable.sortState, requestTable.sortData]);
 
   // Calculate statistics
   const totalUsers = users?.length || 0;
@@ -771,74 +803,122 @@ export default function UsersManagementPage() {
                   </p>
                 </div>
               ) : (
-                <div className="rounded-md border">
-                  <table className="w-full caption-bottom text-sm" dir="rtl">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="h-10 px-3 text-right align-middle font-medium text-muted-foreground">الاسم</th>
-                        <th className="h-10 px-3 text-right align-middle font-medium text-muted-foreground hidden md:table-cell">البريد الإلكتروني</th>
-                        <th className="h-10 px-3 text-right align-middle font-medium text-muted-foreground hidden lg:table-cell">الهاتف</th>
-                        <th className="h-10 px-3 text-right align-middle font-medium text-muted-foreground hidden xl:table-cell">السبب</th>
-                        <th className="h-10 px-3 text-right align-middle font-medium text-muted-foreground">تاريخ الطلب</th>
-                        <th className="h-10 px-3 text-right align-middle font-medium text-muted-foreground">الإجراءات</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {accessRequests.map((request) => (
-                        <tr key={request.id} className="border-b">
-                          <td className="p-3 align-middle font-medium">{request.name}</td>
-                          <td className="p-3 align-middle hidden md:table-cell">
-                            <div className="flex items-center gap-2">
-                              <Mail className="w-4 h-4 text-gray-400" />
-                              <span className="text-sm" dir="ltr">{request.email}</span>
-                            </div>
-                          </td>
-                          <td className="p-3 align-middle hidden lg:table-cell">
-                            {request.phone ? (
-                              <div className="flex items-center gap-2">
-                                <Phone className="w-4 h-4 text-gray-400" />
-                                <span dir="ltr">{request.phone}</span>
-                              </div>
-                            ) : (
-                              <span className="text-gray-400 text-sm">-</span>
-                            )}
-                          </td>
-                          <td className="p-3 align-middle hidden xl:table-cell">
-                            <span className="text-sm text-gray-600">
-                              {request.reason || "غير محدد"}
-                            </span>
-                          </td>
-                          <td className="p-3 align-middle">
-                            <span className="text-sm text-gray-600">
-                              {new Date(request.requestedAt).toLocaleDateString('ar-YE')}
-                            </span>
-                          </td>
-                          <td className="p-3 align-middle">
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => approveMutation.mutate({ requestId: request.id })}
-                                disabled={approveMutation.isPending || rejectMutation.isPending}
-                              >
-                                <UserCheck className="w-4 h-4 ml-1" />
-                                موافقة
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => rejectMutation.mutate({ requestId: request.id })}
-                                disabled={approveMutation.isPending || rejectMutation.isPending}
-                              >
-                                <UserX className="w-4 h-4 ml-1" />
-                                رفض
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
+                <div className="space-y-4">
+                  {/* Column Controls */}
+                  <div className="flex justify-end">
+                    <ColumnVisibility {...requestTable.columnVisibilityProps} />
+                  </div>
+
+                  {/* Requests Table - ResizableTable */}
+                  <ResizableTable {...requestTable.resizableTableProps}>
+                    <TableHeader>
+                      <TableRow>
+                        {requestTable.visibleColumnOrder.map(colKey => {
+                          const col = requestColumns.find(c => c.key === colKey);
+                          if (!col || !requestTable.visibleColumns[colKey]) return null;
+                          return (
+                            <ResizableHeaderCell
+                              key={colKey}
+                              columnKey={colKey}
+                              width={requestTable.columnWidths.columnWidths[colKey] || col.defaultWidth || 150}
+                              minWidth={col.minWidth || 80}
+                              maxWidth={col.maxWidth || 500}
+                              onResize={requestTable.columnWidths.handleResize}
+                              {...requestTable.getSortProps(colKey)}
+                            >
+                              {col.label}
+                            </ResizableHeaderCell>
+                          );
+                        })}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sortedRequests.map((request) => (
+                        <TableRow key={request.id}>
+                          {requestTable.visibleColumnOrder.map(colKey => {
+                            if (!requestTable.visibleColumns[colKey]) return null;
+                            
+                            switch (colKey) {
+                              case 'name':
+                                return (
+                                  <FrozenTableCell key={colKey} columnKey={colKey} className="font-medium">
+                                    {request.name}
+                                  </FrozenTableCell>
+                                );
+                              case 'email':
+                                return (
+                                  <FrozenTableCell key={colKey} columnKey={colKey}>
+                                    <div className="flex items-center gap-2">
+                                      <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                      <span className="text-sm truncate" dir="ltr">{request.email}</span>
+                                    </div>
+                                  </FrozenTableCell>
+                                );
+                              case 'phone':
+                                return (
+                                  <FrozenTableCell key={colKey} columnKey={colKey}>
+                                    {request.phone ? (
+                                      <div className="flex items-center gap-2">
+                                        <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                        <span dir="ltr">{request.phone}</span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-gray-400 text-sm">-</span>
+                                    )}
+                                  </FrozenTableCell>
+                                );
+                              case 'reason':
+                                return (
+                                  <FrozenTableCell key={colKey} columnKey={colKey} wrap>
+                                    <span className="text-sm text-gray-600">
+                                      {request.reason || "غير محدد"}
+                                    </span>
+                                  </FrozenTableCell>
+                                );
+                              case 'requestedAt':
+                                return (
+                                  <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm text-gray-600">
+                                    {new Date(request.requestedAt).toLocaleDateString('ar-YE')}
+                                  </FrozenTableCell>
+                                );
+                              case 'actions':
+                                return (
+                                  <FrozenTableCell key={colKey} columnKey={colKey}>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        size="sm"
+                                        variant="default"
+                                        onClick={() => approveMutation.mutate({ requestId: request.id })}
+                                        disabled={approveMutation.isPending || rejectMutation.isPending}
+                                      >
+                                        <UserCheck className="w-4 h-4 ml-1" />
+                                        موافقة
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={() => rejectMutation.mutate({ requestId: request.id })}
+                                        disabled={approveMutation.isPending || rejectMutation.isPending}
+                                      >
+                                        <UserX className="w-4 h-4 ml-1" />
+                                        رفض
+                                      </Button>
+                                    </div>
+                                  </FrozenTableCell>
+                                );
+                              default:
+                                return null;
+                            }
+                          })}
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </ResizableTable>
+
+                  {/* Results Count */}
+                  <div className="text-sm text-gray-600">
+                    عرض {sortedRequests.length} طلب معلق
+                  </div>
                 </div>
               )}
             </CardContent>
