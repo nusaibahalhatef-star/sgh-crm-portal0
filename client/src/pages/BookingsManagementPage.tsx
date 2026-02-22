@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import OfferLeadsManagement from "@/components/OfferLeadsManagement";
@@ -9,7 +9,8 @@ import AppointmentCard from "@/components/AppointmentCard";
 import ActionButtons from "@/components/ActionButtons";
 import EmptyState from "@/components/EmptyState";
 import MultiSelect from "@/components/MultiSelect";
-import { ColumnVisibility, getDefaultTemplates, type ColumnConfig, type ColumnTemplate } from "@/components/ColumnVisibility";
+import { ColumnVisibility, getDefaultTemplates, getColumnWidth, type ColumnConfig, type ColumnTemplate } from "@/components/ColumnVisibility";
+import { ResizableTable, ResizableHeaderCell, useColumnWidths } from "@/components/ResizableTable";
 import TableSkeleton from "@/components/TableSkeleton";
 import QuickFilters from "@/components/QuickFilters";
 import InlineStatusEditor from "@/components/InlineStatusEditor";
@@ -291,6 +292,19 @@ export default function BookingsManagementPage() {
     savePreferencesMutation.mutate({ key: 'appointmentColumnOrder', value: newOrder });
   };
 
+  // Column widths - with database sync
+  const { data: savedColumnWidths } = trpc.preferences.get.useQuery(
+    { key: 'appointmentColumnWidths' },
+    { retry: false }
+  );
+  const saveColumnWidthsFn = useCallback((widths: Record<string, number>) => {
+    savePreferencesMutation.mutate({ key: 'appointmentColumnWidths', value: widths });
+  }, [savePreferencesMutation]);
+  const appointmentColumnWidths = useColumnWidths(
+    appointmentColumns, appointmentColumnOrder, 'appointments',
+    saveColumnWidthsFn, savedColumnWidths as Record<string, number> | null
+  );
+
   const handleAppointmentColumnsReset = () => {
     const defaultVisible: Record<string, boolean> = {};
     appointmentColumns.forEach(col => {
@@ -299,6 +313,7 @@ export default function BookingsManagementPage() {
     setAppointmentVisibleColumns(defaultVisible);
     setActiveAppointmentTemplateId(null);
     setAppointmentColumnOrder(defaultColumnOrder);
+    appointmentColumnWidths.resetWidths();
     // Save to both localStorage and database
     localStorage.setItem('appointmentVisibleColumns', JSON.stringify(defaultVisible));
     localStorage.removeItem('activeAppointmentTemplateId');
@@ -383,12 +398,13 @@ export default function BookingsManagementPage() {
     dbId: t.id,
   }));
 
-  const handleSaveSharedAppointmentTemplate = (name: string, columns: Record<string, boolean>, columnOrder?: string[]) => {
+  const handleSaveSharedAppointmentTemplate = (name: string, columns: Record<string, boolean>, columnOrder?: string[], columnWidths?: Record<string, number>) => {
     createSharedTemplateMutation.mutate({
       name,
       tableKey: 'appointments',
       columns,
       columnOrder: columnOrder || appointmentColumnOrder,
+      columnWidths: columnWidths || appointmentColumnWidths.columnWidths,
     } as any);
   };
 
@@ -406,18 +422,24 @@ export default function BookingsManagementPage() {
       localStorage.setItem('appointmentColumnOrder', JSON.stringify(template.columnOrder));
       savePreferencesMutation.mutate({ key: 'appointmentColumnOrder', value: template.columnOrder });
     }
+    // Apply column widths from template if available
+    if (template.columnWidths) {
+      appointmentColumnWidths.applyWidths(template.columnWidths);
+      savePreferencesMutation.mutate({ key: 'appointmentColumnWidths', value: template.columnWidths });
+    }
     localStorage.setItem('appointmentVisibleColumns', JSON.stringify(template.columns));
     localStorage.setItem('activeAppointmentTemplateId', template.id);
     savePreferencesMutation.mutate({ key: 'appointmentVisibleColumns', value: template.columns });
     savePreferencesMutation.mutate({ key: 'activeAppointmentTemplateId', value: template.id });
   };
 
-  const handleSaveAppointmentTemplate = (name: string, columns: Record<string, boolean>, columnOrder?: string[]) => {
+  const handleSaveAppointmentTemplate = (name: string, columns: Record<string, boolean>, columnOrder?: string[], columnWidths?: Record<string, number>) => {
     const newTemplate: ColumnTemplate = {
       id: `appointments_custom_${Date.now()}`,
       name,
       columns,
       columnOrder: columnOrder || appointmentColumnOrder,
+      columnWidths: columnWidths || appointmentColumnWidths.columnWidths,
       isDefault: false,
     };
     const updated = [...customTemplates, newTemplate];
@@ -1383,23 +1405,24 @@ export default function BookingsManagementPage() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                     <ColumnVisibility
-                      columns={appointmentColumns}
-                      visibleColumns={appointmentVisibleColumns}
-                      columnOrder={appointmentColumnOrder}
-                      onVisibilityChange={handleAppointmentColumnVisibilityChange}
-                      onColumnOrderChange={handleAppointmentColumnOrderChange}
-                      onReset={handleAppointmentColumnsReset}
-                      templates={allAppointmentTemplates}
-                      activeTemplateId={activeAppointmentTemplateId}
-                      onApplyTemplate={handleApplyAppointmentTemplate}
-                      onSaveTemplate={handleSaveAppointmentTemplate}
-                      onDeleteTemplate={handleDeleteAppointmentTemplate}
-                      tableKey="appointments"
-                      isAdmin={user?.role === 'admin'}
-                      sharedTemplates={sharedAppointmentTemplates}
-                      onSaveSharedTemplate={handleSaveSharedAppointmentTemplate}
-                      onDeleteSharedTemplate={handleDeleteSharedAppointmentTemplate}
-                    />
+                       columns={appointmentColumns}
+                       visibleColumns={appointmentVisibleColumns}
+                       columnOrder={appointmentColumnOrder}
+                       onVisibilityChange={handleAppointmentColumnVisibilityChange}
+                       onColumnOrderChange={handleAppointmentColumnOrderChange}
+                       onReset={handleAppointmentColumnsReset}
+                       templates={allAppointmentTemplates}
+                       activeTemplateId={activeAppointmentTemplateId}
+                       onApplyTemplate={handleApplyAppointmentTemplate}
+                       onSaveTemplate={handleSaveAppointmentTemplate}
+                       onDeleteTemplate={handleDeleteAppointmentTemplate}
+                       tableKey="appointments"
+                       columnWidths={appointmentColumnWidths.columnWidths}
+                       isAdmin={user?.role === 'admin'}
+                       sharedTemplates={sharedAppointmentTemplates}
+                       onSaveSharedTemplate={handleSaveSharedAppointmentTemplate}
+                       onDeleteSharedTemplate={handleDeleteSharedAppointmentTemplate}
+                     />
                   </div>
                 </div>
 
@@ -1442,7 +1465,7 @@ export default function BookingsManagementPage() {
 
                 {/* Desktop Table View */}
                 <div className="table-responsive">
-                  <Table>
+                  <ResizableTable>
                     <TableHeader>
                       <TableRow>
                         {appointmentColumnOrder.filter(key => appointmentVisibleColumns[key]).map(colKey => {
@@ -1450,9 +1473,15 @@ export default function BookingsManagementPage() {
                           if (!col) return null;
                           const sortableFields = ['date', 'name', 'phone', 'doctor', 'specialty', 'source', 'receiptNumber', 'status'];
                           const isSortable = sortableFields.includes(colKey);
+                          const widthConfig = getColumnWidth(colKey, col);
                           return (
-                            <TableHead
+                            <ResizableHeaderCell
                               key={colKey}
+                              columnKey={colKey}
+                              width={appointmentColumnWidths.getWidth(colKey)}
+                              minWidth={widthConfig.min}
+                              maxWidth={widthConfig.max}
+                              onResize={appointmentColumnWidths.handleResize}
                               className={isSortable ? 'cursor-pointer hover:bg-muted/50 select-none' : ''}
                               onClick={isSortable ? () => {
                                 if (appointmentSortField === colKey) {
@@ -1469,7 +1498,7 @@ export default function BookingsManagementPage() {
                                   <span className="text-xs">{appointmentSortDirection === 'asc' ? '↑' : '↓'}</span>
                                 )}
                               </div>
-                            </TableHead>
+                            </ResizableHeaderCell>
                           );
                         })}
                       </TableRow>
@@ -1664,7 +1693,7 @@ export default function BookingsManagementPage() {
                         ))
                       )}
                     </TableBody>
-                  </Table>
+                  </ResizableTable>
                 </div>
               </CardContent>
             </Card>

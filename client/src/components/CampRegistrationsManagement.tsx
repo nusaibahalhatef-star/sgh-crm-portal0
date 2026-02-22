@@ -1,11 +1,12 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
 import ActionButtons from "@/components/ActionButtons";
 import EmptyState from "@/components/EmptyState";
 import MultiSelect from "@/components/MultiSelect";
-import { ColumnVisibility, getDefaultTemplates, type ColumnConfig, type ColumnTemplate } from "@/components/ColumnVisibility";
+import { ColumnVisibility, getDefaultTemplates, getColumnWidth, type ColumnConfig, type ColumnTemplate } from "@/components/ColumnVisibility";
+import { ResizableTable, ResizableHeaderCell, useColumnWidths } from "@/components/ResizableTable";
 import TableSkeleton from "@/components/TableSkeleton";
 import QuickFilters from "@/components/QuickFilters";
 import InlineStatusEditor from "@/components/InlineStatusEditor";
@@ -215,12 +216,24 @@ export default function CampRegistrationsManagement({
       localStorage.setItem('campRegColumnOrder', JSON.stringify(savedCampColumnOrder));
     }
   }, [savedCampColumnOrder]);
-
-  const handleCampColumnOrderChange = (newOrder: string[]) => {
+  const handleCampRegColumnOrderChange = (newOrder: string[]) => {
     setCampColumnOrder(newOrder);
     localStorage.setItem('campRegColumnOrder', JSON.stringify(newOrder));
     saveCampPreferencesMutation.mutate({ key: 'campRegColumnOrder', value: newOrder });
   };
+
+  // Column widths - with database sync
+  const { data: savedCampColumnWidths } = trpc.preferences.get.useQuery(
+    { key: 'campRegColumnWidths' },
+    { retry: false }
+  );
+  const saveCampColumnWidthsFn = useCallback((widths: Record<string, number>) => {
+    saveCampPreferencesMutation.mutate({ key: 'campRegColumnWidths', value: widths });
+  }, [saveCampPreferencesMutation]);
+  const campColumnWidths = useColumnWidths(
+    campRegColumns, campColumnOrder, 'campRegistrations',
+    saveCampColumnWidthsFn, savedCampColumnWidths as Record<string, number> | null
+  );
 
   const handleCampRegColumnsReset = () => {
     const defaultVisible: Record<string, boolean> = {};
@@ -230,6 +243,7 @@ export default function CampRegistrationsManagement({
     setCampRegVisibleColumns(defaultVisible);
     setActiveCampTemplateId(null);
     setCampColumnOrder(defaultCampColumnOrder);
+    campColumnWidths.resetWidths();
     localStorage.setItem('campRegVisibleColumns', JSON.stringify(defaultVisible));
     localStorage.removeItem('activeCampTemplateId');
     localStorage.setItem('campRegColumnOrder', JSON.stringify(defaultCampColumnOrder));
@@ -304,12 +318,13 @@ export default function CampRegistrationsManagement({
     dbId: t.id,
   }));
 
-  const handleSaveSharedCampTemplate = (name: string, columns: Record<string, boolean>, columnOrder?: string[]) => {
+  const handleSaveSharedCampTemplate = (name: string, columns: Record<string, boolean>, columnOrder?: string[], columnWidths?: Record<string, number>) => {
     createSharedCampTemplateMutation.mutate({
       name,
       tableKey: 'campRegistrations',
       columns,
       columnOrder: columnOrder || campColumnOrder,
+      columnWidths: columnWidths || campColumnWidths.columnWidths,
     } as any);
   };
 
@@ -327,18 +342,23 @@ export default function CampRegistrationsManagement({
       localStorage.setItem('campRegColumnOrder', JSON.stringify(template.columnOrder));
       saveCampPreferencesMutation.mutate({ key: 'campRegColumnOrder', value: template.columnOrder });
     }
+    if (template.columnWidths) {
+      campColumnWidths.applyWidths(template.columnWidths);
+      saveCampPreferencesMutation.mutate({ key: 'campRegColumnWidths', value: template.columnWidths });
+    }
     localStorage.setItem('campRegVisibleColumns', JSON.stringify(template.columns));
     localStorage.setItem('activeCampTemplateId', template.id);
     saveCampPreferencesMutation.mutate({ key: 'campRegVisibleColumns', value: template.columns });
     saveCampPreferencesMutation.mutate({ key: 'activeCampTemplateId', value: template.id });
   };
 
-  const handleSaveCampTemplate = (name: string, columns: Record<string, boolean>, columnOrder?: string[]) => {
+  const handleSaveCampTemplate = (name: string, columns: Record<string, boolean>, columnOrder?: string[], columnWidths?: Record<string, number>) => {
     const newTemplate: ColumnTemplate = {
       id: `campRegistrations_custom_${Date.now()}`,
       name,
       columns,
       columnOrder: columnOrder || campColumnOrder,
+      columnWidths: columnWidths || campColumnWidths.columnWidths,
       isDefault: false,
     };
     const updated = [...customCampTemplates, newTemplate];
@@ -817,23 +837,24 @@ export default function CampRegistrationsManagement({
             </div>
             <div className="flex gap-2">
               <ColumnVisibility
-                columns={campRegColumns}
-                visibleColumns={campRegVisibleColumns}
-                columnOrder={campColumnOrder}
-                onVisibilityChange={handleCampRegColumnVisibilityChange}
-                onColumnOrderChange={handleCampColumnOrderChange}
-                onReset={handleCampRegColumnsReset}
-                templates={allCampTemplates}
-                activeTemplateId={activeCampTemplateId}
-                onApplyTemplate={handleApplyCampTemplate}
-                onSaveTemplate={handleSaveCampTemplate}
-                onDeleteTemplate={handleDeleteCampTemplate}
-                tableKey="campRegistrations"
-                isAdmin={user?.role === 'admin'}
-                sharedTemplates={sharedCampTemplates}
-                onSaveSharedTemplate={handleSaveSharedCampTemplate}
-                onDeleteSharedTemplate={handleDeleteSharedCampTemplate}
-              />
+                 columns={campRegColumns}
+                 visibleColumns={campRegVisibleColumns}
+                 columnOrder={campColumnOrder}
+                 onVisibilityChange={handleCampRegColumnVisibilityChange}
+                 onColumnOrderChange={handleCampRegColumnOrderChange}
+                 onReset={handleCampRegColumnsReset}
+                 templates={allCampTemplates}
+                 activeTemplateId={activeCampTemplateId}
+                 onApplyTemplate={handleApplyCampTemplate}
+                 onSaveTemplate={handleSaveCampTemplate}
+                 onDeleteTemplate={handleDeleteCampTemplate}
+                 tableKey="campRegistrations"
+                 columnWidths={campColumnWidths.columnWidths}
+                 isAdmin={user?.role === 'admin'}
+                 sharedTemplates={sharedCampTemplates}
+                 onSaveSharedTemplate={handleSaveSharedCampTemplate}
+                 onDeleteSharedTemplate={handleDeleteSharedCampTemplate}
+               />
               <Button
                 variant="outline"
                 onClick={handlePrintCampRegistrations}
@@ -995,7 +1016,7 @@ export default function CampRegistrationsManagement({
 
           {/* Desktop Table View */}
           <div className="hidden md:block border rounded-lg">
-            <Table>
+            <ResizableTable>
               <TableHeader>
                 <TableRow>
                   {campColumnOrder.filter(key => campRegVisibleColumns[key]).map(colKey => {
@@ -1005,18 +1026,24 @@ export default function CampRegistrationsManagement({
                     const isSortable = sortableFields.includes(colKey);
                     if (colKey === 'checkbox') {
                       return (
-                        <TableHead key={colKey} className="w-12">
+                        <ResizableHeaderCell key={colKey} columnKey={colKey} width={40} minWidth={40} maxWidth={40} onResize={() => {}}>
                           <Checkbox
                             checked={selectedIds.length === filteredRegistrations.length && filteredRegistrations.length > 0}
                             onCheckedChange={handleSelectAll}
                           />
-                        </TableHead>
+                        </ResizableHeaderCell>
                       );
                     }
+                    const widthConfig = getColumnWidth(colKey, col);
                     return (
-                      <TableHead
+                      <ResizableHeaderCell
                         key={colKey}
-                        className={`text-right ${isSortable ? 'cursor-pointer hover:bg-muted/50 select-none' : ''}`}
+                        columnKey={colKey}
+                        width={campColumnWidths.getWidth(colKey)}
+                        minWidth={widthConfig.min}
+                        maxWidth={widthConfig.max}
+                        onResize={campColumnWidths.handleResize}
+                        className={isSortable ? 'cursor-pointer hover:bg-muted/50 select-none' : ''}
                         onClick={isSortable ? () => {
                           if (sortField === colKey) {
                             setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -1032,7 +1059,7 @@ export default function CampRegistrationsManagement({
                             <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                           )}
                         </div>
-                      </TableHead>
+                      </ResizableHeaderCell>
                     );
                   })}
                 </TableRow>
@@ -1216,7 +1243,7 @@ export default function CampRegistrationsManagement({
                   ))
                 )}
               </TableBody>
-            </Table>
+            </ResizableTable>
           </div>
 
 
