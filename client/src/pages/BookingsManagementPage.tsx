@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import OfferLeadsManagement from "@/components/OfferLeadsManagement";
@@ -84,8 +84,8 @@ import {
   CheckSquare,
 } from "lucide-react";
 import { toast } from "sonner";
-import { exportToExcel, formatLeadsForExport, formatAppointmentsForExport } from "@/lib/exportToExcel";
-import { exportData, printTable, type ExportMetadata } from "@/lib/advancedExport";
+import { exportToExcel, formatLeadsForExport } from "@/lib/exportToExcel";
+import { useExportUtils } from "@/hooks/useExportUtils";
 import { printReceipt } from "@/components/PrintReceipt";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -515,184 +515,83 @@ export default function BookingsManagementPage() {
     toast.success("تم تصدير البيانات بنجاح");
   };
 
-  const handleExportAppointments = async (format: 'excel' | 'csv' | 'pdf') => {
-    if (!filteredAppointments || filteredAppointments.length === 0) {
-      toast.error("لا توجد بيانات للتصدير");
-      return;
-    }
+  // useExportUtils hook للمواعيد
+  const appointmentExport = useExportUtils({
+    tableName: 'مواعيد الأطباء',
+    filenamePrefix: 'مواعيد_الأطباء',
+    exportColumns: [
+      { key: 'date', label: 'التاريخ' },
+      { key: 'name', label: 'اسم المريض' },
+      { key: 'phone', label: 'الهاتف' },
+      { key: 'doctor', label: 'الطبيب' },
+      { key: 'specialty', label: 'التخصص' },
+      { key: 'source', label: 'المصدر' },
+      { key: 'receiptNumber', label: 'رقم السند' },
+      { key: 'status', label: 'الحالة' },
+    ],
+    printColumns: [
+      { key: 'date', label: 'التاريخ' },
+      { key: 'name', label: 'اسم المريض' },
+      { key: 'phone', label: 'الهاتف' },
+      { key: 'doctor', label: 'الطبيب' },
+      { key: 'specialty', label: 'التخصص' },
+      { key: 'source', label: 'المصدر' },
+      { key: 'receiptNumber', label: 'رقم السند' },
+      { key: 'status', label: 'الحالة' },
+      { key: 'comments', label: 'التعليقات' },
+      { key: 'tasks', label: 'المهام' },
+      { key: 'actions', label: 'الإجراءات' },
+    ],
+    mapToExportRow: (appointment: any) => ({
+      date: new Date(appointment.appointmentDate).toLocaleDateString('ar-SA'),
+      name: appointment.name,
+      phone: appointment.phone,
+      doctor: appointment.doctorName || '-',
+      specialty: appointment.specialty || '-',
+      source: SOURCE_LABELS[appointment.source] || appointment.source || '-',
+      receiptNumber: appointment.receiptNumber || '-',
+      status: statusLabels[appointment.status as keyof typeof statusLabels] || appointment.status,
+    }),
+    mapToPrintRow: (appointment: any) => ({
+      date: new Date(appointment.appointmentDate).toLocaleDateString('ar-SA'),
+      name: appointment.name,
+      phone: appointment.phone,
+      doctor: appointment.doctorName || '-',
+      specialty: appointment.specialty || '-',
+      source: SOURCE_LABELS[appointment.source] || appointment.source || '-',
+      receiptNumber: appointment.receiptNumber || '-',
+      status: statusLabels[appointment.status as keyof typeof statusLabels] || appointment.status,
+      comments: appointment.commentCount > 0 ? `${appointment.commentCount} تعليق` : '-',
+      tasks: appointment.taskCount > 0 ? `${appointment.taskCount} مهمة` : '-',
+      actions: '-',
+    }),
+  });
 
-    try {
-      // تحضير الفلاتر المستخدمة
-      const activeFilters: Record<string, string> = {};
-      if (debouncedAppointmentSearch) {
-        activeFilters['البحث'] = debouncedAppointmentSearch;
-      }
-      if (appointmentStatusFilter.length > 0) {
-        activeFilters['الحالة'] = appointmentStatusFilter.map(s => statusLabels[s as keyof typeof statusLabels]).join(', ');
-      }
-      if (appointmentSourceFilter.length > 0) {
-        activeFilters['المصدر'] = appointmentSourceFilter.map(s => SOURCE_LABELS[s] || s).join(', ');
-      }
-      if (selectedDoctor.length > 0) {
-        const doctorNames = selectedDoctor.map(id => {
-          const doctor = doctors.find(d => d.id.toString() === id);
-          return doctor ? doctor.name : id;
-        }).join(', ');
-        activeFilters['الطبيب'] = doctorNames;
-      }
+  const getAppointmentExportOptions = useCallback(() => {
+    const activeFilters = appointmentExport.buildActiveFilters([
+      { label: 'البحث', value: debouncedAppointmentSearch || undefined },
+      { label: 'الحالة', value: appointmentStatusFilter.length > 0 ? appointmentStatusFilter.map(s => statusLabels[s as keyof typeof statusLabels]).join(', ') : undefined },
+      { label: 'المصدر', value: appointmentSourceFilter.length > 0 ? appointmentSourceFilter.map(s => SOURCE_LABELS[s] || s).join(', ') : undefined },
+      { label: 'الطبيب', value: selectedDoctor.length > 0 ? selectedDoctor.map(id => {
+        const doctor = doctors.find((d: any) => d.id.toString() === id);
+        return doctor ? doctor.name : id;
+      }).join(', ') : undefined },
+    ]);
+    return {
+      data: filteredAppointments,
+      activeFilters,
+      dateRangeStr: appointmentExport.formatDateRange(dateRange.from, dateRange.to),
+      visibleColumns: appointmentTable.visibleColumns,
+    };
+  }, [filteredAppointments, debouncedAppointmentSearch, appointmentStatusFilter, appointmentSourceFilter, selectedDoctor, doctors, dateRange, appointmentTable.visibleColumns, appointmentExport]);
 
-      // تحضير نطاق التاريخ
-      const dateRangeStr = `${dateRange.from.toLocaleDateString('ar-SA')} - ${dateRange.to.toLocaleDateString('ar-SA')}`;
+  const handleExportAppointments = useCallback(async (format: 'excel' | 'csv' | 'pdf') => {
+    await appointmentExport.handleExport(format, getAppointmentExportOptions());
+  }, [appointmentExport, getAppointmentExportOptions]);
 
-      // تحضير تعريفات الأعمدة
-      const columnDefinitions = [
-        { key: 'date', label: 'التاريخ' },
-        { key: 'name', label: 'اسم المريض' },
-        { key: 'phone', label: 'الهاتف' },
-        { key: 'doctor', label: 'الطبيب' },
-        { key: 'specialty', label: 'التخصص' },
-        { key: 'source', label: 'المصدر' },
-        { key: 'receiptNumber', label: 'رقم السند' },
-        { key: 'status', label: 'الحالة' },
-      ];
-
-      // تحويل البيانات للتصدير
-      const dataToExport = filteredAppointments.map((appointment: any) => ({
-        date: new Date(appointment.appointmentDate).toLocaleDateString('ar-SA'),
-        name: appointment.name,
-        phone: appointment.phone,
-        doctor: appointment.doctorName || '-',
-        specialty: appointment.specialty || '-',
-        source: SOURCE_LABELS[appointment.source] || appointment.source || '-',
-        receiptNumber: appointment.receiptNumber || '-',
-        status: statusLabels[appointment.status as keyof typeof statusLabels] || appointment.status,
-      }));
-
-      // تحضير metadata
-      const metadata: ExportMetadata = {
-        tableName: 'مواعيد الأطباء',
-        dateRange: dateRangeStr,
-        filters: Object.keys(activeFilters).length > 0 ? activeFilters : undefined,
-        totalRecords: dataToExport.length,
-        exportedRecords: dataToExport.length,
-        exportDate: new Date().toLocaleString('ar-SA'),
-        exportedBy: user?.name || 'مستخدم',
-      };
-
-      // تحضير الأعمدة المرئية
-      const visibleCols = Object.entries(appointmentTable.visibleColumns)
-        .filter(([_, visible]) => visible)
-        .map(([key]) => {
-          const col = columnDefinitions.find(c => c.key === key);
-          return { key, label: col?.label || key };
-        });
-
-      // تصدير بالتنسيق المحدد
-      await exportData({
-        format,
-        metadata,
-        columns: visibleCols,
-        data: dataToExport,
-        filename: `مواعيد_الأطباء_${Date.now()}.${format === 'excel' ? 'xlsx' : format}`,
-      });
-
-      toast.success(`تم تصدير البيانات بنجاح بتنسيق ${format.toUpperCase()}`);
-    } catch (error) {
-      console.error('Export error:', error);
-      toast.error('حدث خطأ أثناء التصدير');
-    }
-  };
-
-  const handlePrintAppointments = () => {
-    if (!filteredAppointments || filteredAppointments.length === 0) {
-      toast.error("لا توجد بيانات للطباعة");
-      return;
-    }
-
-    try {
-      // تحضير الفلاتر المستخدمة
-      const activeFilters: Record<string, string> = {};
-      if (debouncedAppointmentSearch) {
-        activeFilters['البحث'] = debouncedAppointmentSearch;
-      }
-      if (appointmentStatusFilter.length > 0) {
-        activeFilters['الحالة'] = appointmentStatusFilter.map(s => statusLabels[s as keyof typeof statusLabels]).join(', ');
-      }
-      if (appointmentSourceFilter.length > 0) {
-        activeFilters['المصدر'] = appointmentSourceFilter.map(s => SOURCE_LABELS[s] || s).join(', ');
-      }
-      if (selectedDoctor.length > 0) {
-        const doctorNames = selectedDoctor.map(id => {
-          const doctor = doctors.find(d => d.id.toString() === id);
-          return doctor ? doctor.name : id;
-        }).join(', ');
-        activeFilters['الطبيب'] = doctorNames;
-      }
-
-      // تحضير نطاق التاريخ
-      const dateRangeStr = `${dateRange.from.toLocaleDateString('ar-SA')} - ${dateRange.to.toLocaleDateString('ar-SA')}`;
-
-      // تحضير تعريفات جميع الأعمدة الـ 11
-      const columnDefinitions = [
-        { key: 'date', label: 'التاريخ' },
-        { key: 'name', label: 'اسم المريض' },
-        { key: 'phone', label: 'الهاتف' },
-        { key: 'doctor', label: 'الطبيب' },
-        { key: 'specialty', label: 'التخصص' },
-        { key: 'source', label: 'المصدر' },
-        { key: 'receiptNumber', label: 'رقم السند' },
-        { key: 'status', label: 'الحالة' },
-        { key: 'comments', label: 'التعليقات' },
-        { key: 'tasks', label: 'المهام' },
-        { key: 'actions', label: 'الإجراءات' },
-      ];
-
-      // تحويل البيانات للطباعة مع جميع الأعمدة
-      const dataToExport = filteredAppointments.map((appointment: any) => ({
-        date: new Date(appointment.appointmentDate).toLocaleDateString('ar-SA'),
-        name: appointment.name,
-        phone: appointment.phone,
-        doctor: appointment.doctorName || '-',
-        specialty: appointment.specialty || '-',
-        source: SOURCE_LABELS[appointment.source] || appointment.source || '-',
-        receiptNumber: appointment.receiptNumber || '-',
-        status: statusLabels[appointment.status as keyof typeof statusLabels] || appointment.status,
-        comments: appointment.commentCount > 0 ? `${appointment.commentCount} تعليق` : '-',
-        tasks: appointment.taskCount > 0 ? `${appointment.taskCount} مهمة` : '-',
-        actions: '-',
-      }));
-
-      // تحضير metadata
-      const metadata: ExportMetadata = {
-        tableName: 'مواعيد الأطباء',
-        dateRange: dateRangeStr,
-        filters: Object.keys(activeFilters).length > 0 ? activeFilters : undefined,
-        totalRecords: dataToExport.length,
-        exportedRecords: dataToExport.length,
-        exportDate: new Date().toLocaleString('ar-SA'),
-        exportedBy: user?.name || 'مستخدم',
-      };
-
-      // تحضير الأعمدة المرئية
-      const visibleCols = Object.entries(appointmentTable.visibleColumns)
-        .filter(([_, visible]) => visible)
-        .map(([key]) => {
-          const col = columnDefinitions.find(c => c.key === key);
-          return { key, label: col?.label || key };
-        });
-
-      // استدعاء دالة الطباعة
-      printTable({
-        format: 'pdf', // لا يستخدم في الطباعة
-        metadata,
-        columns: visibleCols,
-        data: dataToExport,
-      });
-    } catch (error) {
-      console.error('Print error:', error);
-      toast.error('حدث خطأ أثناء الطباعة');
-    }
-  };
+  const handlePrintAppointments = useCallback(() => {
+    appointmentExport.handlePrint(getAppointmentExportOptions());
+  }, [appointmentExport, getAppointmentExportOptions]);
 
   return (
     <DashboardLayout

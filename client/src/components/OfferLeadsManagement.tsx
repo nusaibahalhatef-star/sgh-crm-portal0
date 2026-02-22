@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
@@ -74,8 +74,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { exportToExcel, formatOfferLeadsForExport } from "@/lib/exportToExcel";
-import { exportData, printTable, type ExportMetadata } from "@/lib/advancedExport";
+import { useExportUtils } from "@/hooks/useExportUtils";
 import { printReceipt } from "@/components/PrintReceipt";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { SOURCE_OPTIONS, SOURCE_LABELS, SOURCE_COLORS } from "@shared/sources";
@@ -186,181 +185,6 @@ export default function OfferLeadsManagement({
   }, [pendingCount, onPendingCountChange]);
 
   const utils = trpc.useUtils();
-
-  // دالة التصدير المتقدمة
-  const handleExportOfferLeads = async (format: 'excel' | 'csv' | 'pdf') => {
-    if (!filteredLeads || filteredLeads.length === 0) {
-      toast.error("لا توجد بيانات للتصدير");
-      return;
-    }
-
-    try {
-      // تحضير الفلاتر المستخدمة
-      const activeFilters: Record<string, string> = {};
-      if (debouncedSearch) {
-        activeFilters['البحث'] = debouncedSearch;
-      }
-      if (statusFilter.length > 0) {
-        activeFilters['الحالة'] = statusFilter.map(s => statusLabels[s as keyof typeof statusLabels]).join(', ');
-      }
-      if (sourceFilter.length > 0) {
-        activeFilters['المصدر'] = sourceFilter.map(s => SOURCE_LABELS[s] || s).join(', ');
-      }
-      if (selectedOffer.length > 0) {
-        activeFilters['العرض'] = selectedOffer.join(', ');
-      }
-
-      // تحضير نطاق التاريخ
-      const dateRangeStr = `${dateRange.from.toLocaleDateString('ar-SA')} - ${dateRange.to.toLocaleDateString('ar-SA')}`;
-
-      // تحضير تعريفات الأعمدة
-      const columnDefinitions = [
-        { key: 'receiptNumber', label: 'رقم السند' },
-        { key: 'name', label: 'الاسم الكامل' },
-        { key: 'phone', label: 'رقم الهاتف' },
-        { key: 'email', label: 'البريد الإلكتروني' },
-        { key: 'offer', label: 'العرض' },
-        { key: 'source', label: 'المصدر' },
-        { key: 'status', label: 'الحالة' },
-        { key: 'date', label: 'تاريخ التسجيل' },
-      ];
-
-      // تحويل البيانات للتصدير
-      const dataToExport = filteredLeads.map((lead: any) => ({
-        receiptNumber: lead.receiptNumber || '-',
-        name: lead.fullName,
-        phone: lead.phone,
-        email: lead.email || '-',
-        offer: lead.offerTitle || '-',
-        source: SOURCE_LABELS[lead.source] || lead.source || '-',
-        status: statusLabels[lead.status as keyof typeof statusLabels] || lead.status,
-        date: new Date(lead.createdAt).toLocaleDateString('ar-SA'),
-      }));
-
-      // تحضير metadata
-      const metadata: ExportMetadata = {
-        tableName: 'حجوزات العروض',
-        dateRange: dateRangeStr,
-        filters: Object.keys(activeFilters).length > 0 ? activeFilters : undefined,
-        totalRecords: dataToExport.length,
-        exportedRecords: dataToExport.length,
-        exportDate: new Date().toLocaleString('ar-SA'),
-        exportedBy: user?.name || 'مستخدم',
-      };
-
-      // تحضير الأعمدة المرئية
-      const visibleCols = Object.entries(offerTable.visibleColumns)
-        .filter(([_, visible]) => visible)
-        .map(([key]) => {
-          const col = columnDefinitions.find(c => c.key === key);
-          return { key, label: col?.label || key };
-        });
-
-      // تصدير بالتنسيق المحدد
-      await exportData({
-        format,
-        metadata,
-        columns: visibleCols,
-        data: dataToExport,
-        filename: `حجوزات_العروض_${Date.now()}.${format === 'excel' ? 'xlsx' : format}`,
-      });
-
-      toast.success(`تم تصدير البيانات بنجاح بتنسيق ${format.toUpperCase()}`);
-    } catch (error) {
-      console.error('Export error:', error);
-      toast.error('حدث خطأ أثناء التصدير');
-    }
-  };
-
-  // دالة الطباعة
-  const handlePrintOfferLeads = () => {
-    if (!filteredLeads || filteredLeads.length === 0) {
-      toast.error("لا توجد بيانات للطباعة");
-      return;
-    }
-
-    try {
-      // تحضير الفلاتر المستخدمة
-      const activeFilters: Record<string, string> = {};
-      if (debouncedSearch) {
-        activeFilters['البحث'] = debouncedSearch;
-      }
-      if (statusFilter.length > 0) {
-        activeFilters['الحالة'] = statusFilter.map(s => statusLabels[s as keyof typeof statusLabels]).join(', ');
-      }
-      if (sourceFilter.length > 0) {
-        activeFilters['المصدر'] = sourceFilter.map(s => SOURCE_LABELS[s] || s).join(', ');
-      }
-      if (selectedOffer.length > 0) {
-        activeFilters['العرض'] = selectedOffer.join(', ');
-      }
-
-      // تحضير نطاق التاريخ
-      const dateRangeStr = `${dateRange.from.toLocaleDateString('ar-SA')} - ${dateRange.to.toLocaleDateString('ar-SA')}`;
-
-      // تحضير تعريفات جميع الأعمدة الـ 12
-      const columnDefinitions = [
-        { key: 'checkbox', label: 'تحديد' },
-        { key: 'receiptNumber', label: 'رقم السند' },
-        { key: 'name', label: 'الاسم الكامل' },
-        { key: 'phone', label: 'رقم الهاتف' },
-        { key: 'email', label: 'البريد الإلكتروني' },
-        { key: 'offer', label: 'العرض' },
-        { key: 'source', label: 'المصدر' },
-        { key: 'status', label: 'الحالة' },
-        { key: 'date', label: 'تاريخ التسجيل' },
-        { key: 'comments', label: 'التعليقات' },
-        { key: 'tasks', label: 'المهام' },
-        { key: 'actions', label: 'الإجراءات' },
-      ];
-
-      // تحويل البيانات للطباعة مع جميع الأعمدة
-      const dataToExport = filteredLeads.map((lead: any) => ({
-        checkbox: '-',
-        receiptNumber: lead.receiptNumber || '-',
-        name: lead.fullName,
-        phone: lead.phone,
-        email: lead.email || '-',
-        offer: lead.offerTitle || '-',
-        source: SOURCE_LABELS[lead.source] || lead.source || '-',
-        status: statusLabels[lead.status as keyof typeof statusLabels] || lead.status,
-        date: new Date(lead.createdAt).toLocaleDateString('ar-SA'),
-        comments: lead.commentCount > 0 ? `${lead.commentCount} تعليق` : '-',
-        tasks: lead.taskCount > 0 ? `${lead.taskCount} مهمة` : '-',
-        actions: '-',
-      }));
-
-      // تحضير metadata
-      const metadata: ExportMetadata = {
-        tableName: 'حجوزات العروض',
-        dateRange: dateRangeStr,
-        filters: Object.keys(activeFilters).length > 0 ? activeFilters : undefined,
-        totalRecords: dataToExport.length,
-        exportedRecords: dataToExport.length,
-        exportDate: new Date().toLocaleString('ar-SA'),
-        exportedBy: user?.name || 'مستخدم',
-      };
-
-      // تحضير الأعمدة المرئية
-      const visibleCols = Object.entries(offerTable.visibleColumns)
-        .filter(([_, visible]) => visible)
-        .map(([key]) => {
-          const col = columnDefinitions.find(c => c.key === key);
-          return { key, label: col?.label || key };
-        });
-
-      // استدعاء دالة الطباعة
-      printTable({
-        format: 'pdf',
-        metadata,
-        columns: visibleCols,
-        data: dataToExport,
-      });
-    } catch (error) {
-      console.error('Print error:', error);
-      toast.error('حدث خطأ أثناء الطباعة');
-    }
-  };
   
   const updateStatusMutation = trpc.offerLeads.updateStatus.useMutation({
     onMutate: async (variables) => {
@@ -494,6 +318,83 @@ export default function OfferLeadsManagement({
     
     return sorted;
   }, [offerLeads, selectedOffer, sourceFilter, statusFilter, offerTable.sortState, offerTable.sortData]);
+
+  // useExportUtils hook لحجوزات العروض
+  const offerExport = useExportUtils({
+    tableName: 'حجوزات العروض',
+    filenamePrefix: 'حجوزات_العروض',
+    exportColumns: [
+      { key: 'receiptNumber', label: 'رقم السند' },
+      { key: 'name', label: 'الاسم الكامل' },
+      { key: 'phone', label: 'رقم الهاتف' },
+      { key: 'email', label: 'البريد الإلكتروني' },
+      { key: 'offer', label: 'العرض' },
+      { key: 'source', label: 'المصدر' },
+      { key: 'status', label: 'الحالة' },
+      { key: 'date', label: 'تاريخ التسجيل' },
+    ],
+    printColumns: [
+      { key: 'checkbox', label: 'تحديد' },
+      { key: 'receiptNumber', label: 'رقم السند' },
+      { key: 'name', label: 'الاسم الكامل' },
+      { key: 'phone', label: 'رقم الهاتف' },
+      { key: 'email', label: 'البريد الإلكتروني' },
+      { key: 'offer', label: 'العرض' },
+      { key: 'source', label: 'المصدر' },
+      { key: 'status', label: 'الحالة' },
+      { key: 'date', label: 'تاريخ التسجيل' },
+      { key: 'comments', label: 'التعليقات' },
+      { key: 'tasks', label: 'المهام' },
+      { key: 'actions', label: 'الإجراءات' },
+    ],
+    mapToExportRow: (lead: any) => ({
+      receiptNumber: lead.receiptNumber || '-',
+      name: lead.fullName,
+      phone: lead.phone,
+      email: lead.email || '-',
+      offer: lead.offerTitle || '-',
+      source: SOURCE_LABELS[lead.source] || lead.source || '-',
+      status: statusLabels[lead.status as keyof typeof statusLabels] || lead.status,
+      date: new Date(lead.createdAt).toLocaleDateString('ar-SA'),
+    }),
+    mapToPrintRow: (lead: any) => ({
+      checkbox: '-',
+      receiptNumber: lead.receiptNumber || '-',
+      name: lead.fullName,
+      phone: lead.phone,
+      email: lead.email || '-',
+      offer: lead.offerTitle || '-',
+      source: SOURCE_LABELS[lead.source] || lead.source || '-',
+      status: statusLabels[lead.status as keyof typeof statusLabels] || lead.status,
+      date: new Date(lead.createdAt).toLocaleDateString('ar-SA'),
+      comments: lead.commentCount > 0 ? `${lead.commentCount} تعليق` : '-',
+      tasks: lead.taskCount > 0 ? `${lead.taskCount} مهمة` : '-',
+      actions: '-',
+    }),
+  });
+
+  const getOfferExportOptions = useCallback(() => {
+    const activeFilters = offerExport.buildActiveFilters([
+      { label: 'البحث', value: debouncedSearch || undefined },
+      { label: 'الحالة', value: statusFilter.length > 0 ? statusFilter.map(s => statusLabels[s as keyof typeof statusLabels]).join(', ') : undefined },
+      { label: 'المصدر', value: sourceFilter.length > 0 ? sourceFilter.map(s => SOURCE_LABELS[s] || s).join(', ') : undefined },
+      { label: 'العرض', value: selectedOffer.length > 0 ? selectedOffer.join(', ') : undefined },
+    ]);
+    return {
+      data: filteredLeads,
+      activeFilters,
+      dateRangeStr: offerExport.formatDateRange(dateRange.from, dateRange.to),
+      visibleColumns: offerTable.visibleColumns,
+    };
+  }, [filteredLeads, debouncedSearch, statusFilter, sourceFilter, selectedOffer, dateRange, offerTable.visibleColumns, offerExport]);
+
+  const handleExportOfferLeads = useCallback(async (format: 'excel' | 'csv' | 'pdf') => {
+    await offerExport.handleExport(format, getOfferExportOptions());
+  }, [offerExport, getOfferExportOptions]);
+
+  const handlePrintOfferLeads = useCallback(() => {
+    offerExport.handlePrint(getOfferExportOptions());
+  }, [offerExport, getOfferExportOptions]);
 
   const handleStatusUpdate = () => {
     if (!selectedLead || !newStatus) return;

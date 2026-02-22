@@ -3,6 +3,13 @@ import path from "path";
 
 export default defineConfig({
   root: path.resolve(import.meta.dirname),
+  resolve: {
+    alias: {
+      "@": path.resolve(import.meta.dirname, "client/src"),
+      "@/_core": path.resolve(import.meta.dirname, "client/src/_core"),
+      "@shared": path.resolve(import.meta.dirname, "shared"),
+    },
+  },
   test: {
     environment: "jsdom",
     include: ["server/**/*.test.ts", "server/**/*.spec.ts", "client/src/**/*.test.ts", "client/src/**/*.spec.ts"],

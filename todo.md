@@ -2819,3 +2819,13 @@
 - [x] إضافة bulkUpdateStatus endpoint في appointments router
 - [x] فصل appointments router إلى ملف منفصل (server/routers/appointments.ts) - 315 سطر
 - [x] تنظيف imports غير المستخدمة في routers.ts (تقليص من 847 إلى 558 سطر)
+
+### إنشاء useExportUtils hook مشترك ✅ مكتمل
+- [x] فحص دوال التصدير والطباعة الحالية في الصفحات الثلاث
+- [x] إنشاء useExportUtils hook مع دوال التصدير (Excel/CSV/PDF) والطباعة الموحدة (227 سطر)
+- [x] استبدال الكود المتكرر في BookingsManagementPage
+- [x] استبدال الكود المتكرر في OfferLeadsManagement
+- [x] استبدال الكود المتكرر في CampRegistrationsManagement
+- [x] كتابة اختبارات vitest للـ hook (14 اختبار - جميعها ناجحة)
+- [x] إضافة resolve aliases في vitest.config.ts
+- [x] التحقق من عمل التصدير والطباعة في جميع الصفحات
