@@ -8,6 +8,7 @@ import SourceAnalytics from "@/components/SourceAnalytics";
 import RecentActivity from "@/components/RecentActivity";
 import QuickPatientSearch from "@/components/QuickPatientSearch";
 import DetailedStatsCards from "@/components/DetailedStatsCards";
+import DashboardCharts from "@/components/DashboardCharts";
 import { AnimatedCounter } from "@/components/animations";
 import DashboardLayout from "@/components/DashboardLayout";
 import DoctorsManagement from "@/components/DoctorsManagement";
@@ -373,6 +374,11 @@ export default function AdminDashboard() {
         {/* Analytics */}
         <div className="mb-6 md:mb-8">
           <SourceAnalytics />
+        </div>
+
+        {/* Charts Dashboard */}
+        <div className="mb-6 md:mb-8">
+          <DashboardCharts />
         </div>
 
         {/* Tabs removed - moved to Bookings Management Page */}

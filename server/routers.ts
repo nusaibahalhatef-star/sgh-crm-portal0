@@ -37,12 +37,14 @@ import { queueRouter } from "./routers/queue";
 import { customersRouter } from "./routers/customers";
 import { auditLogsRouter } from "./routers/auditLogs";
 import { savedFiltersRouter } from "./routers/savedFilters";
+import { chartsRouter } from "./routers/charts";
 import { generatePDF, type ExportMetadata } from "./pdfService";
 
 export const appRouter = router({
   campaigns: campaignsRouter,
   tasks: tasksRouter,
   system: systemRouter,
+  charts: chartsRouter,
   whatsapp: whatsappRouter,
   messageSettings: messageSettingsRouter,
   webhooks: webhooksRouter,

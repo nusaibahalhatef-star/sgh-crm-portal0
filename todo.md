@@ -3061,3 +3061,17 @@
 - [x] تحسين TabsList في OfferLeads و CampRegistrations و Bookings
 - [x] تحسين QuickPatientSearch للجوال
 - [x] 420 اختبار vitest ناجح (19 ملف)
+
+### إضافة لوحة إحصائيات رسومية (Charts) في لوحة التحكم ✅ مكتمل
+- [x] تحليل قاعدة البيانات (leads, appointments, offerLeads, campRegistrations, whatsappMessages)
+- [x] إنشاء charts router مع 5 endpoints (timeline, statusDistribution, sourceBreakdown, whatsappActivity, topPerformers)
+- [x] رسم بياني مساحي (AreaChart): اتجاه العملاء والمواعيد والعروض والمخيمات عبر الزمن
+- [x] رسم بياني شريطي (BarChart): الحجوزات حسب المصدر
+- [x] رسم بياني دائري (PieChart): توزيع حالات العملاء
+- [x] رسم بياني خطي (LineChart): نشاط رسائل WhatsApp (واردة/صادرة)
+- [x] بطاقات ملخص مع نسبة التغيير (أسهم أعلى/أسفل)
+- [x] فلتر الفترة الزمنية (7 أيام, 30 يوم, 3 أشهر, 12 شهر)
+- [x] تصميم responsive (1 عمود جوال, 2 عمود سطح مكتب)
+- [x] دعم الوضع المظلم كامل
+- [x] دمج DashboardCharts في AdminDashboard
+- [x] 444 اختبار vitest ناجح (20 ملف)
