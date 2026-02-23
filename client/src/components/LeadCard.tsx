@@ -1,3 +1,4 @@
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ interface LeadCardProps {
 }
 
 export default function LeadCard({ lead, onUpdateStatus, onWhatsApp }: LeadCardProps) {
+  const { formatDate, formatDateTime } = useFormatDate();
   const status = statusConfig[lead.status] || statusConfig.new;
   const isUrgent = lead.status === 'new' || lead.status === 'pending';
 
@@ -82,11 +84,7 @@ export default function LeadCard({ lead, onUpdateStatus, onWhatsApp }: LeadCardP
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
             <span>
-              {new Date(lead.createdAt).toLocaleDateString("ar-SA", {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
+              {formatDate(lead.createdAt)}
             </span>
           </div>
         </div>

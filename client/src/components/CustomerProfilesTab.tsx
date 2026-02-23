@@ -8,6 +8,7 @@
  * - useExportUtils: للتصدير والطباعة
  */
 
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { useState, useMemo, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -96,11 +97,7 @@ const statusColors: Record<string, string> = {
 function formatDate(date: string | Date | null | undefined) {
   if (!date) return "-";
   try {
-    return new Date(date).toLocaleDateString("ar-EG", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    return formatDate(date);
   } catch {
     return "-";
   }
@@ -134,6 +131,7 @@ const customerColumns: ColumnConfig[] = [
 ];
 
 export default function CustomerProfilesTab() {
+  const { formatDate, formatDateTime } = useFormatDate();
   const { user } = useAuth();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<PageSizeValue>("100");
@@ -173,8 +171,8 @@ export default function CustomerProfilesTab() {
       phone: customer.phone || '-',
       email: customer.email || '-',
       totalRecords: customer.totalRecords || 0,
-      lastSeen: customer.lastSeen ? new Date(customer.lastSeen).toLocaleDateString('ar-SA') : '-',
-      firstSeen: customer.firstSeen ? new Date(customer.firstSeen).toLocaleDateString('ar-SA') : '-',
+      lastSeen: formatDate(customer.lastSeen),
+      firstSeen: formatDate(customer.firstSeen),
     }),
   });
 

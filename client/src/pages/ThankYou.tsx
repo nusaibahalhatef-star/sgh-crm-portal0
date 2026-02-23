@@ -1,3 +1,4 @@
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { CheckCircle2, Phone, Home, Calendar, User, Mail, Stethoscope, Gift, Tent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -5,6 +6,7 @@ import { Link, useLocation } from "wouter";
 import { useEffect, useState } from "react";
 
 export default function ThankYou() {
+  const { formatDate, formatDateTime } = useFormatDate();
   const [location] = useLocation();
   const [bookingInfo, setBookingInfo] = useState<any>(null);
 
@@ -120,7 +122,7 @@ export default function ThankYou() {
                     <Calendar className="w-5 h-5 text-primary" />
                     <span className="text-sm text-muted-foreground">الموعد المفضل:</span>
                     <span className="font-medium">
-                      {bookingInfo.date && new Date(bookingInfo.date).toLocaleDateString('ar-YE')}
+                      {bookingInfo.date && formatDate(bookingInfo.date)}
                       {bookingInfo.date && bookingInfo.time && ' - '}
                       {bookingInfo.time}
                     </span>

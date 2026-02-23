@@ -1,3 +1,4 @@
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -10,6 +11,7 @@ import { toast } from "sonner";
 import { Loader2, User, Mail, Shield, Calendar } from "lucide-react";
 
 export default function ProfilePage() {
+  const { formatDate, formatDateTime } = useFormatDate();
   const { user, loading: authLoading } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || "");
@@ -196,11 +198,7 @@ export default function ProfilePage() {
                   <div className="flex-1">
                     <p className="text-sm text-muted-foreground">تاريخ التسجيل</p>
                     <p className="font-medium">
-                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString('ar-YE', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      }) : 'غير محدد'}
+                      {user.createdAt ? formatDate(user.createdAt) : 'غير محدد'}
                     </p>
                   </div>
                 </div>

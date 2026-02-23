@@ -1,3 +1,4 @@
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { useFilterUtils } from "@/hooks/useFilterUtils";
@@ -107,6 +108,7 @@ export default function CampRegistrationsManagement({
   onPendingCountChange?: (count: number) => void,
   dateRange: { from: Date, to: Date }
 }) {
+  const { formatDate, formatDateTime } = useFormatDate();
   const { user } = useAuth();
   const generateReceiptNumberMutation = trpc.campRegistrations.generateReceiptNumber.useMutation();
   const [selectedRegistration, setSelectedRegistration] = useState<any>(null);
@@ -376,7 +378,7 @@ export default function CampRegistrationsManagement({
       camp: reg.campTitle || '-',
       source: SOURCE_LABELS[reg.source] || reg.source || '-',
       status: statusLabels[reg.status as keyof typeof statusLabels] || reg.status,
-      date: new Date(reg.createdAt).toLocaleDateString('ar-SA'),
+      date: formatDate(reg.createdAt),
     }),
     mapToPrintRow: (reg: any) => ({
       checkbox: '-',
@@ -388,7 +390,7 @@ export default function CampRegistrationsManagement({
       camp: reg.campTitle || '-',
       source: SOURCE_LABELS[reg.source] || reg.source || '-',
       status: statusLabels[reg.status as keyof typeof statusLabels] || reg.status,
-      date: new Date(reg.createdAt).toLocaleDateString('ar-SA'),
+      date: formatDate(reg.createdAt),
       comments: reg.commentCount > 0 ? `${reg.commentCount} تعليق` : '-',
       tasks: reg.taskCount > 0 ? `${reg.taskCount} مهمة` : '-',
       actions: '-',
@@ -840,9 +842,9 @@ export default function CampRegistrationsManagement({
                           case 'medicalCondition':
                             return <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm">{reg.medicalCondition || '-'}</FrozenTableCell>;
                           case 'attendanceDate':
-                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm">{reg.attendanceDate ? new Date(reg.attendanceDate).toLocaleDateString('ar-SA') : '-'}</FrozenTableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm">{formatDate(reg.attendanceDate)}</FrozenTableCell>;
                           case 'date':
-                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm text-muted-foreground">{new Date(reg.createdAt).toLocaleDateString("ar-SA")}</FrozenTableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm text-muted-foreground">{formatDate(reg.createdAt)}</FrozenTableCell>;
                           case 'utmSource':
                             return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{reg.utmSource || '-'}</FrozenTableCell>;
                           case 'utmMedium':
@@ -1152,13 +1154,7 @@ export default function CampRegistrationsManagement({
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">تاريخ التسجيل</p>
                   <p className="text-base">
-                    {new Date(selectedRegistration.createdAt).toLocaleDateString('ar-YE', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    {formatDate(selectedRegistration.createdAt)}
                   </p>
                 </div>
               </div>

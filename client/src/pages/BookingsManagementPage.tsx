@@ -1,3 +1,4 @@
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -116,6 +117,7 @@ const sanitizeLead = (lead: any) => {
 };
 
 export default function BookingsManagementPage() {
+  const { formatDate, formatDateTime } = useFormatDate();
   const { user } = useAuth();
   const utils = trpc.useUtils();
   const [location, setLocation] = useLocation();
@@ -547,7 +549,7 @@ export default function BookingsManagementPage() {
       { key: 'actions', label: 'الإجراءات' },
     ],
     mapToExportRow: (appointment: any) => ({
-      date: new Date(appointment.appointmentDate).toLocaleDateString('ar-SA'),
+      date: formatDate(appointment.appointmentDate),
       name: appointment.name,
       phone: appointment.phone,
       doctor: appointment.doctorName || '-',
@@ -557,7 +559,7 @@ export default function BookingsManagementPage() {
       status: statusLabels[appointment.status as keyof typeof statusLabels] || appointment.status,
     }),
     mapToPrintRow: (appointment: any) => ({
-      date: new Date(appointment.appointmentDate).toLocaleDateString('ar-SA'),
+      date: formatDate(appointment.appointmentDate),
       name: appointment.name,
       phone: appointment.phone,
       doctor: appointment.doctorName || '-',
@@ -890,7 +892,7 @@ export default function BookingsManagementPage() {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              {new Date(lead.createdAt).toLocaleDateString("ar-EG")}
+                              {formatDate(lead.createdAt)}
                             </TableCell>
                             <TableCell>
                               <Button
@@ -1215,7 +1217,7 @@ export default function BookingsManagementPage() {
                                     </FrozenTableCell>
                                   );
                                 case 'date':
-                                  return <FrozenTableCell key={colKey} columnKey={colKey} className="font-medium">{new Date(appointment.createdAt).toLocaleDateString("ar-EG")}</FrozenTableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey} className="font-medium">{formatDate(appointment.createdAt)}</FrozenTableCell>;
                                 case 'name':
                                   return <FrozenTableCell key={colKey} columnKey={colKey} className="font-medium">{appointment.fullName || appointment.patientName || '-'}</FrozenTableCell>;
                                 case 'phone':
@@ -1244,11 +1246,11 @@ export default function BookingsManagementPage() {
                                 case 'procedure':
                                   return <FrozenTableCell key={colKey} columnKey={colKey}>{appointment.procedure || '-'}</FrozenTableCell>;
                                 case 'preferredDate':
-                                  return <FrozenTableCell key={colKey} columnKey={colKey}>{appointment.preferredDate ? new Date(appointment.preferredDate).toLocaleDateString('ar-EG') : '-'}</FrozenTableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey}>{formatDate(appointment.preferredDate)}</FrozenTableCell>;
                                 case 'preferredTime':
                                   return <FrozenTableCell key={colKey} columnKey={colKey}>{appointment.preferredTime || '-'}</FrozenTableCell>;
                                 case 'appointmentDate':
-                                  return <FrozenTableCell key={colKey} columnKey={colKey}>{appointment.appointmentDate ? new Date(appointment.appointmentDate).toLocaleDateString('ar-EG') : '-'}</FrozenTableCell>;
+                                  return <FrozenTableCell key={colKey} columnKey={colKey}>{formatDate(appointment.appointmentDate)}</FrozenTableCell>;
                                 case 'notes':
                                   return <FrozenTableCell key={colKey} columnKey={colKey} wrap title={appointment.notes}>{appointment.notes || '-'}</FrozenTableCell>;
                                 case 'additionalNotes':
@@ -1575,7 +1577,7 @@ export default function BookingsManagementPage() {
                       )}
                       <p className="text-sm">
                         <span className="font-medium">تاريخ التسجيل:</span>{' '}
-                        {new Date(selectedAppointment.createdAt).toLocaleString("ar-EG")}
+                        {formatDateTime(selectedAppointment.createdAt)}
                       </p>
                     </div>
                     <div className="space-y-2">

@@ -1,3 +1,4 @@
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { useState, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -95,6 +96,7 @@ const getCategoryInfo = (category: TaskCategory) => {
 };
 
 export default function MediaTeamPage() {
+  const { formatDate, formatDateTime } = useFormatDate();
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -381,7 +383,7 @@ export default function MediaTeamPage() {
             {task.dueDate && (
               <div className={`flex items-center gap-1 ${isOverdue ? 'text-red-600' : ''}`}>
                 <Calendar className="h-3 w-3" />
-                {new Date(task.dueDate).toLocaleDateString('ar-SA')}
+                {formatDate(task.dueDate)}
               </div>
             )}
           </div>
@@ -793,7 +795,7 @@ export default function MediaTeamPage() {
                           <td className="p-4">
                             {task.dueDate ? (
                               <span className={isOverdue ? 'text-red-600' : ''}>
-                                {new Date(task.dueDate).toLocaleDateString('ar-SA')}
+                                {formatDate(task.dueDate)}
                               </span>
                             ) : '-'}
                           </td>

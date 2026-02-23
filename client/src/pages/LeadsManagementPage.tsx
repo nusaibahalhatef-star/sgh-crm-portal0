@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import LeadStatsCards from "@/components/LeadStatsCards";
@@ -59,6 +60,7 @@ const sanitizeLead = (lead: any) => {
 };
 
 export default function LeadsManagementPage() {
+  const { formatDate, formatDateTime } = useFormatDate();
   const { user } = useAuth();
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -403,7 +405,7 @@ export default function LeadsManagementPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
-                          {new Date(lead.createdAt).toLocaleDateString("ar-SA")}
+                          {formatDate(lead.createdAt)}
                         </TableCell>
                         <TableCell className="text-center">
                           <Button
@@ -509,7 +511,7 @@ export default function LeadsManagementPage() {
                     {(() => {
                       try {
                         const date = selectedLead.createdAt ? new Date(selectedLead.createdAt) : null;
-                        return date && !isNaN(date.getTime()) ? date.toLocaleString("ar-SA") : 'غير متوفر';
+                        return formatDateTime(date);
                       } catch (e) {
                         return 'غير متوفر';
                       }

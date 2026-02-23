@@ -1,4 +1,7 @@
 import { useState, useMemo } from "react";
+import { useFormatDate } from "@/hooks/useFormatDate";
+import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +18,6 @@ import {
   Tag,
   CheckCircle2,
   XCircle,
-  AlertTriangle,
   Copy,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -42,10 +44,10 @@ const offerColumns: ColumnConfig[] = [
 ];
 
 export default function OffersManagement() {
+  const { formatDate } = useFormatDate();
+  const deleteConfirm = useConfirmDialog<any>();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingOffer, setEditingOffer] = useState<any>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deletingOffer, setDeletingOffer] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState({
     title: "",
@@ -101,8 +103,7 @@ export default function OffersManagement() {
     onSuccess: () => {
       toast.success("تم حذف العرض بنجاح");
       refetch();
-      setDeleteDialogOpen(false);
-      setDeletingOffer(null);
+      deleteConfirm.closeConfirm();
     },
     onError: () => {
       toast.error("حدث خطأ أثناء حذف العرض");
@@ -367,13 +368,13 @@ export default function OffersManagement() {
                       case 'startDate':
                         return (
                           <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm text-muted-foreground">
-                            {offer.startDate ? new Date(offer.startDate).toLocaleDateString('ar-YE') : "-"}
+                            {formatDate(offer.startDate)}
                           </FrozenTableCell>
                         );
                       case 'endDate':
                         return (
                           <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm text-muted-foreground">
-                            {offer.endDate ? new Date(offer.endDate).toLocaleDateString('ar-YE') : "-"}
+                            {formatDate(offer.endDate)}
                           </FrozenTableCell>
                         );
                       case 'description':
@@ -393,7 +394,7 @@ export default function OffersManagement() {
                       case 'createdAt':
                         return (
                           <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm text-muted-foreground">
-                            {offer.createdAt ? new Date(offer.createdAt).toLocaleDateString('ar-YE') : "-"}
+                            {formatDate(offer.createdAt)}
                           </FrozenTableCell>
                         );
                       case 'actions':
@@ -422,10 +423,7 @@ export default function OffersManagement() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8"
-                                onClick={() => {
-                                  setDeletingOffer(offer);
-                                  setDeleteDialogOpen(true);
-                                }}
+                                onClick={() => deleteConfirm.openConfirm(offer)}
                                 title="حذف"
                               >
                                 <Trash2 className="h-3.5 w-3.5 text-red-400" />
@@ -568,50 +566,19 @@ export default function OffersManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center">
-                <AlertTriangle className="h-4 w-4 text-red-500" />
-              </div>
-              تأكيد الحذف
-            </DialogTitle>
-            <DialogDescription className="pt-2">
-              هل أنت متأكد من حذف العرض <strong>"{deletingOffer?.title}"</strong>؟
-              <br />
-              <span className="text-red-500 text-xs">لا يمكن التراجع عن هذا الإجراء.</span>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              إلغاء
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (deletingOffer) {
-                  deleteMutation.mutate({ id: deletingOffer.id });
-                }
-              }}
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 ml-2 animate-spin" />
-                  جاري الحذف...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="h-4 w-4 ml-2" />
-                  حذف العرض
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDeleteDialog
+        open={deleteConfirm.isOpen}
+        onOpenChange={() => deleteConfirm.closeConfirm()}
+        itemName={deleteConfirm.item?.title}
+        itemType="العرض"
+        onConfirm={() => {
+          if (deleteConfirm.item) {
+            deleteMutation.mutate({ id: deleteConfirm.item.id });
+          }
+        }}
+        isLoading={deleteMutation.isPending}
+        confirmText="حذف العرض"
+      />
     </div>
   );
 }

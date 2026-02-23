@@ -3,6 +3,7 @@
  * 
  * يعرض حجوزات المريض ومواعيده ونتائجه وتقاريره
  */
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -20,6 +21,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export default function PatientDashboard() {
+  const { formatDate, formatDateTime } = useFormatDate();
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -84,14 +86,7 @@ export default function PatientDashboard() {
     return <Badge variant={info.variant} className="text-[10px] sm:text-xs">{info.label}</Badge>;
   };
 
-  const formatDate = (date: string | Date | null) => {
-    if (!date) return "—";
-    return new Date(date).toLocaleDateString("ar-SA", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
+  // formatDate is provided by useFormatDate hook above
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50/50 via-white to-green-50/30 dark:from-gray-900 dark:via-gray-950 dark:to-gray-900" dir="rtl">

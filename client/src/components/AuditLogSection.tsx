@@ -3,6 +3,7 @@
  * يعرض تاريخ التغييرات على سجل محدد
  */
 
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { trpc } from "@/lib/trpc";
 import { Badge } from "@/components/ui/badge";
 import { Clock, User, ArrowRight } from "lucide-react";
@@ -49,6 +50,7 @@ interface AuditLogSectionProps {
 }
 
 export default function AuditLogSection({ entityType, entityId }: AuditLogSectionProps) {
+  const { formatDate, formatDateTime } = useFormatDate();
   const { data: logs, isLoading } = trpc.auditLogs.getByEntity.useQuery(
     { entityType, entityId },
     { enabled: !!entityId }

@@ -1,3 +1,4 @@
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +34,7 @@ const statusConfig: Record<string, { bg: string; text: string; dot: string; bord
 };
 
 export default function CampRegistrationCard({ registration, onEdit, onViewDetails, onPrint }: CampRegistrationCardProps) {
+  const { formatDate, formatDateTime } = useFormatDate();
   const status = statusConfig[registration.status] || { bg: "bg-muted/50", text: "text-foreground", dot: "bg-gray-500", border: "border-border", label: registration.status };
   const isUrgent = registration.status === 'pending' || registration.status === 'new';
 
@@ -106,13 +108,7 @@ export default function CampRegistrationCard({ registration, onEdit, onViewDetai
           <div className="flex items-center gap-2 text-[10px] text-muted-foreground pt-1 border-t border-dashed">
             <Calendar className="w-3 h-3" />
             <span>
-              {new Date(registration.createdAt).toLocaleDateString('ar-SA', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
+              {formatDate(registration.createdAt)}
             </span>
             {registration.age && (
               <>

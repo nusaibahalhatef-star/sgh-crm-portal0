@@ -3,6 +3,7 @@
  * 
  * Individual offer page with details and registration form
  */
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { useEffect, useState } from "react";
 import { useParams, useLocation, Link } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -19,6 +20,7 @@ import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 
 export default function OfferDetailPage() {
+  const { formatDate, formatDateTime } = useFormatDate();
   const params = useParams();
   const [, setLocation] = useLocation();
   const slug = params.slug as string;
@@ -234,7 +236,7 @@ export default function OfferDetailPage() {
                     <div className="text-sm">
                       <div className="font-semibold">مدة العرض</div>
                       <div className="text-white/90 text-xs">
-                        حتى {new Date(offer.endDate).toLocaleDateString("ar-EG")}
+                        حتى {formatDate(offer.endDate)}
                       </div>
                     </div>
                   </div>

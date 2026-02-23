@@ -1,3 +1,4 @@
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -56,6 +57,7 @@ import Pagination, { type PageSizeValue } from "@/components/Pagination";
 import { appointmentStatusLabels as statusLabels } from "@/hooks/useStatusLabels";
 
 export default function AppointmentsManagementPage() {
+  const { formatDate, formatDateTime } = useFormatDate();
   const { user } = useAuth();
   const utils = trpc.useUtils();
 
@@ -280,7 +282,7 @@ export default function AppointmentsManagementPage() {
       { key: 'status', label: 'الحالة' },
     ],
     mapToExportRow: (appointment: any) => ({
-      date: new Date(appointment.appointmentDate).toLocaleDateString('ar-SA'),
+      date: formatDate(appointment.appointmentDate),
       name: appointment.name,
       phone: appointment.phone,
       doctor: appointment.doctorName || '-',
@@ -290,7 +292,7 @@ export default function AppointmentsManagementPage() {
       status: statusLabels[appointment.status] || appointment.status,
     }),
     mapToPrintRow: (appointment: any) => ({
-      date: new Date(appointment.appointmentDate).toLocaleDateString('ar-SA'),
+      date: formatDate(appointment.appointmentDate),
       name: appointment.name,
       phone: appointment.phone,
       doctor: appointment.doctorName || '-',
@@ -601,7 +603,7 @@ export default function AppointmentsManagementPage() {
                             case 'receiptNumber':
                               return <FrozenTableCell key={colKey} columnKey={colKey} className="font-mono text-xs">{appointment.receiptNumber || '-'}</FrozenTableCell>;
                             case 'date':
-                              return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs whitespace-nowrap">{new Date(appointment.createdAt).toLocaleDateString("ar-EG")}</FrozenTableCell>;
+                              return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs whitespace-nowrap">{formatDate(appointment.createdAt)}</FrozenTableCell>;
                             case 'name':
                               return <FrozenTableCell key={colKey} columnKey={colKey} className="font-medium">{appointment.fullName || appointment.patientName}</FrozenTableCell>;
                             case 'phone':
@@ -621,11 +623,11 @@ export default function AppointmentsManagementPage() {
                             case 'procedure':
                               return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{appointment.procedure || '-'}</FrozenTableCell>;
                             case 'preferredDate':
-                              return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{appointment.preferredDate ? new Date(appointment.preferredDate).toLocaleDateString("ar-EG") : '-'}</FrozenTableCell>;
+                              return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{formatDate(appointment.preferredDate)}</FrozenTableCell>;
                             case 'preferredTime':
                               return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{appointment.preferredTime || '-'}</FrozenTableCell>;
                             case 'appointmentDate':
-                              return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{appointment.appointmentDate ? new Date(appointment.appointmentDate).toLocaleDateString("ar-EG") : '-'}</FrozenTableCell>;
+                              return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{formatDate(appointment.appointmentDate)}</FrozenTableCell>;
                             case 'notes':
                               return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs max-w-[200px] truncate">{appointment.patientNotes || '-'}</FrozenTableCell>;
                             case 'additionalNotes':
@@ -790,7 +792,7 @@ export default function AppointmentsManagementPage() {
                           {(selectedAppointment as any).source ? SOURCE_LABELS[(selectedAppointment as any).source] || (selectedAppointment as any).source : '-'}
                         </p>
                         {selectedAppointment.patientNotes && <p className="text-sm"><span className="font-medium">ملاحظات المريض:</span> {selectedAppointment.patientNotes}</p>}
-                        <p className="text-sm"><span className="font-medium">تاريخ التسجيل:</span> {new Date(selectedAppointment.createdAt).toLocaleString("ar-EG")}</p>
+                        <p className="text-sm"><span className="font-medium">تاريخ التسجيل:</span> {formatDateTime(selectedAppointment.createdAt)}</p>
                       </div>
                       <div className="space-y-2">
                         <Label>الحالة الجديدة</Label>

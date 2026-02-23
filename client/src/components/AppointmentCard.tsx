@@ -1,3 +1,4 @@
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ const statusConfig: Record<string, { bg: string; text: string; dot: string; bord
 };
 
 export default function AppointmentCard({ appointment, onViewDetails, onPrint }: AppointmentCardProps) {
+  const { formatDate, formatDateTime } = useFormatDate();
   const status = statusConfig[appointment.status] || statusConfig.pending;
   const isUrgent = appointment.status === 'pending';
 
@@ -90,11 +92,7 @@ export default function AppointmentCard({ appointment, onViewDetails, onPrint }:
           <div className="flex items-center gap-2 text-[10px] text-muted-foreground pt-1 border-t border-dashed">
             <Calendar className="w-3 h-3" />
             <span>
-              {new Date(appointment.createdAt).toLocaleDateString("ar-SA", {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
+              {formatDate(appointment.createdAt)}
             </span>
             {appointment.age && (
               <>

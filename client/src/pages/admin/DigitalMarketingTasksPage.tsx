@@ -1,3 +1,4 @@
+import { useFormatDate, formatDateUtil } from "@/hooks/useFormatDate";
 import { useState, useMemo } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -143,11 +144,7 @@ const getCategoryColor = (category: TaskCategory) => {
   return colors[category] || "bg-muted text-muted-foreground";
 };
 
-const formatDate = (date: Date | string | null) => {
-  if (!date) return "-";
-  const d = new Date(date);
-  return d.toLocaleDateString("ar-SA", { year: "numeric", month: "short", day: "numeric" });
-};
+const formatDate = formatDateUtil;
 
 const isOverdue = (dueDate: Date | null, status: TaskStatus) => {
   if (!dueDate || status === "completed" || status === "cancelled") return false;
@@ -758,6 +755,7 @@ function TaskFormDialog({
 
 // Main Page Component
 export default function DigitalMarketingTasksPage() {
+  const { formatDate, formatDateTime } = useFormatDate();
   const { user } = useAuth();
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
   const [searchQuery, setSearchQuery] = useState("");

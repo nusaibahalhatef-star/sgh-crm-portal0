@@ -1,3 +1,4 @@
+import { useFormatDate, formatDateUtil } from "@/hooks/useFormatDate";
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -88,7 +89,7 @@ const exportToCSV = (users: any[]) => {
     user.email || "-",
     roleLabels[user.role],
     user.isActive === "yes" ? "نشط" : "معطل",
-    user.lastSignedIn ? new Date(user.lastSignedIn).toLocaleDateString("ar-EG") : "-"
+    formatDateUtil(user.lastSignedIn)
   ]);
   
   const csvContent = [
@@ -125,6 +126,7 @@ const userColumns: ColumnConfig[] = [
 ];
 
 export default function UsersManagementPage() {
+  const { formatDate, formatDateTime } = useFormatDate();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [activeSection, setActiveSection] = useState<"users" | "requests" | "activity">("users");
   const [editingUser, setEditingUser] = useState<any>(null);
@@ -667,17 +669,13 @@ export default function UsersManagementPage() {
                               case 'lastSignedIn':
                                 return (
                                   <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm text-muted-foreground">
-                                    {user.lastSignedIn
-                                      ? new Date(user.lastSignedIn).toLocaleDateString("ar-EG")
-                                      : "-"}
+                                    {formatDate(user.lastSignedIn)}
                                   </FrozenTableCell>
                                 );
                               case 'createdAt':
                                 return (
                                   <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm text-muted-foreground">
-                                    {user.createdAt
-                                      ? new Date(user.createdAt).toLocaleDateString("ar-EG")
-                                      : "-"}
+                                    {formatDate(user.createdAt)}
                                   </FrozenTableCell>
                                 );
                               case 'actions':
@@ -878,7 +876,7 @@ export default function UsersManagementPage() {
                               case 'requestedAt':
                                 return (
                                   <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm text-muted-foreground">
-                                    {new Date(request.requestedAt).toLocaleDateString('ar-YE')}
+                                    {formatDate(request.requestedAt)}
                                   </FrozenTableCell>
                                 );
                               case 'actions':

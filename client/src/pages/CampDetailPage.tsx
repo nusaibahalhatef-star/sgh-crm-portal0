@@ -3,6 +3,7 @@
  * 
  * Individual camp page with details, gallery, and registration form
  */
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useLocation, Link } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -19,6 +20,7 @@ import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 
 export default function CampDetailPage() {
+  const { formatDate, formatDateTime } = useFormatDate();
   const params = useParams();
   const [, setLocation] = useLocation();
   const slug = params.slug as string;
@@ -257,7 +259,7 @@ export default function CampDetailPage() {
                     <div className="text-sm">
                       <div className="font-semibold">التاريخ</div>
                       <div className="text-white/90 text-xs">
-                        {new Date(camp.startDate).toLocaleDateString("ar-EG")} - {new Date(camp.endDate).toLocaleDateString("ar-EG")}
+                        {formatDate(camp.startDate)} - {formatDate(camp.endDate)}
                       </div>
                     </div>
                   </div>

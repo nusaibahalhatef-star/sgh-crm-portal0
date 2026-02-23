@@ -1,4 +1,7 @@
 import { useState, useMemo } from "react";
+import { useFormatDate } from "@/hooks/useFormatDate";
+import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +39,6 @@ import {
   Loader2,
   Stethoscope,
   Plane,
-  AlertTriangle,
   Phone,
   Copy,
 } from "lucide-react";
@@ -66,11 +68,11 @@ const doctorColumns: ColumnConfig[] = [
 ];
 
 export default function DoctorsManagement() {
+  const { formatDate } = useFormatDate();
+  const deleteConfirm = useConfirmDialog<any>();
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState<any>(null);
-  const [deletingDoctor, setDeletingDoctor] = useState<any>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -142,8 +144,7 @@ export default function DoctorsManagement() {
     onSuccess: () => {
       toast.success("تم حذف الطبيب بنجاح");
       refetch();
-      setDeleteDialogOpen(false);
-      setDeletingDoctor(null);
+      deleteConfirm.closeConfirm();
     },
     onError: () => {
       toast.error("حدث خطأ أثناء حذف الطبيب");
@@ -263,10 +264,7 @@ export default function DoctorsManagement() {
     }
   };
 
-  const handleDelete = () => {
-    if (!deletingDoctor) return;
-    deleteMutation.mutate({ id: deletingDoctor.id });
-  };
+
 
   const handleToggleAvailability = (doctor: any) => {
     const newAvailability = doctor.available === "yes" ? "no" : "yes";
@@ -539,7 +537,7 @@ export default function DoctorsManagement() {
                       case 'createdAt':
                         return (
                           <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm text-muted-foreground">
-                            {doctor.createdAt ? new Date(doctor.createdAt).toLocaleDateString('ar-YE') : "-"}
+                            {formatDate(doctor.createdAt)}
                           </FrozenTableCell>
                         );
                       case 'actions':
@@ -580,10 +578,7 @@ export default function DoctorsManagement() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8"
-                                onClick={() => {
-                                  setDeletingDoctor(doctor);
-                                  setDeleteDialogOpen(true);
-                                }}
+                                onClick={() => deleteConfirm.openConfirm(doctor)}
                                 title="حذف"
                               >
                                 <Trash2 className="h-3.5 w-3.5 text-red-400" />
@@ -796,45 +791,19 @@ export default function DoctorsManagement() {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center">
-                <AlertTriangle className="h-4 w-4 text-red-500" />
-              </div>
-              تأكيد الحذف
-            </DialogTitle>
-            <DialogDescription className="pt-2">
-              هل أنت متأكد من حذف الطبيب <strong>"{deletingDoctor?.name}"</strong>؟
-              <br />
-              <span className="text-red-500 text-xs">لا يمكن التراجع عن هذا الإجراء.</span>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              إلغاء
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                  جاري الحذف...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="h-4 w-4 ml-2" />
-                  حذف الطبيب
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDeleteDialog
+        open={deleteConfirm.isOpen}
+        onOpenChange={() => deleteConfirm.closeConfirm()}
+        itemName={deleteConfirm.item?.name}
+        itemType="الطبيب"
+        onConfirm={() => {
+          if (deleteConfirm.item) {
+            deleteMutation.mutate({ id: deleteConfirm.item.id });
+          }
+        }}
+        isLoading={deleteMutation.isPending}
+        confirmText="حذف الطبيب"
+      />
     </div>
   );
 }

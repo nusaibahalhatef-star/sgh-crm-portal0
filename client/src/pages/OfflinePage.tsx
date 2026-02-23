@@ -1,3 +1,4 @@
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ interface CachedAppointment {
 }
 
 export default function OfflinePage() {
+  const { formatDate, formatDateTime } = useFormatDate();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [cachedAppointments, setCachedAppointments] = useState<CachedAppointment[]>([]);
   const [lastSync, setLastSync] = useState<string | null>(null);
@@ -45,7 +47,7 @@ export default function OfflinePage() {
       // Get last sync time
       const lastSyncTime = localStorage.getItem('lastSyncTime');
       if (lastSyncTime) {
-        setLastSync(new Date(lastSyncTime).toLocaleString('ar-YE'));
+        setLastSync(formatDateTime(lastSyncTime));
       }
     } catch (error) {
       console.error('Error loading cached data:', error);
@@ -175,7 +177,7 @@ export default function OfflinePage() {
                         الهاتف: {appointment.phone}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {new Date(appointment.createdAt).toLocaleString('ar-YE')}
+                        {formatDateTime(appointment.createdAt)}
                       </div>
                     </div>
                     <div>

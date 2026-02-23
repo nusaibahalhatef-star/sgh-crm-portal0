@@ -1,3 +1,4 @@
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { useFilterUtils } from "@/hooks/useFilterUtils";
@@ -109,6 +110,7 @@ export default function OfferLeadsManagement({
   onPendingCountChange?: (count: number) => void,
   dateRange: { from: Date, to: Date }
 }) {
+  const { formatDate, formatDateTime } = useFormatDate();
   const { user } = useAuth();
   const generateReceiptNumberMutation = trpc.offerLeads.generateReceiptNumber.useMutation();
   const [selectedLead, setSelectedLead] = useState<any>(null);
@@ -369,7 +371,7 @@ export default function OfferLeadsManagement({
       offer: lead.offerTitle || '-',
       source: SOURCE_LABELS[lead.source] || lead.source || '-',
       status: statusLabels[lead.status as keyof typeof statusLabels] || lead.status,
-      date: new Date(lead.createdAt).toLocaleDateString('ar-SA'),
+      date: formatDate(lead.createdAt),
     }),
     mapToPrintRow: (lead: any) => ({
       checkbox: '-',
@@ -380,7 +382,7 @@ export default function OfferLeadsManagement({
       offer: lead.offerTitle || '-',
       source: SOURCE_LABELS[lead.source] || lead.source || '-',
       status: statusLabels[lead.status as keyof typeof statusLabels] || lead.status,
-      date: new Date(lead.createdAt).toLocaleDateString('ar-SA'),
+      date: formatDate(lead.createdAt),
       comments: lead.commentCount > 0 ? `${lead.commentCount} تعليق` : '-',
       tasks: lead.taskCount > 0 ? `${lead.taskCount} مهمة` : '-',
       actions: '-',
@@ -809,7 +811,7 @@ export default function OfferLeadsManagement({
                           case 'statusNotes':
                             return <FrozenTableCell key={colKey} columnKey={colKey} wrap title={lead.statusNotes}>{lead.statusNotes || '-'}</FrozenTableCell>;
                           case 'date':
-                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm text-muted-foreground">{new Date(lead.createdAt).toLocaleDateString("ar-SA")}</FrozenTableCell>;
+                            return <FrozenTableCell key={colKey} columnKey={colKey} className="text-sm text-muted-foreground">{formatDate(lead.createdAt)}</FrozenTableCell>;
                           case 'utmSource':
                             return <FrozenTableCell key={colKey} columnKey={colKey} className="text-xs">{lead.utmSource || '-'}</FrozenTableCell>;
                           case 'utmMedium':

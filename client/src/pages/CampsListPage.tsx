@@ -1,3 +1,4 @@
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -12,6 +13,7 @@ import InstallPWAButton from "@/components/InstallPWAButton";
 import SEO from "@/components/SEO";
 
 export default function CampsListPage() {
+  const { formatDate, formatDateTime } = useFormatDate();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -105,9 +107,9 @@ export default function CampsListPage() {
             <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs md:text-sm text-muted-foreground mb-3 sm:mb-4">
               <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span>
-                {camp.startDate && new Date(camp.startDate).toLocaleDateString('ar-YE')}
+                {camp.startDate && formatDate(camp.startDate)}
                 {camp.startDate && camp.endDate && ' - '}
-                {camp.endDate && new Date(camp.endDate).toLocaleDateString('ar-YE')}
+                {camp.endDate && formatDate(camp.endDate)}
               </span>
             </div>
           )}

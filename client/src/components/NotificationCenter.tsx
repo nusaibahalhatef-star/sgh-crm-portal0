@@ -1,3 +1,4 @@
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,6 +7,7 @@ import { ChevronDown, ChevronUp, Users, Calendar, TrendingUp, UserCheck } from "
 import { useLocation } from "wouter";
 
 export default function NotificationCenter() {
+  const { formatDate, formatDateTime } = useFormatDate();
   const [, setLocation] = useLocation();
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     campRegistrations: false,
@@ -177,7 +179,7 @@ export default function NotificationCenter() {
                                 {item.fullName || item.name}
                               </span>
                               <span className="text-xs text-muted-foreground">
-                                {new Date(item.createdAt).toLocaleDateString('ar-EG')}
+                                {formatDate(item.createdAt)}
                               </span>
                             </button>
                           ))}

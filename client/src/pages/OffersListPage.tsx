@@ -1,3 +1,4 @@
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -11,6 +12,7 @@ import Footer from "@/components/Footer";
 import InstallPWAButton from "@/components/InstallPWAButton";
 
 export default function OffersListPage() {
+  const { formatDate, formatDateTime } = useFormatDate();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -102,7 +104,7 @@ export default function OffersListPage() {
             <div className="flex items-center gap-1.5 sm:gap-2 text-muted-foreground text-[10px] sm:text-xs md:text-sm mb-3 sm:mb-4">
               <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span>
-                صالح حتى {new Date(offer.endDate).toLocaleDateString("ar-EG")}
+                صالح حتى {formatDate(offer.endDate)}
               </span>
             </div>
           )}

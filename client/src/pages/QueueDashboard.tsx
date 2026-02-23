@@ -1,3 +1,4 @@
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { Loader2, RefreshCw, Clock, CheckCircle2, XCircle, AlertCircle } from "l
 import { toast } from "sonner";
 
 export default function QueueDashboard() {
+  const { formatDate, formatDateTime } = useFormatDate();
   const [autoRefresh, setAutoRefresh] = useState(true);
   
   const { data: queueStats, isLoading, refetch, error: statsError } = trpc.queue.getStats.useQuery(undefined, {
@@ -187,7 +189,7 @@ export default function QueueDashboard() {
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <div className="text-xs text-muted-foreground">
-                        {new Date(job.timestamp).toLocaleString("ar-SA")}
+                        {formatDateTime(job.timestamp)}
                       </div>
                       {job.attempts > 1 && (
                         <div className="text-xs text-yellow-600 mt-1">

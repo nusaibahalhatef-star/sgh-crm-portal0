@@ -3,6 +3,7 @@
  * 
  * Displays all active medical offers with registration forms.
  */
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ interface OfferFormData {
 }
 
 export default function OffersPage() {
+  const { formatDate, formatDateTime } = useFormatDate();
   const [selectedOffer, setSelectedOffer] = useState<number | null>(null);
   const [formData, setFormData] = useState<OfferFormData>({
     fullName: "",
@@ -159,7 +161,7 @@ export default function OffersPage() {
                     {offer.endDate && (
                       <CardDescription className="flex items-center gap-1 text-orange-600">
                         <Calendar className="h-4 w-4" />
-                        العرض ساري حتى {new Date(offer.endDate).toLocaleDateString("ar-SA")}
+                        العرض ساري حتى {formatDate(offer.endDate)}
                       </CardDescription>
                     )}
                   </CardHeader>

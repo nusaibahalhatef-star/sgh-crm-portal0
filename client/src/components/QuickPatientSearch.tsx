@@ -1,3 +1,4 @@
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ interface PatientCardProps {
 }
 
 function PatientCard({ patient, onClose, onUpdateStatus }: PatientCardProps) {
+  const { formatDate, formatDateTime } = useFormatDate();
   const [selectedStatus, setSelectedStatus] = useState(patient.status);
   const { user } = useAuth();
   const [isPrinting, setIsPrinting] = useState(false);
@@ -233,7 +235,7 @@ function PatientCard({ patient, onClose, onUpdateStatus }: PatientCardProps) {
               <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
               <div className="flex-1">
                 <p className="text-xs text-muted-foreground">تاريخ الموعد</p>
-                <p className="font-medium text-sm">{new Date(patient.appointmentDate).toLocaleDateString('ar-EG')}</p>
+                <p className="font-medium text-sm">{formatDate(patient.appointmentDate)}</p>
               </div>
             </div>
           )}
@@ -272,7 +274,7 @@ function PatientCard({ patient, onClose, onUpdateStatus }: PatientCardProps) {
               <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
               <div className="flex-1">
                 <p className="text-xs text-muted-foreground">تاريخ التسجيل</p>
-                <p className="font-medium text-sm">{new Date(patient.createdAt).toLocaleDateString('ar-EG')}</p>
+                <p className="font-medium text-sm">{formatDate(patient.createdAt)}</p>
               </div>
             </div>
           )}
@@ -323,6 +325,7 @@ function PatientCard({ patient, onClose, onUpdateStatus }: PatientCardProps) {
 }
 
 export default function QuickPatientSearch() {
+  const { formatDate, formatDateTime } = useFormatDate();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<any>(null);

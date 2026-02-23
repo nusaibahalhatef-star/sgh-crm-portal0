@@ -1,3 +1,4 @@
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,7 @@ const statusConfig: Record<string, { bg: string; text: string; dot: string; bord
 };
 
 export default function OfferLeadCard({ lead, onEdit, onPrint }: OfferLeadCardProps) {
+  const { formatDate, formatDateTime } = useFormatDate();
   const status = statusConfig[lead.status] || { bg: "bg-muted/50", text: "text-foreground", dot: "bg-gray-500", border: "border-border", label: lead.status };
   const isUrgent = lead.status === 'new' || lead.status === 'pending';
 
@@ -105,13 +107,7 @@ export default function OfferLeadCard({ lead, onEdit, onPrint }: OfferLeadCardPr
           <div className="flex items-center gap-2 text-[10px] text-muted-foreground pt-1 border-t border-dashed">
             <Calendar className="w-3 h-3" />
             <span>
-              {new Date(lead.createdAt).toLocaleDateString('ar-SA', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
+              {formatDate(lead.createdAt)}
             </span>
           </div>
         </div>

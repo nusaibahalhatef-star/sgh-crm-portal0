@@ -1,3 +1,4 @@
+import { useFormatDate } from "@/hooks/useFormatDate";
 import { useState, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { ar } from "date-fns/locale";
 import { Link } from "wouter";
 
 export default function WhatsAppPage() {
+  const { formatDate, formatDateTime } = useFormatDate();
   const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
   const [messageText, setMessageText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
