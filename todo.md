@@ -1726,7 +1726,7 @@
 ### الخطوات التالية (للمستقبل):
 - [ ] إنشاء القوالب في WhatsApp Manager وإرسالها للموافقة
 - [ ] الحصول على WHATSAPP_PHONE_NUMBER_ID و META_ACCESS_TOKEN
-- [ ] تسجيل Webhook URL في Meta App Dashboard
+- [x] تسجيل Webhook URL في Meta App Dashboard
 - [ ] اختبار إرسال الرسائل التفاعلية الفعلية
 - [ ] إضافة صفحة إدارة القوالب في لوحة التحكم
 
@@ -3237,5 +3237,7 @@
 - [x] إنشاء Express webhook routes مباشرة (بدلاً من tRPC) لتوافق Meta
 - [x] اختبار webhook verification endpoint محلياً
 - [ ] نشر المشروع على sghsanaa.net
-- [ ] إعداد Webhook URL في Meta Developer Portal
+- [x] إعداد Webhook URL في Meta Developer Portal
+- [x] إعداد Webhook subscriptions (messages, template_status, account_update)
+- [x] ربط WABA بالتطبيق عبر subscribed_apps
 - [ ] اختبار استقبال الرسائل عبر Webhook
