@@ -18,6 +18,7 @@ import TaskCount from "@/components/TaskCount";
 import TasksSection from "@/components/TasksSection";
 import AuditLogSection from "@/components/AuditLogSection";
 import SavedFilters from "@/components/SavedFilters";
+import FilterPresets from "@/components/FilterPresets";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -181,6 +182,46 @@ export default function OfferLeadsManagement({
   
   // Debounced search - now managed by useFilterUtils
   const debouncedSearch = offerFilter.filters.debouncedSearch;
+
+  // Quick presets for FilterPresets component
+  const quickPresets = [
+    {
+      id: "today-new",
+      name: "حجوزات اليوم - جديدة",
+      filters: { dateFilter: "today", status: ["new"] },
+    },
+    {
+      id: "week-contacted",
+      name: "حجوزات الأسبوع - تم الاتصال",
+      filters: { dateFilter: "week", status: ["contacted"] },
+    },
+    {
+      id: "month-confirmed",
+      name: "حجوزات الشهر - مؤكدة",
+      filters: { dateFilter: "month", status: ["confirmed"] },
+    },
+    {
+      id: "all-cancelled",
+      name: "جميع الحجوزات - ملغاة",
+      filters: { dateFilter: "all", status: ["cancelled"] },
+    },
+  ];
+
+  const handleApplyPreset = (filters: Record<string, any>) => {
+    if (filters.dateFilter) setDateFilter(filters.dateFilter);
+    if (filters.status) setStatusFilter(filters.status);
+    if (filters.source) setSourceFilter(filters.source);
+    if (filters.searchTerm !== undefined) setSearchTerm(filters.searchTerm);
+    if (filters.offer) setSelectedOffer(filters.offer);
+  };
+
+  const currentFilters = {
+    dateFilter,
+    status: statusFilter,
+    source: sourceFilter,
+    searchTerm,
+    offer: selectedOffer,
+  };
 
   // Reset page when filters change
   useEffect(() => {
@@ -453,6 +494,15 @@ export default function OfferLeadsManagement({
           </div>
         ))}
       </div>
+
+      {/* Filter Presets */}
+      <FilterPresets
+        pageKey="offerLeads"
+        currentFilters={currentFilters}
+        onApplyFilters={handleApplyPreset}
+        quickPresets={quickPresets}
+        isAdmin={user?.role === "admin"}
+      />
 
       {/* Quick Actions + Filters */}
       <div className="space-y-3">

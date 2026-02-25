@@ -18,6 +18,7 @@ import TaskCount from "@/components/TaskCount";
 import TasksSection from "@/components/TasksSection";
 import AuditLogSection from "@/components/AuditLogSection";
 import SavedFilters from "@/components/SavedFilters";
+import FilterPresets from "@/components/FilterPresets";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -188,6 +189,46 @@ export default function CampRegistrationsManagement({
   
   // Debounced search - now managed by useFilterUtils
   const debouncedSearch = campFilter.filters.debouncedSearch;
+
+  // Quick presets for FilterPresets component
+  const quickPresets = [
+    {
+      id: "today-new",
+      name: "تسجيلات اليوم - جديدة",
+      filters: { dateFilter: "today", status: ["new"] },
+    },
+    {
+      id: "week-confirmed",
+      name: "تسجيلات الأسبوع - مؤكدة",
+      filters: { dateFilter: "week", status: ["confirmed"] },
+    },
+    {
+      id: "month-attended",
+      name: "تسجيلات الشهر - حضروا",
+      filters: { dateFilter: "month", status: ["attended"] },
+    },
+    {
+      id: "all-cancelled",
+      name: "جميع التسجيلات - ملغاة",
+      filters: { dateFilter: "all", status: ["cancelled"] },
+    },
+  ];
+
+  const handleApplyPreset = (filters: Record<string, any>) => {
+    if (filters.dateFilter) setDateFilter(filters.dateFilter);
+    if (filters.status) setStatusFilter(filters.status);
+    if (filters.source) setSourceFilter(filters.source);
+    if (filters.searchTerm !== undefined) setSearchTerm(filters.searchTerm);
+    if (filters.camp) setSelectedCamp(filters.camp);
+  };
+
+  const currentFilters = {
+    dateFilter,
+    status: statusFilter,
+    source: sourceFilter,
+    searchTerm,
+    camp: selectedCamp,
+  };
 
   // Reset page when filters change
   useEffect(() => {
@@ -485,6 +526,15 @@ export default function CampRegistrationsManagement({
           </div>
         ))}
       </div>
+
+      {/* Filter Presets */}
+      <FilterPresets
+        pageKey="campRegistrations"
+        currentFilters={currentFilters}
+        onApplyFilters={handleApplyPreset}
+        quickPresets={quickPresets}
+        isAdmin={user?.role === "admin"}
+      />
 
       {/* Quick Actions + Filters */}
       <div className="space-y-3">

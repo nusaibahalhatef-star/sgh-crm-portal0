@@ -3371,3 +3371,10 @@
 - [x] تطبيق FilterPresets على OfferLeadsManagement
 - [x] تطبيق FilterPresets على CampRegistrationsManagement
 - [x] 0 أخطاء TypeScript
+
+
+### تطبيق FilterPresets على باقي الصفحات ✅ مكتمل
+- [x] تطبيق FilterPresets على OfferLeadsManagement
+- [x] تطبيق FilterPresets على CampRegistrationsManagement
+- [x] فحص TypeScript والاختبارات
+- [x] 0 أخطاء TypeScript و 663 اختبار ناجح
