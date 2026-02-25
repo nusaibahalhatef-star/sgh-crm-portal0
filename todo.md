@@ -3330,3 +3330,15 @@
 - [x] كتابة اختبارات Vitest شاملة (43 اختبار جديد)
 - [x] تحديث الاختبارات القديمة لتتوافق مع البنية الجديدة
 - [x] 0 أخطاء TypeScript، 663 اختبار ناجح
+
+
+### تحسين قابلية الصيانة والأداء ✅ مكتمل
+- [x] تقسيم LeadsManagementPage (615+ سطر) إلى 5 مكونات منفصلة (LeadFilters, LeadTableDesktop, LeadStatusDialog, LeadMobileCards, orchestrator)
+- [x] إنشاء مكون DataTableWrapper مشترك يجمع الأنماط المتكررة (toolbar, pagination, empty state, loading)
+- [x] إنشاء مكون DataTableToolbar مشترك لأدوات الجدول (export, print, column visibility, saved filters)
+- [x] إنشاء hook usePagination مشترك لإدارة حالة الترقيم
+- [x] تحويل جميع الصفحات إلى lazy loading (49 صفحة) لتحسين سرعة التحميل الأولي
+- [x] إضافة 43 اختبار Vitest جديد للمكونات والـ hooks المشتركة
+- [x] إنشاء مكونات فرعية لـ OfferLeadsManagement (OfferLeadsFilters, OfferLeadsTable, OfferLeadsCards)
+- [x] إنشاء مكونات فرعية لـ CampRegistrationsManagement (CampRegistrationsFilters, CampRegistrationsTable, CampRegistrationsCards)
+- [x] إنشاء نسخ محسّنة من OfferLeadsManagement و CampRegistrationsManagement باستخدام DataTableWrapper
