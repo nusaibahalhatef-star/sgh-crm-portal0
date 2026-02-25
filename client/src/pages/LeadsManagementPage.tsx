@@ -9,6 +9,7 @@ import { useFilterUtils, type DateFilterPreset } from "@/hooks/useFilterUtils";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { usePagination } from "@/hooks/usePagination";
 import { LeadFilters, LeadTableDesktop, LeadStatusDialog, LeadMobileCards } from "@/components/leads";
+import FilterPresets from "@/components/FilterPresets";
 
 const sanitizeLead = (lead: any) => {
   if (!lead) return null;
@@ -40,6 +41,44 @@ export default function LeadsManagementPage() {
   const setLeadsStatusFilter = leadsFilter.filters.setStatusFilter;
   const leadsSourceFilter = leadsFilter.filters.sourceFilter;
   const setLeadsSourceFilter = leadsFilter.filters.setSourceFilter;
+
+  // Quick presets for FilterPresets component
+  const quickPresets = [
+    {
+      id: "today-new",
+      name: "عملاء اليوم - جدد",
+      filters: { dateFilter: "today" as DateFilterPreset, status: "new" },
+    },
+    {
+      id: "week-contacted",
+      name: "عملاء الأسبوع - تم الاتصال",
+      filters: { dateFilter: "week" as DateFilterPreset, status: "contacted" },
+    },
+    {
+      id: "month-converted",
+      name: "عملاء الشهر - محولين",
+      filters: { dateFilter: "month" as DateFilterPreset, status: "converted" },
+    },
+    {
+      id: "all-qualified",
+      name: "جميع العملاء - مؤهلين",
+      filters: { dateFilter: "all" as DateFilterPreset, status: "qualified" },
+    },
+  ];
+
+  const handleApplyPreset = (filters: Record<string, any>) => {
+    if (filters.dateFilter) setLeadsDateFilter(filters.dateFilter);
+    if (filters.status) setLeadsStatusFilter(filters.status);
+    if (filters.source) setLeadsSourceFilter(filters.source);
+    if (filters.searchTerm !== undefined) setSearchTerm(filters.searchTerm);
+  };
+
+  const currentFilters = {
+    dateFilter: leadsDateFilter,
+    status: leadsStatusFilter,
+    source: leadsSourceFilter,
+    searchTerm,
+  };
 
   const { data: unifiedLeads, isLoading: leadsLoading, refetch: refetchLeads } = trpc.leads.list.useQuery();
   const { data: stats } = trpc.leads.stats.useQuery();
@@ -180,6 +219,15 @@ export default function LeadsManagementPage() {
       <div className="space-y-4 sm:space-y-5 px-3 sm:px-4 md:px-6 py-3 sm:py-4" dir="rtl">
         {/* Stats Cards */}
         <LeadStatsCards stats={stats} />
+
+        {/* Filter Presets */}
+        <FilterPresets
+          pageKey="leads"
+          currentFilters={currentFilters}
+          onApplyFilters={handleApplyPreset}
+          quickPresets={quickPresets}
+          isAdmin={user?.role === "admin"}
+        />
 
         {/* Filters Section */}
         <LeadFilters

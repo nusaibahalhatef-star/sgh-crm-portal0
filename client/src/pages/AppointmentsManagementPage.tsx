@@ -6,6 +6,7 @@ import AppointmentStatsCards from "@/components/AppointmentStatsCards";
 import AppointmentCard from "@/components/AppointmentCard";
 import AuditLogSection from "@/components/AuditLogSection";
 import SavedFilters from "@/components/SavedFilters";
+import FilterPresets from "@/components/FilterPresets";
 import ActionButtons from "@/components/ActionButtons";
 import EmptyState from "@/components/EmptyState";
 import MultiSelect from "@/components/MultiSelect";
@@ -90,6 +91,46 @@ export default function AppointmentsManagementPage() {
   const dateFilter = appointmentFilter.filters.dateFilter;
   const setDateFilter = appointmentFilter.filters.setDateFilter;
   const debouncedAppointmentSearch = appointmentFilter.filters.debouncedSearch;
+
+  // Quick presets for FilterPresets component
+  const quickPresets = [
+    {
+      id: "today-pending",
+      name: "مواعيد اليوم - قيد الانتظار",
+      filters: { dateFilter: "today", status: ["pending"] },
+    },
+    {
+      id: "week-confirmed",
+      name: "مواعيد الأسبوع - مؤكدة",
+      filters: { dateFilter: "week", status: ["confirmed"] },
+    },
+    {
+      id: "month-completed",
+      name: "مواعيد الشهر - مكتملة",
+      filters: { dateFilter: "month", status: ["completed"] },
+    },
+    {
+      id: "all-cancelled",
+      name: "جميع المواعيد - ملغاة",
+      filters: { dateFilter: "all", status: ["cancelled"] },
+    },
+  ];
+
+  const handleApplyPreset = (filters: Record<string, any>) => {
+    if (filters.dateFilter) setDateFilter(filters.dateFilter);
+    if (filters.status) setAppointmentStatusFilter(filters.status);
+    if (filters.source) setAppointmentSourceFilter(filters.source);
+    if (filters.searchTerm !== undefined) setAppointmentSearchTerm(filters.searchTerm);
+    if (filters.doctor) setSelectedDoctor(filters.doctor);
+  };
+
+  const currentFilters = {
+    dateFilter,
+    status: appointmentStatusFilter,
+    source: appointmentSourceFilter,
+    searchTerm: appointmentSearchTerm,
+    doctor: selectedDoctor,
+  };
 
   // Column visibility state
   const appointmentColumns: ColumnConfig[] = [
@@ -340,6 +381,15 @@ export default function AppointmentsManagementPage() {
         <DateRangePicker dateRange={dateRange} onDateRangeChange={setDateRange} />
 
         <AppointmentStatsCards stats={appointmentStats} />
+
+        {/* Filter Presets */}
+        <FilterPresets
+          pageKey="appointments"
+          currentFilters={currentFilters}
+          onApplyFilters={handleApplyPreset}
+          quickPresets={quickPresets}
+          isAdmin={user?.role === "admin"}
+        />
 
         {/* Filters Section */}
         <div className="space-y-3">

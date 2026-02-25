@@ -3351,3 +3351,23 @@
 - [x] إنشاء usePagination hook مشترك
 - [x] إنشاء DataTableToolbar مشترك
 - [x] 0 أخطاء TypeScript و 663 اختبار ناجح
+
+
+### إنشاء FilterPresets وتوثيق المكونات
+- [ ] إنشاء مكون FilterPresets مشترك لحفظ واستدعاء مجموعات الفلاتر المستخدمة بكثرة
+- [ ] إنشاء ملف COMPONENTS.md شامل يوثق جميع المكونات المستخدمة (الاسم، الوصف، المحتوى، أماكن التطبيق)
+- [ ] تطبيق FilterPresets على LeadsManagementPage
+- [ ] تطبيق FilterPresets على AppointmentsManagementPage
+- [ ] تطبيق FilterPresets على OfferLeadsManagement
+- [ ] تطبيق FilterPresets على CampRegistrationsManagement
+- [ ] كتابة اختبارات Vitest للمكون الجديد
+
+
+### إنشاء FilterPresets وتوثيق المكونات ✅ مكتمل
+- [x] إنشاء مكون FilterPresets مشترك لحفظ واستدعاء مجموعات الفلاتر
+- [x] إنشاء ملف COMPONENTS.md شامل يوثق 120+ مكون و15+ hook
+- [x] تطبيق FilterPresets على LeadsManagementPage
+- [x] تطبيق FilterPresets على AppointmentsManagementPage
+- [x] تطبيق FilterPresets على OfferLeadsManagement
+- [x] تطبيق FilterPresets على CampRegistrationsManagement
+- [x] 0 أخطاء TypeScript
