@@ -96,10 +96,10 @@ export default function EditSidebarModal({
           </button>
           <div className="text-center flex-1">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              تخصيص الأدوات التي تظهر في لـ Saudi German Hospital Sana'a
+              تعديل الشريط الجانبي
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              يمكنك تحديد 10 أدوات بحد أقصى
+              اختر العناصر واسحبها لإعادة ترتيبها في الشريط الجانبي
             </p>
           </div>
           <div className="w-9" />
@@ -108,7 +108,7 @@ export default function EditSidebarModal({
 
 
         {/* Two Column Layout */}
-        <div className="grid grid-cols-2 divide-x divide-gray-200 dark:divide-gray-700 divide-x-reverse h-[600px]">
+        <div className="grid grid-cols-2 divide-x divide-gray-200 dark:divide-gray-700 divide-x-reverse" style={{ height: 'calc(100vh - 280px)', maxHeight: '500px' }}>
           {/* Right Column - "التفاعل مع الجمهور" (Selected Items) */}
           <div className="flex flex-col h-full">
             <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30">
@@ -155,9 +155,9 @@ export default function EditSidebarModal({
                       />
 
                       {/* Item Info */}
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
                         <Icon className="h-4 w-4 text-gray-600 dark:text-gray-400 flex-shrink-0" />
-                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate block">
                           {item.title}
                         </span>
                       </div>
@@ -201,33 +201,30 @@ export default function EditSidebarModal({
 
                       {/* Group Items */}
                       <div className="space-y-1">
-                        {group.items.map((item) => {
+                        {group.items.filter(item => !selectedIds.includes(item.id)).map((item) => {
                           const Icon = item.icon;
-                          const isSelected = selectedIds.includes(item.id);
                           const isHome = item.id === "home";
-                          const canSelect = !isSelected && selectedIds.length < MAX_VISIBLE_ITEMS;
+                          const canSelect = selectedIds.length < MAX_VISIBLE_ITEMS;
 
                           return (
                             <button
                               key={item.id}
                               onClick={() => toggleItem(item.id)}
-                              disabled={isHome || (!isSelected && !canSelect)}
+                              disabled={isHome || !canSelect}
                               className={cn(
                                 "w-full flex items-center gap-3 p-2.5 rounded-lg transition-all text-right",
-                                isSelected
-                                  ? "bg-blue-50 dark:bg-blue-900/20"
-                                  : canSelect
+                                canSelect
                                   ? "hover:bg-gray-100 dark:hover:bg-gray-800"
                                   : "opacity-50 cursor-not-allowed"
                               )}
                             >
                               <Checkbox
-                                checked={isSelected}
-                                disabled={isHome || (!isSelected && !canSelect)}
+                                checked={false}
+                                disabled={isHome || !canSelect}
                                 className="flex-shrink-0"
                               />
                               <Icon className="h-4 w-4 text-gray-600 dark:text-gray-400 flex-shrink-0" />
-                              <span className="text-sm text-gray-900 dark:text-gray-100 truncate">
+                              <span className="text-sm text-gray-900 dark:text-gray-100 truncate block flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
                                 {item.title}
                               </span>
                             </button>
