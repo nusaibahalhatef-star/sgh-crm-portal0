@@ -3524,3 +3524,8 @@
 - [x] EditSidebarModal: جميع العناصر موجودة (22 عنصر في 6 أقسام)
 - [x] EditSidebarModal: التداخل محلول (قائمتين منفصلتين)
 - [x] فحص TypeScript (0 أخطاء)
+
+### إصلاح موضع لوحة كل الأدوات ونافذة التعديل ✅ مكتمل
+- [x] إصلاح موضع AllToolsDrawer لتظهر في منتصف الشاشة (إزالة position: fixed)
+- [x] تحسين عنوان EditSidebarModal (تكبير النص الفرعي text-sm)
+- [x] فحص TypeScript (0 أخطاء)

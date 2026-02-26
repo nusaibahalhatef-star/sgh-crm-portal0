@@ -50,13 +50,6 @@ export default function AllToolsDrawer({
       <DialogContent 
         className="max-w-[900px] h-[85vh] p-0 gap-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-gray-200 dark:border-gray-700"
         dir="rtl"
-        style={{ 
-          position: 'fixed',
-          right: '80px',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          margin: 0
-        }}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-l from-blue-50/50 to-transparent dark:from-blue-900/20">
