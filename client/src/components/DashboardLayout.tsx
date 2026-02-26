@@ -3,6 +3,7 @@ import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 import DashboardSidebar from "./DashboardSidebar";
+import DashboardSidebarV2 from "./DashboardSidebarV2";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,8 +63,8 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-muted/50 dark:bg-gray-950 flex" dir="rtl">
-      {/* Sidebar - Meta Business Suite Style */}
-      <DashboardSidebar currentPath={location} />
+      {/* Sidebar - Meta Business Suite Style V2 */}
+      <DashboardSidebarV2 currentPath={location} />
       
       {/* Main Content */}
       <div className="flex-1 flex flex-col lg:pb-0 pb-14">
