@@ -63,19 +63,29 @@ const allNavItems: NavItem[] = [
   { id: "camp-registrations", title: "تسجيلات المخيمات", href: "/dashboard/bookings/camp-registrations", icon: Tent },
   { id: "customers", title: "ملفات العملاء", href: "/dashboard/bookings/customers", icon: Contact },
   { id: "tasks", title: "المهام", href: "/dashboard/bookings/tasks", icon: CheckSquare },
-  { id: "reports", title: "التقارير", href: "/dashboard/reports", icon: BarChart3 },
+  { id: "reports", title: "التقارير", href: "/dashboard/reports", icon: FileText },
+  { id: "analytics", title: "التحليلات", href: "/dashboard/analytics", icon: BarChart3 },
   { id: "whatsapp", title: "واتساب", href: "/dashboard/whatsapp", icon: MessageCircle },
+  { id: "messages", title: "الرسائل", href: "/dashboard/messages", icon: MessageSquare },
+  { id: "message-settings", title: "إعدادات الرسائل", href: "/dashboard/message-settings", icon: SettingsIcon },
+  { id: "queue", title: "طوابير الرسائل", href: "/dashboard/queue", icon: ClipboardList },
   { id: "management", title: "الإدارة", href: "/dashboard/management", icon: SettingsIcon },
   { id: "content", title: "المحتوى", href: "/dashboard/content", icon: FileEdit },
   { id: "publishing", title: "النشر", href: "/dashboard/publishing", icon: Send },
+  { id: "digital-marketing", title: "التسويق الرقمي", href: "/dashboard/teams/digital-marketing", icon: Megaphone },
+  { id: "media", title: "وحدة الإعلام", href: "/dashboard/teams/media", icon: Video },
+  { id: "field-marketing", title: "التسويق الميداني", href: "/dashboard/teams/field-marketing", icon: MapPin },
+  { id: "customer-service", title: "خدمة العملاء", href: "/dashboard/teams/customer-service", icon: Headphones },
   { id: "users", title: "المستخدمين", href: "/dashboard/users", icon: Users },
+  { id: "campaigns", title: "الحملات والمشاريع", href: "/dashboard/campaigns", icon: Target },
+  { id: "review-approval", title: "المراجعة والاعتماد", href: "/dashboard/review-approval", icon: CheckSquare },
 ];
 
 // المجموعات لعرضها في لوحة كل الأدوات
 const allToolsGroups: NavGroup[] = [
   {
-    label: "الحجوزات والعملاء",
-    icon: Calendar,
+    label: "إدارة الحجوزات",
+    icon: ClipboardList,
     items: [
       { id: "leads", title: "العملاء المحتملين", href: "/dashboard/bookings/leads", icon: UserCheck },
       { id: "appointments", title: "مواعيد الأطباء", href: "/dashboard/bookings/appointments", icon: Calendar },
@@ -86,10 +96,12 @@ const allToolsGroups: NavGroup[] = [
     ],
   },
   {
-    label: "التقارير والتحليلات",
-    icon: BarChart3,
+    label: "إدارة المحتوى",
+    icon: FileEdit,
     items: [
-      { id: "reports", title: "التقارير", href: "/dashboard/reports", icon: BarChart3 },
+      { id: "management", title: "الإدارة", href: "/dashboard/management", icon: SettingsIcon },
+      { id: "content", title: "المحتوى", href: "/dashboard/content", icon: FileEdit },
+      { id: "publishing", title: "النشر", href: "/dashboard/publishing", icon: Send },
     ],
   },
   {
@@ -97,22 +109,36 @@ const allToolsGroups: NavGroup[] = [
     icon: MessageCircle,
     items: [
       { id: "whatsapp", title: "واتساب", href: "/dashboard/whatsapp", icon: MessageCircle },
+      { id: "messages", title: "الرسائل", href: "/dashboard/messages", icon: MessageSquare },
+      { id: "message-settings", title: "إعدادات الرسائل", href: "/dashboard/message-settings", icon: SettingsIcon },
+      { id: "queue", title: "طوابير الرسائل", href: "/dashboard/queue", icon: ClipboardList },
     ],
   },
   {
-    label: "الإدارة والإعدادات",
+    label: "الفرق",
+    icon: Users,
+    items: [
+      { id: "digital-marketing", title: "التسويق الرقمي", href: "/dashboard/teams/digital-marketing", icon: Megaphone },
+      { id: "media", title: "وحدة الإعلام", href: "/dashboard/teams/media", icon: Video },
+      { id: "field-marketing", title: "التسويق الميداني", href: "/dashboard/teams/field-marketing", icon: MapPin },
+      { id: "customer-service", title: "خدمة العملاء", href: "/dashboard/teams/customer-service", icon: Headphones },
+    ],
+  },
+  {
+    label: "التقارير والتحليلات",
+    icon: BarChart3,
+    items: [
+      { id: "reports", title: "التقارير", href: "/dashboard/reports", icon: FileText },
+      { id: "analytics", title: "التحليلات", href: "/dashboard/analytics", icon: BarChart3 },
+    ],
+  },
+  {
+    label: "الإدارة العامة",
     icon: SettingsIcon,
     items: [
-      { id: "management", title: "الإدارة", href: "/dashboard/management", icon: SettingsIcon },
       { id: "users", title: "المستخدمين", href: "/dashboard/users", icon: Users },
-    ],
-  },
-  {
-    label: "المحتوى والنشر",
-    icon: FileEdit,
-    items: [
-      { id: "content", title: "المحتوى", href: "/dashboard/content", icon: FileEdit },
-      { id: "publishing", title: "النشر", href: "/dashboard/publishing", icon: Send },
+      { id: "campaigns", title: "الحملات والمشاريع", href: "/dashboard/campaigns", icon: Target },
+      { id: "review-approval", title: "المراجعة والاعتماد", href: "/dashboard/review-approval", icon: CheckSquare },
     ],
   },
 ];
@@ -374,36 +400,38 @@ export default function DashboardSidebarV2({ currentPath }: { currentPath: strin
         </nav>
       </ScrollArea>
 
-      {/* Bottom Actions - البحث والمساعدة فقط */}
+      {/* Bottom Actions - الإعدادات والمساعدة */}
       <div className="flex flex-col gap-1 px-2 py-2 border-t border-gray-100 dark:border-gray-700">
-        {/* البحث */}
+        {/* الإعدادات */}
         <Tooltip delayDuration={shouldShowText ? 999999 : 300}>
           <TooltipTrigger asChild>
             <button
-              onClick={() => {/* TODO: فتح البحث */}}
+              onClick={() => handleNavClick("/dashboard/management")}
               className={cn(
                 "w-full flex items-center gap-3 py-3 rounded-lg transition-all duration-200",
                 shouldShowText ? "px-3" : "px-0 justify-center",
-                "text-foreground hover:bg-muted/50 dark:text-gray-300 dark:hover:bg-gray-800"
+                isItemActive("/dashboard/management")
+                  ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+                  : "text-foreground hover:bg-muted/50 dark:text-gray-300 dark:hover:bg-gray-800"
               )}
             >
-              <Search className={cn(
+              <SettingsIcon className={cn(
                 "flex-shrink-0 transition-all duration-200",
                 shouldShowText ? "h-5 w-5" : "h-6 w-6"
               )} />
               {shouldShowText && (
                 <span className="text-sm font-medium truncate flex-1 text-right">
-                  البحث
+                  الإعدادات
                 </span>
               )}
             </button>
           </TooltipTrigger>
           {!shouldShowText && (
-            <TooltipContent side="left">البحث</TooltipContent>
+            <TooltipContent side="left">الإعدادات</TooltipContent>
           )}
         </Tooltip>
 
-        {/* 4. المساعدة */}
+        {/* المساعدة */}
         <Tooltip delayDuration={shouldShowText ? 999999 : 300}>
           <TooltipTrigger asChild>
             <button

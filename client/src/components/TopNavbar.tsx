@@ -14,6 +14,8 @@ import { User, Settings, LogOut, Volume2, VolumeX, Moon, Sun } from "lucide-reac
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useNotificationSound } from "@/hooks/useNotificationSound";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TopNavbarProps {
   pageTitle?: string;
@@ -24,7 +26,7 @@ export default function TopNavbar({ pageTitle, pageDescription }: TopNavbarProps
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
   const { theme, toggleTheme } = useTheme();
-  const [isMuted, setIsMuted] = useState(false);
+  const { soundEnabled, toggleSound } = useNotificationSound();
 
   return (
     <header className="bg-white dark:bg-card dark:bg-gray-900 border-b border-border dark:border-gray-700 sticky top-0 z-20">
@@ -51,28 +53,42 @@ export default function TopNavbar({ pageTitle, pageDescription }: TopNavbarProps
         {/* Left Actions: Notifications + Theme + User */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {/* Sound Control */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9"
-            onClick={() => setIsMuted(!isMuted)}
-          >
-            {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                onClick={toggleSound}
+              >
+                {soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>{soundEnabled ? "إيقاف صوت التنبيهات" : "تفعيل صوت التنبيهات"}</p>
+            </TooltipContent>
+          </Tooltip>
 
           {/* Theme Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9"
-            onClick={toggleTheme}
-          >
-            {theme === 'dark' ? (
-              <Sun className="h-5 w-5" />
-            ) : (
-              <Moon className="h-5 w-5" />
-            )}
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                onClick={toggleTheme}
+              >
+                {theme === 'dark' ? (
+                  <Sun className="h-5 w-5" />
+                ) : (
+                  <Moon className="h-5 w-5" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>{theme === 'dark' ? "الوضع الفاتح" : "الوضع الداكن"}</p>
+            </TooltipContent>
+          </Tooltip>
 
           {/* User Dropdown */}
           <DropdownMenu>
