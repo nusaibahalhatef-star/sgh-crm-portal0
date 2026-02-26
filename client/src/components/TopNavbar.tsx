@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { APP_LOGO } from "@/const";
 import { Button } from "./ui/button";
@@ -9,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, Settings, LogOut, Bell, Moon, Sun } from "lucide-react";
+import { User, Settings, LogOut, Volume2, VolumeX, Moon, Sun } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -23,6 +24,7 @@ export default function TopNavbar({ pageTitle, pageDescription }: TopNavbarProps
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
   const { theme, toggleTheme } = useTheme();
+  const [isMuted, setIsMuted] = useState(false);
 
   return (
     <header className="bg-white dark:bg-card dark:bg-gray-900 border-b border-border dark:border-gray-700 sticky top-0 z-20">
@@ -48,16 +50,14 @@ export default function TopNavbar({ pageTitle, pageDescription }: TopNavbarProps
         
         {/* Left Actions: Notifications + Theme + User */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Notifications */}
+          {/* Sound Control */}
           <Button
             variant="ghost"
             size="icon"
-            className="relative h-9 w-9"
-            onClick={() => setLocation('/dashboard/notifications')}
+            className="h-9 w-9"
+            onClick={() => setIsMuted(!isMuted)}
           >
-            <Bell className="h-5 w-5" />
-            {/* Notification Badge */}
-            <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+            {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
           </Button>
 
           {/* Theme Toggle */}

@@ -36,8 +36,10 @@ import { trpc } from "@/lib/trpc";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { useRecentlyUsed } from "@/hooks/useRecentlyUsed";
+import AllToolsDrawer from "./AllToolsDrawer";
+import EditSidebarModal from "./EditSidebarModal";
 
-interface NavItem {
+export interface NavItem {
   title: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -46,7 +48,7 @@ interface NavItem {
   id: string;
 }
 
-interface NavGroup {
+export interface NavGroup {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   items: NavItem[];
@@ -139,6 +141,7 @@ export default function DashboardSidebarV2({ currentPath }: { currentPath: strin
   
   const { recentlyUsed, addRecentlyUsed } = useRecentlyUsed();
   const [allToolsOpen, setAllToolsOpen] = useState(false);
+  const [editSidebarOpen, setEditSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   // TODO: إضافة procedure للحصول على عدد الإشعارات
@@ -345,7 +348,7 @@ export default function DashboardSidebarV2({ currentPath }: { currentPath: strin
             <Tooltip delayDuration={shouldShowText ? 999999 : 300}>
               <TooltipTrigger asChild>
                 <button
-                  onClick={() => {/* TODO: فتح modal التعديل */}}
+                  onClick={() => setEditSidebarOpen(true)}
                   className={cn(
                     "w-full flex items-center gap-3 py-3 rounded-lg transition-all duration-200",
                     shouldShowText ? "px-3" : "px-0 justify-center",
@@ -432,10 +435,28 @@ export default function DashboardSidebarV2({ currentPath }: { currentPath: strin
 
   // TODO: إضافة renderAllToolsPanel و renderMobileViews في المراحل القادمة
 
+  // معالج حفظ تعديلات الشريط
+  const handleSaveVisibleItems = useCallback((newVisibleIds: string[]) => {
+    setVisibleItemIds(newVisibleIds);
+  }, []);
+
   return (
     <>
       {renderDesktopSidebar()}
-      {/* TODO: All Tools Panel */}
+      <AllToolsDrawer
+        isOpen={allToolsOpen}
+        onClose={() => setAllToolsOpen(false)}
+        allToolsGroups={allToolsGroups}
+        allNavItems={allNavItems}
+      />
+      <EditSidebarModal
+        isOpen={editSidebarOpen}
+        onClose={() => setEditSidebarOpen(false)}
+        allToolsGroups={allToolsGroups}
+        allNavItems={allNavItems}
+        visibleItemIds={visibleItemIds}
+        onSave={handleSaveVisibleItems}
+      />
       {/* TODO: Mobile Views */}
     </>
   );
