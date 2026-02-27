@@ -3567,3 +3567,11 @@
 - [x] إزالة DashboardLayout من OffersListPage.tsx واستبداله بـ Navbar العام
 - [x] إزالة DashboardLayout من OfferDetailPage.tsx واستبداله بـ Navbar العام
 - [x] التحقق من عدم وجود أي طلب تسجيل دخول لوحة التحكم في الواجهة العامة (0 أخطاء TypeScript)
+
+## إصلاح مشكلة إضافة العروض ✅ مكتمل
+- [x] فحص كود إضافة العروض في الواجهة (OffersManagement.tsx)
+- [x] فحص كود إضافة العروض في الخادم (routers)
+- [x] تحديد سبب الخطأ: offerInputSchema لا يقبل slug و isActive و imageUrl الفارغ
+- [x] إضافة slug و isActive و معالجة imageUrl الفارغ في offerInputSchema
+- [x] تحديث منطق create و update لاستخدام slug المقدم أو توليده تلقائياً
+- [x] 0 أخطاء TypeScript

@@ -20,8 +20,10 @@ import { serverCache, CacheKeys, CacheTTL } from '../cache';
  */
 const offerInputSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters').max(255),
+  slug: z.string().optional(), // Optional: will be auto-generated from title if not provided
   description: z.string().optional(),
-  imageUrl: z.string().url().optional(),
+  imageUrl: z.string().url().optional().or(z.literal('')),
+  isActive: z.boolean().optional(),
   startDate: z.date().optional(),
   endDate: z.date().optional(),
 });
@@ -125,15 +127,16 @@ export const offersRouter = router({
         const dbInstance = await getDb();
         if (!dbInstance) throw new Error('Database not available');
         
-        // Generate slug from title
-        const slug = generateSlug(input.title);
+        // Use provided slug or generate from title
+        let slug = (input.slug && input.slug.trim()) ? input.slug.trim() : generateSlug(input.title);
 
         // Validate slug
         if (!isValidSlug(slug)) {
-          throw new Error('Invalid slug format');
+          // Fallback: generate from title
+          slug = generateSlug(input.title);
         }
 
-        // Check if slug already exists
+        // Check if slug already exists, add suffix if needed
         const existingOffer = await dbInstance
           .select()
           .from(offers)
@@ -141,18 +144,22 @@ export const offersRouter = router({
           .limit(1);
 
         if (existingOffer.length > 0) {
-          throw new Error('An offer with this title already exists');
+          // Add timestamp suffix to make slug unique
+          slug = `${slug}-${Date.now()}`;
         }
+
+        // Normalize imageUrl: treat empty string as undefined
+        const imageUrl = input.imageUrl && input.imageUrl.trim() !== '' ? input.imageUrl : undefined;
 
         // Create the offer
         const newOffer = await dbInstance.insert(offers).values({
           title: input.title,
           slug,
           description: input.description,
-          imageUrl: input.imageUrl,
+          imageUrl,
           startDate: input.startDate,
           endDate: input.endDate,
-          isActive: true,
+          isActive: input.isActive !== undefined ? input.isActive : true,
         });
 
         // Invalidate offers cache
@@ -186,13 +193,16 @@ export const offersRouter = router({
         const dbInstance = await getDb();
         if (!dbInstance) throw new Error('Database not available');
         
-        // Generate new slug if title changed
-        const slug = generateSlug(input.title);
+        // Use provided slug or generate from title
+        let slug = (input.slug && input.slug.trim()) ? input.slug.trim() : generateSlug(input.title);
 
         // Validate slug
         if (!isValidSlug(slug)) {
-          throw new Error('Invalid slug format');
+          slug = generateSlug(input.title);
         }
+
+        // Normalize imageUrl: treat empty string as undefined
+        const imageUrl = input.imageUrl && input.imageUrl.trim() !== '' ? input.imageUrl : undefined;
 
         // Update the offer
         await dbInstance
@@ -201,9 +211,10 @@ export const offersRouter = router({
             title: input.title,
             slug,
             description: input.description,
-            imageUrl: input.imageUrl,
+            imageUrl,
             startDate: input.startDate,
             endDate: input.endDate,
+            isActive: input.isActive !== undefined ? input.isActive : true,
           })
           .where(eq(offers.id, input.id));
 
