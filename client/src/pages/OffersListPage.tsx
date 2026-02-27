@@ -1,7 +1,7 @@
 import { useFormatDate } from "@/hooks/useFormatDate";
 import { useState } from "react";
 import { useLocation } from "wouter";
-import DashboardLayout from "@/components/DashboardLayout";
+import Navbar from "@/components/Navbar";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,9 +13,10 @@ import InstallPWAButton from "@/components/InstallPWAButton";
 
 export default function OffersListPage() {
   return (
-    <DashboardLayout pageTitle="العروض" pageDescription="قائمة جميع العروض الطبية">
+    <div className="min-h-screen bg-background" dir="rtl">
+      <Navbar />
       <OffersListContent />
-    </DashboardLayout>
+    </div>
   );
 }
 

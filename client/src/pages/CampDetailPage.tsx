@@ -6,7 +6,7 @@
 import { useFormatDate } from "@/hooks/useFormatDate";
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useLocation, Link } from "wouter";
-import DashboardLayout from "@/components/DashboardLayout";
+import Navbar from "@/components/Navbar";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,9 +24,10 @@ export default function CampDetailPage() {
   const slug = params.slug as string;
 
   return (
-    <DashboardLayout pageTitle="تفاصيل المخيم" pageDescription="عرض تفاصيل المخيم والتسجيلات">
+    <div className="min-h-screen bg-background" dir="rtl">
+      <Navbar />
       <CampDetailContent slug={slug} />
-    </DashboardLayout>
+    </div>
   );
 }
 

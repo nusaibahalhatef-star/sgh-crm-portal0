@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import DashboardLayout from "@/components/DashboardLayout";
+import Navbar from "@/components/Navbar";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,9 +19,10 @@ import InstallPWAButton from "@/components/InstallPWAButton";
 
 export default function Doctors() {
   return (
-    <DashboardLayout pageTitle="الأطباء" pageDescription="قائمة جميع الأطباء المتاحين">
+    <div className="min-h-screen bg-background" dir="rtl">
+      <Navbar />
       <DoctorsContent />
-    </DashboardLayout>
+    </div>
   );
 }
 

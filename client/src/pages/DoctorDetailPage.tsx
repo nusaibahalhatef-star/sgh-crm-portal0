@@ -5,7 +5,7 @@
  */
 import { useState } from "react";
 import { useRoute, Link, useLocation } from "wouter";
-import DashboardLayout from "@/components/DashboardLayout";
+import Navbar from "@/components/Navbar";
 import { ArrowRight, Calendar, Phone, Award, Loader2, CheckCircle, Star, Users, Clock, CheckCircle2, TrendingUp, Stethoscope, Globe, CreditCard, MessageSquare } from "lucide-react";
 import { getCompleteTrackingData } from "@/lib/tracking";
 import { Button } from "@/components/ui/button";
@@ -24,9 +24,10 @@ export default function DoctorDetailPage() {
   const slug = params?.slug || "";
 
   return (
-    <DashboardLayout pageTitle="تفاصيل الطبيب" pageDescription="معلومات الطبيب والتخصصات">
+    <div className="min-h-screen bg-background" dir="rtl">
+      <Navbar />
       <DoctorDetailContent slug={slug} />
-    </DashboardLayout>
+    </div>
   );
 }
 

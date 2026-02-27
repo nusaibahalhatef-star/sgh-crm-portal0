@@ -3556,3 +3556,14 @@
 - [x] تحسين التصميم والأيقونات مع badges للإشعارات
 - [x] إزالة padding-top من DashboardLayout
 - [x] 0 أخطاء TypeScript
+
+## إصلاح صفحات الواجهة العامة (تم إضافة DashboardLayout خطأً) ✅ مكتمل
+- [x] إزالة DashboardLayout من Doctors.tsx واستبداله بـ Navbar العام
+- [x] إزالة DashboardLayout من DoctorDetailPage.tsx واستبداله بـ Navbar العام
+- [x] إزالة DashboardLayout من VisitingDoctors.tsx واستبداله بـ Navbar العام
+- [x] إزالة DashboardLayout من CampsListPage.tsx واستبداله بـ Navbar العام
+- [x] إزالة DashboardLayout من CampDetailPage.tsx واستبداله بـ Navbar العام
+- [x] إزالة DashboardLayout من OffersPage.tsx واستبداله بـ Navbar العام
+- [x] إزالة DashboardLayout من OffersListPage.tsx واستبداله بـ Navbar العام
+- [x] إزالة DashboardLayout من OfferDetailPage.tsx واستبداله بـ Navbar العام
+- [x] التحقق من عدم وجود أي طلب تسجيل دخول لوحة التحكم في الواجهة العامة (0 أخطاء TypeScript)

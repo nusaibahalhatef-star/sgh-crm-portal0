@@ -5,7 +5,7 @@
  */
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
-import DashboardLayout from "@/components/DashboardLayout";
+import Navbar from "@/components/Navbar";
 import { Search, Stethoscope, Calendar, Award, Loader2, Users, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,9 +16,10 @@ import { trpc } from "@/lib/trpc";
 
 export default function VisitingDoctors() {
   return (
-    <DashboardLayout pageTitle="الأطباء الزائرين" pageDescription="قائمة الأطباء الزائرين والمواعيد">
+    <div className="min-h-screen bg-background" dir="rtl">
+      <Navbar />
       <VisitingDoctorsContent />
-    </DashboardLayout>
+    </div>
   );
 }
 
