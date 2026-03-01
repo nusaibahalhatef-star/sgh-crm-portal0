@@ -3617,3 +3617,9 @@
 - [x] إنشاء صفحة إحصائيات PWA على /dashboard/pwa-stats
 - [x] إضافة Route في App.tsx لصفحة PWAStatsPage
 - [x] 0 أخطاء TypeScript
+
+## إصلاح أخطاء صفحة PWA Stats ✅ مكتمل
+- [x] تأكيد وجود جدول pwaInstalls في قاعدة البيانات
+- [x] إصلاح سبب الخطأ: استخدام ASC داخل sql template بدلاً من asc() wrapper
+- [x] إصلاح تمرير Date object في sql template باستخدام gte() من drizzle-orm
+- [x] 0 أخطاء TypeScript

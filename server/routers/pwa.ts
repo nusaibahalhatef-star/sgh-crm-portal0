@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { getDb } from '../db';
 import { pwaInstalls } from '../../drizzle/schema';
 import { publicProcedure, protectedProcedure, router } from '../_core/trpc';
-import { desc, eq, count, sql } from 'drizzle-orm';
+import { desc, eq, count, sql, asc, gte } from 'drizzle-orm';
 
 export const pwaRouter = router({
   /**
@@ -72,9 +72,9 @@ export const pwaRouter = router({
           count: count(),
         })
         .from(pwaInstalls)
-        .where(sql`${pwaInstalls.installedAt} >= ${thirtyDaysAgo}`)
+        .where(gte(pwaInstalls.installedAt, thirtyDaysAgo))
         .groupBy(sql`DATE(${pwaInstalls.installedAt})`, pwaInstalls.appType)
-        .orderBy(sql`DATE(${pwaInstalls.installedAt}) ASC`);
+        .orderBy(asc(sql`DATE(${pwaInstalls.installedAt})`));
 
       return {
         total: totalResult[0]?.count || 0,
