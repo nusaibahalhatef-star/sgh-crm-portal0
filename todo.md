@@ -3648,3 +3648,10 @@
 - [x] تغيير نص الزر إلى "تثبيت التطبيق"
 - [x] تصميم بانر لوحة التحكم بالأزرق الرسمي #1a6faf + أيقونة الشعار
 - [x] 0 أخطاء TypeScript
+
+### إصلاح PWA لوحة التحكم - الدورة الثالثة ✅ مكتمل
+- [x] manifest-admin.json صحيح (اسم "لوحة تحكم SGH" + start_url=/dashboard/)
+- [x] إنشاء 8 أيقونات admin بخلفية زرقاء #1a6faf + شعار SGH
+- [x] إصلاح usePWAInstall: كل نطاق يسجّل SW الخاص به فقط (admin → sw-admin.js, public → sw.js)
+- [x] 0 أخطاء TypeScript
+- [x] أيقونات admin تُقدّم بشكل صحيح (HTTP 200)rd/* و /admin/*

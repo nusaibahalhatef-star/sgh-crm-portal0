@@ -1,15 +1,14 @@
 /**
- * usePWAInstall Hook
+ * usePWAInstall Hook - النسخة المُحسَّنة
  *
- * Hook موحد لإدارة تثبيت PWA لكلا التطبيقين:
- * - التطبيق العام (Public App): للمرضى والزوار
- * - تطبيق الإدارة (Admin App): للموظفين
- *
- * الإصلاح الحرج:
- * - عند إلغاء التثبيت، لا يختفي الزر نهائياً
- * - canInstall يبقى true حتى بعد إلغاء المستخدم للـ prompt
- * - isDismissed يُستخدم فقط عند الضغط على "لاحقاً" (dismissPrompt)
- * - promptUsed يتتبع ما إذا تم استخدام الـ prompt في هذه الجلسة
+ * إصلاحات جوهرية:
+ * 1. كل نطاق (admin/public) يسجّل Service Worker الخاص به فقط
+ *    - صفحات /dashboard/* تسجّل /dashboard/sw-admin.js فقط
+ *    - صفحات / تسجّل /sw.js فقط
+ *    - لا تعارض بين الـ Service Workers
+ * 2. canInstall يبقى true حتى بعد إلغاء المستخدم للـ prompt
+ *    (يختفي الزر في الجلسة الحالية لكن يعود عند تحديث الصفحة)
+ * 3. isDismissed يُستخدم فقط عند الضغط على "لاحقاً" (7 أيام)
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -48,6 +47,7 @@ export function usePWAInstall(appType: PWAAppType): PWAInstallState {
   const [isDismissed, setIsDismissed] = useState(false);
 
   const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
+  const promptUsedRef = useRef(false); // هل تم استخدام الـ prompt في هذه الجلسة
 
   // tRPC mutation لتسجيل التثبيت في قاعدة البيانات
   const trackInstallMutation = trpc.pwa.trackInstall.useMutation();
@@ -67,7 +67,7 @@ export function usePWAInstall(appType: PWAAppType): PWAInstallState {
       (window.navigator as any).standalone === true;
     setIsInstalled(isStandalone);
 
-    // التحقق من رفض صريح سابق (زر "لاحقاً" فقط - ليس إلغاء prompt)
+    // التحقق من رفض صريح سابق (زر "لاحقاً" فقط)
     const dismissed = localStorage.getItem(DISMISS_STORAGE_KEY(appType));
     if (dismissed) {
       const dismissedAt = parseInt(dismissed, 10);
@@ -79,31 +79,41 @@ export function usePWAInstall(appType: PWAAppType): PWAInstallState {
       }
     }
 
-    // تسجيل Service Worker المناسب
+    // تسجيل Service Worker المناسب للنطاق الحالي فقط
+    // CRITICAL: كل نطاق يسجّل SW الخاص به فقط لتجنب التعارض
     if (supported && !isStandalone) {
-      const swPath = appType === 'admin' ? '/dashboard/sw-admin.js' : '/sw.js';
-      const swScope = appType === 'admin' ? '/dashboard/' : '/';
-
-      navigator.serviceWorker
-        .register(swPath, { scope: swScope })
-        .then((registration) => {
-          console.log(`[PWA-${appType}] Service Worker registered at scope:`, registration.scope);
-        })
-        .catch((error) => {
-          console.warn(`[PWA-${appType}] Service Worker registration failed:`, error);
-          if (appType === 'admin') {
-            navigator.serviceWorker
-              .register('/dashboard/sw-admin.js')
-              .then(reg => console.log('[PWA-admin] Fallback SW registered:', reg.scope))
-              .catch(err => console.error('[PWA-admin] Fallback SW failed:', err));
-          }
-        });
+      const currentPath = window.location.pathname;
+      const isAdminPath = currentPath.startsWith('/dashboard') || currentPath.startsWith('/admin');
+      
+      // سجّل SW المناسب للمسار الحالي فقط
+      if (appType === 'admin' && isAdminPath) {
+        // تسجيل SW الإدارة فقط في صفحات الإدارة
+        navigator.serviceWorker
+          .register('/dashboard/sw-admin.js', { scope: '/dashboard/' })
+          .then((registration) => {
+            console.log('[PWA-admin] Service Worker registered at scope:', registration.scope);
+          })
+          .catch((error) => {
+            console.warn('[PWA-admin] Service Worker registration failed:', error);
+          });
+      } else if (appType === 'public' && !isAdminPath) {
+        // تسجيل SW العام فقط في الصفحات العامة
+        navigator.serviceWorker
+          .register('/sw.js', { scope: '/' })
+          .then((registration) => {
+            console.log('[PWA-public] Service Worker registered at scope:', registration.scope);
+          })
+          .catch((error) => {
+            console.warn('[PWA-public] Service Worker registration failed:', error);
+          });
+      }
     }
 
     // الاستماع لحدث beforeinstallprompt
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       deferredPromptRef.current = e as BeforeInstallPromptEvent;
+      promptUsedRef.current = false; // إعادة تعيين عند وصول prompt جديد
       setCanInstall(true);
       console.log(`[PWA-${appType}] Install prompt available`);
     };
@@ -129,12 +139,13 @@ export function usePWAInstall(appType: PWAAppType): PWAInstallState {
   }, [appType]);
 
   const installApp = useCallback(async (): Promise<'accepted' | 'dismissed' | 'unavailable'> => {
-    if (!deferredPromptRef.current) {
+    if (!deferredPromptRef.current || promptUsedRef.current) {
       console.warn(`[PWA-${appType}] No install prompt available`);
       return 'unavailable';
     }
 
     setIsInstalling(true);
+    promptUsedRef.current = true; // تحديد أن الـ prompt تم استخدامه
 
     try {
       const prompt = deferredPromptRef.current;
@@ -143,9 +154,7 @@ export function usePWAInstall(appType: PWAAppType): PWAInstallState {
 
       console.log(`[PWA-${appType}] Install outcome:`, outcome);
 
-      // CRITICAL FIX: بعد استخدام الـ prompt (سواء قبل أو رفض)،
-      // المتصفح لن يُطلق beforeinstallprompt مرة أخرى في نفس الجلسة.
-      // لذا نُصفّر الـ ref لكن نبقي canInstall=true حتى يُظهر iOS guide أو رسالة مناسبة.
+      // بعد استخدام الـ prompt، المتصفح لن يُطلق beforeinstallprompt مرة أخرى في نفس الجلسة
       deferredPromptRef.current = null;
 
       if (outcome === 'accepted') {
@@ -163,10 +172,10 @@ export function usePWAInstall(appType: PWAAppType): PWAInstallState {
         setCanInstall(false);
         return 'accepted';
       } else {
-        // المستخدم ألغى من نافذة المتصفح - لا نُخفي الزر نهائياً
-        // الزر سيختفي فقط في هذه الجلسة (لأن deferredPromptRef أصبح null)
-        // لكن عند تحديث الصفحة سيظهر مجدداً إذا أطلق المتصفح beforeinstallprompt
-        setCanInstall(false); // يختفي في الجلسة الحالية فقط
+        // المستخدم ألغى من نافذة المتصفح
+        // نُخفي الزر في هذه الجلسة فقط (canInstall=false)
+        // عند تحديث الصفحة سيظهر مجدداً إذا أطلق المتصفح beforeinstallprompt
+        setCanInstall(false);
         return 'dismissed';
       }
     } catch (error) {
@@ -188,7 +197,6 @@ export function usePWAInstall(appType: PWAAppType): PWAInstallState {
   }, [appType]);
 
   return {
-    // canInstall: true فقط إذا: الـ prompt متاح + لم يُرفض صراحةً + لم يُثبَّت
     canInstall: canInstall && !isDismissed && !isInstalled,
     isInstalled,
     isIOS,
