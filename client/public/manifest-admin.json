@@ -2,12 +2,12 @@
   "name": "لوحة تحكم SGH",
   "short_name": "SGH Admin",
   "description": "لوحة تحكم إدارة المستشفى السعودي الألماني - صنعاء. إدارة الحجوزات والمواعيد والعملاء",
-  "start_url": "/dashboard/",
+  "start_url": "/admin/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#1e40af",
   "orientation": "portrait-primary",
-  "scope": "/dashboard/",
+  "scope": "/admin/",
   "lang": "ar",
   "dir": "rtl",
   "id": "sgh-admin-app-v2",
@@ -67,28 +67,28 @@
       "name": "العملاء",
       "short_name": "عملاء",
       "description": "عرض قائمة العملاء المسجلين",
-      "url": "/dashboard/customers",
+      "url": "/admin/customers",
       "icons": [{ "src": "/icon-admin-192x192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "المواعيد",
       "short_name": "مواعيد",
       "description": "إدارة مواعيد الأطباء",
-      "url": "/dashboard/appointments",
+      "url": "/admin/appointments",
       "icons": [{ "src": "/icon-admin-192x192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "الحجوزات",
       "short_name": "حجوزات",
       "description": "إدارة حجوزات العروض والمخيمات",
-      "url": "/dashboard/bookings",
+      "url": "/admin/bookings",
       "icons": [{ "src": "/icon-admin-192x192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "المهام",
       "short_name": "مهام",
       "description": "إدارة مهام الفريق",
-      "url": "/dashboard/tasks",
+      "url": "/admin/tasks",
       "icons": [{ "src": "/icon-admin-192x192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ],

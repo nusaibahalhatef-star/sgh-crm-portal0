@@ -39,14 +39,15 @@ async function startServer() {
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // ===== PWA Service Worker Routes =====
-  // Serve sw-admin.js from /dashboard/sw-admin.js with correct scope header
+  // Serve sw-admin.js from /admin/sw-admin.js with correct scope header
   // This is required because browsers enforce that SW files must be within their scope
-  app.get('/dashboard/sw-admin.js', (req, res) => {
+  // Also keep /dashboard/sw-admin.js for backward compatibility
+  const serveAdminSW = (scopePath: string) => (req: any, res: any) => {
     const swPath = path.resolve(import.meta.dirname, '../../client/public/sw-admin.js');
     if (fs.existsSync(swPath)) {
       res.set({
         'Content-Type': 'application/javascript',
-        'Service-Worker-Allowed': '/dashboard/',
+        'Service-Worker-Allowed': scopePath,
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0',
@@ -55,10 +56,12 @@ async function startServer() {
     } else {
       res.status(404).send('Service Worker not found');
     }
-  });
+  };
+  app.get('/admin/sw-admin.js', serveAdminSW('/admin/'));
+  app.get('/dashboard/sw-admin.js', serveAdminSW('/dashboard/'));
 
-  // Serve manifest-admin.json from /dashboard/manifest-admin.json for correct PWA scope
-  app.get('/dashboard/manifest-admin.json', (req, res) => {
+  // Serve manifest-admin.json from /manifest-admin.json (root) and /dashboard/manifest-admin.json (legacy)
+  const serveAdminManifest = (req: any, res: any) => {
     const manifestPath = path.resolve(import.meta.dirname, '../../client/public/manifest-admin.json');
     if (fs.existsSync(manifestPath)) {
       res.set({
@@ -69,7 +72,9 @@ async function startServer() {
     } else {
       res.status(404).send('Manifest not found');
     }
-  });
+  };
+  app.get('/manifest-admin.json', serveAdminManifest);
+  app.get('/dashboard/manifest-admin.json', serveAdminManifest);
 
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);

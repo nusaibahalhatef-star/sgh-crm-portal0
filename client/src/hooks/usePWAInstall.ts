@@ -111,12 +111,17 @@ export function usePWAInstall(appType: PWAAppType): PWAInstallState {
         // ثم تسجيل SW الإدارة
         unregisterPublicSWInAdminPages().then(() => {
           navigator.serviceWorker
-            .register('/dashboard/sw-admin.js', { scope: '/dashboard/' })
+            .register('/admin/sw-admin.js', { scope: '/admin/' })
             .then((registration) => {
               console.log('[PWA-admin] SW registered at scope:', registration.scope);
             })
             .catch((error) => {
-              console.warn('[PWA-admin] SW registration failed:', error);
+              // Fallback to /dashboard/ scope for backward compatibility
+              console.warn('[PWA-admin] SW registration at /admin/ failed, trying /dashboard/:', error);
+              navigator.serviceWorker
+                .register('/dashboard/sw-admin.js', { scope: '/dashboard/' })
+                .then((reg) => console.log('[PWA-admin] SW registered at fallback scope:', reg.scope))
+                .catch((err) => console.warn('[PWA-admin] SW registration failed completely:', err));
             });
         });
       } else if (appType === 'public' && !isAdminPath) {

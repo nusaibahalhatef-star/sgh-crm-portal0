@@ -3671,3 +3671,12 @@
 - [x] إضافة index-admin.html كـ rollupOptions.input في vite.config.ts
 - [x] التحقق من بناء index-admin.html في dist/public بشكل صحيح
 - [x] index-admin.html يحمل manifest-admin.json و index.html يحمل manifest.json
+
+## تعديلات PWA الإنتاج - الدورة الرابعة ✅ مكتمل
+- [x] تعديل manifest href في index-admin.html إلى /manifest-admin.json (بدون /dashboard/)
+- [x] تحديث start_url وscope في manifest-admin.json إلى /admin/
+- [x] isAdminRoute في serveStatic صحيح بالفعل (يشمل /admin)
+- [x] detectAppType في PWAManager صحيح بالفعل (يتعرف على /admin)
+- [x] إضافة routes /admin/sw-admin.js و /manifest-admin.json في index.ts
+- [x] تحديث usePWAInstall ليسجل SW بـ scope /admin/ مع fallback لـ /dashboard/
+- [x] 0 أخطاء TypeScript
