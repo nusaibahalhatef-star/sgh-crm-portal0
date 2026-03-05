@@ -11,9 +11,24 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>%VITE_APP_TITLE%</title>
     
-    <!-- PWA Manifest - Public App -->
-    <!-- NOTE: Admin pages (/dashboard/*, /admin/*) are served via index-admin.html which loads manifest-admin.json directly -->
-    <link rel="manifest" href="/manifest.json" />
+    <!-- PWA Manifest - Dynamic: switches based on current path -->
+    <!-- Admin pages (/dashboard/*, /admin/*) use manifest-admin.json; public pages use manifest.json -->
+    <link rel="manifest" id="pwa-manifest" href="/manifest.json" />
+    <script>
+      // Switch manifest BEFORE React loads - critical for PWA install dialog
+      (function() {
+        var path = window.location.pathname;
+        var isAdmin = path.startsWith('/admin') || path.startsWith('/dashboard');
+        if (isAdmin) {
+          document.getElementById('pwa-manifest').href = '/manifest-admin.json';
+          // Also update theme-color for admin
+          var themeColor = document.querySelector('meta[name="theme-color"]');
+          if (themeColor) themeColor.content = '#1e40af';
+          // Update title
+          document.title = '\u0644\u0648\u062d\u0629 \u062a\u062d\u0643\u0645 SGH';
+        }
+      })();
+    </script>
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#00A651" />
