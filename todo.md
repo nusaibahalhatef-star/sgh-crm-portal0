@@ -3687,3 +3687,9 @@
 - [x] sw.js: تجاهل /admin و /dashboard في جميع أحداث fetch و notificationclick و sync
 - [x] usePWAInstall.ts: إلغاء إجباري لأي SW ليس خاصاً بالإدارة عند فتح /admin أو /dashboard
 - [x] بناء ناجح: index-admin.html و index.html في dist/ بمانيفست منفصلين تماماً
+
+## إصلاح نهائي لـ PWA - الدورة السادسة
+- [ ] التحقق من البناء وإصلاح مشكلة manifest في الإنتاج
+- [ ] إصلاح تحذير maskable في manifest.json وmanifest-admin.json
+- [ ] إضافة screenshots للـ manifest
+- [ ] حفظ checkpoint ونشر

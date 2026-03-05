@@ -63,10 +63,16 @@ export function serveStatic(app: Express) {
     process.env.NODE_ENV === "development"
       ? path.resolve(import.meta.dirname, "../..", "dist", "public")
       : path.resolve(import.meta.dirname, "public");
+
   if (!fs.existsSync(distPath)) {
     console.error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
+  } else {
+    // Log available HTML files for debugging
+    const files = fs.readdirSync(distPath).filter(f => f.endsWith('.html'));
+    console.log(`[serveStatic] distPath: ${distPath}`);
+    console.log(`[serveStatic] HTML files found: ${files.join(', ')}`);
   }
 
   app.use(express.static(distPath));
@@ -74,9 +80,16 @@ export function serveStatic(app: Express) {
   // fall through to index.html or index-admin.html based on route
   app.use("*", (req, res) => {
     const isAdminRoute = req.originalUrl.startsWith('/dashboard') || req.originalUrl.startsWith('/admin');
-    const htmlFile = isAdminRoute && fs.existsSync(path.resolve(distPath, 'index-admin.html'))
-      ? 'index-admin.html'
-      : 'index.html';
-    res.sendFile(path.resolve(distPath, htmlFile));
+    const htmlFile = isAdminRoute ? 'index-admin.html' : 'index.html';
+    const htmlPath = path.resolve(distPath, htmlFile);
+
+    // Verify the file exists before serving
+    if (!fs.existsSync(htmlPath)) {
+      console.error(`[serveStatic] File not found: ${htmlPath}. Falling back to index.html`);
+      return res.sendFile(path.resolve(distPath, 'index.html'));
+    }
+
+    console.log(`[serveStatic] Serving ${htmlFile} for route: ${req.originalUrl}`);
+    res.sendFile(htmlPath);
   });
 }
