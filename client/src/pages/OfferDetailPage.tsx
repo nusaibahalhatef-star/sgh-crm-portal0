@@ -368,6 +368,8 @@ function OfferDetailContent({ slug }: { slug: string }) {
                   </Label>
                   <Input
                     id="fullName"
+                    name="name"
+                    autoComplete="name"
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                     placeholder="أدخل اسمك الكامل"
@@ -384,7 +386,9 @@ function OfferDetailContent({ slug }: { slug: string }) {
                     <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="phone"
+                      name="tel"
                       type="tel"
+                      autoComplete="tel-national"
                       value={formData.phone}
                       onChange={(e) => {
                         const processed = processPhoneInput(e.target.value);
@@ -420,7 +424,9 @@ function OfferDetailContent({ slug }: { slug: string }) {
                     <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="email"
+                      name="email"
                       type="email"
+                      autoComplete="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="example@email.com"

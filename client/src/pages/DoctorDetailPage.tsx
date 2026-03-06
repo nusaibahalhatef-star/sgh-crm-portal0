@@ -451,6 +451,8 @@ function DoctorDetailContent({ slug }: { slug: string }) {
                     </Label>
                     <Input
                       id="fullName"
+                      name="name"
+                      autoComplete="name"
                       value={formData.fullName}
                       onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                       required
@@ -466,7 +468,9 @@ function DoctorDetailContent({ slug }: { slug: string }) {
                       </Label>
                       <Input
                         id="phone"
+                        name="tel"
                         type="tel"
+                        autoComplete="tel-national"
                         value={formData.phone}
                         onChange={(e) => {
                           const processed = processPhoneInput(e.target.value);
@@ -498,7 +502,9 @@ function DoctorDetailContent({ slug }: { slug: string }) {
                       </Label>
                       <Input
                         id="age"
+                        name="age"
                         type="number"
+                        autoComplete="off"
                         min="1"
                         max="150"
                         value={formData.age}
