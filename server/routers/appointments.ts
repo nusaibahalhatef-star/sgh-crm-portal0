@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
+import { eq, and, gte } from "drizzle-orm";
 import { getDb } from "../db";
 import { appointments } from "../../drizzle/schema";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
@@ -22,8 +23,11 @@ import { createAuditLog } from "./auditLogs";
 export const appointmentsRouter = router({
   submit: publicProcedure
     .input(z.object({
-      fullName: z.string(),
-      phone: z.string(),
+      fullName: z.string().min(1),
+      phone: z.string().min(9).regex(
+        /^(\+?967)?7\d{8}$|^07\d{8}$|^7\d{8}$/,
+        "رقم الهاتف يجب أن يبدأ بالرقم 7 ويتكون من 9 أرقام"
+      ),
       email: z.string().optional(),
       doctorId: z.number(),
       age: z.number().optional(),
@@ -45,6 +49,30 @@ export const appointmentsRouter = router({
       gclid: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
+      // التحقق من عدم تكرار الحجز بنفس الرقم ونفس الطبيب خلال 3 أيام
+      const db = await getDb();
+      if (db) {
+        const threeDaysAgo = new Date();
+        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+        const existing = await db
+          .select({ id: appointments.id })
+          .from(appointments)
+          .where(
+            and(
+              eq(appointments.phone, input.phone),
+              eq(appointments.doctorId, input.doctorId),
+              gte(appointments.createdAt, threeDaysAgo)
+            )
+          )
+          .limit(1);
+        if (existing.length > 0) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "لقد تم تسجيل حجز بنفس رقم الهاتف مع هذا الطبيب خلال الأيام الثلاثة الماضية",
+          });
+        }
+      }
+
       // Get or create campaign by slug
       let campaign = await getCampaignBySlug(input.campaignSlug);
       if (!campaign) {

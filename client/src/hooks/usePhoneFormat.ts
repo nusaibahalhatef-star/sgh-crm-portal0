@@ -4,57 +4,130 @@ import { useCallback } from "react";
  * usePhoneFormat - هوك لتوحيد تنسيق وعرض أرقام الهواتف
  * 
  * الاستخدام:
- * const { formatPhone, formatPhoneDisplay, getWhatsAppLink } = usePhoneFormat();
- * 
- * <td>{formatPhoneDisplay(lead.phone)}</td>
- * <a href={getWhatsAppLink(lead.phone)}>واتساب</a>
+ * const { formatPhone, formatPhoneDisplay, getWhatsAppLink, validateYemeniPhone, convertArabicToEnglish } = usePhoneFormat();
  */
 
 /**
- * تنظيف رقم الهاتف من الأحرف غير الرقمية
+ * تحويل الأرقام العربية/الهندية إلى أرقام إنجليزية
+ * ٠١٢٣٤٥٦٧٨٩ → 0123456789
+ */
+export function convertArabicToEnglish(input: string): string {
+  return input
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0));
+}
+
+/**
+ * تنظيف رقم الهاتف: تحويل الأرقام العربية ثم إزالة الأحرف غير الرقمية
  */
 function cleanPhone(phone: string): string {
-  return phone.replace(/[^\d+]/g, "");
+  const converted = convertArabicToEnglish(phone);
+  return converted.replace(/[^\d+]/g, "");
+}
+
+/**
+ * استخراج الـ 9 أرقام المحلية من أي صيغة للرقم اليمني
+ * يدعم: 7XXXXXXXX | 07XXXXXXXX | 9677XXXXXXXX | +9677XXXXXXXX | 009677XXXXXXXX
+ */
+function extractLocalDigits(phone: string): string | null {
+  const cleaned = cleanPhone(phone);
+
+  // +9677XXXXXXXX أو 9677XXXXXXXX
+  if (cleaned.startsWith("9677") && cleaned.length === 13) {
+    return cleaned.slice(3); // 7XXXXXXXX
+  }
+  if (cleaned.startsWith("+9677") && cleaned.length === 14) {
+    return cleaned.slice(4);
+  }
+  // 009677XXXXXXXX
+  if (cleaned.startsWith("009677") && cleaned.length === 15) {
+    return cleaned.slice(5);
+  }
+  // 07XXXXXXXX
+  if (cleaned.startsWith("0") && cleaned.length === 10) {
+    return cleaned.slice(1);
+  }
+  // 7XXXXXXXX (9 digits starting with 7)
+  if (cleaned.length === 9) {
+    return cleaned;
+  }
+
+  return null;
+}
+
+/**
+ * التحقق من صحة رقم الهاتف اليمني
+ * - يجب أن يبدأ بـ 7
+ * - يجب أن يكون 9 أرقام (بعد إزالة مفتاح الدولة)
+ */
+export function validateYemeniPhone(phone: string): { valid: boolean; message?: string } {
+  if (!phone || phone.trim() === "") {
+    return { valid: false, message: "رقم الهاتف مطلوب" };
+  }
+
+  const local = extractLocalDigits(phone);
+
+  if (!local) {
+    return {
+      valid: false,
+      message: "رقم الهاتف غير صحيح - يجب أن يكون 9 أرقام",
+    };
+  }
+
+  if (!local.startsWith("7")) {
+    return {
+      valid: false,
+      message: "رقم الهاتف اليمني يجب أن يبدأ بالرقم 7",
+    };
+  }
+
+  return { valid: true };
 }
 
 /**
  * تنسيق رقم الهاتف للعرض: +967 7XX XXX XXX
  */
 function formatForDisplay(phone: string): string {
-  const cleaned = cleanPhone(phone);
-  
-  // إذا كان يبدأ بـ 967
-  if (cleaned.startsWith("967") && cleaned.length === 12) {
-    return `+${cleaned.slice(0, 3)} ${cleaned.slice(3, 4)}${cleaned.slice(4, 6)} ${cleaned.slice(6, 9)} ${cleaned.slice(9)}`;
+  const local = extractLocalDigits(phone);
+  if (local && local.startsWith("7") && local.length === 9) {
+    return `+967 ${local.slice(0, 3)} ${local.slice(3, 6)} ${local.slice(6)}`;
   }
-  
-  // إذا كان يبدأ بـ +967
-  if (cleaned.startsWith("+967")) {
-    const digits = cleaned.slice(1);
-    if (digits.length === 12) {
-      return `+${digits.slice(0, 3)} ${digits.slice(3, 4)}${digits.slice(4, 6)} ${digits.slice(6, 9)} ${digits.slice(9)}`;
-    }
-  }
-  
-  // إرجاع الرقم كما هو
-  return phone;
+  // إرجاع الرقم كما هو (بعد تحويل العربية)
+  return convertArabicToEnglish(phone);
 }
 
 /**
- * تنسيق رقم الهاتف للإرسال (بدون + أو مسافات)
+ * تنسيق رقم الهاتف للإرسال (بدون + أو مسافات): 9677XXXXXXXX
  */
 function formatForSend(phone: string): string {
-  let cleaned = phone.replace(/[^\d]/g, "");
-  
-  if (cleaned.startsWith("00967")) {
-    cleaned = cleaned.substring(2);
-  } else if (cleaned.startsWith("0") && cleaned.length === 10) {
-    cleaned = "967" + cleaned.substring(1);
-  } else if (cleaned.length === 9) {
-    cleaned = "967" + cleaned;
+  const local = extractLocalDigits(phone);
+  if (local) {
+    return "967" + local;
   }
-  
-  return cleaned;
+  // fallback: تنظيف وإرجاع
+  return cleanPhone(phone);
+}
+
+/**
+ * معالجة إدخال رقم الهاتف في real-time:
+ * - تحويل الأرقام العربية إلى إنجليزية
+ * - إزالة الأحرف غير المسموح بها (يُبقي + في البداية)
+ * - تقييد الطول
+ */
+export function processPhoneInput(raw: string): string {
+  // تحويل الأرقام العربية أولاً
+  let value = convertArabicToEnglish(raw);
+  // السماح فقط بالأرقام و + في البداية
+  value = value.replace(/[^\d+]/g, "");
+  // + مسموح فقط في البداية
+  if (value.indexOf("+") > 0) {
+    value = value.replace(/\+/g, "");
+  }
+  // تقييد الطول إلى 15 رقم كحد أقصى
+  if (value.length > 15) {
+    value = value.slice(0, 15);
+  }
+  return value;
 }
 
 export function usePhoneFormat() {
@@ -64,7 +137,7 @@ export function usePhoneFormat() {
     return formatForDisplay(phone);
   }, []);
 
-  /** تنسيق للإرسال: 967XXXXXXXXX */
+  /** تنسيق للإرسال: 9677XXXXXXXX */
   const formatPhone = useCallback((phone: string | null | undefined): string => {
     if (!phone) return "";
     return formatForSend(phone);
@@ -89,6 +162,9 @@ export function usePhoneFormat() {
     formatPhone,
     getWhatsAppLink,
     getCallLink,
+    validateYemeniPhone,
+    convertArabicToEnglish,
+    processPhoneInput,
   };
 }
 

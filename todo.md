@@ -3693,3 +3693,15 @@
 - [ ] إصلاح تحذير maskable في manifest.json وmanifest-admin.json
 - [ ] إضافة screenshots للـ manifest
 - [ ] حفظ checkpoint ونشر
+
+## تحسينات نماذج الحجز
+- [x] تحديث usePhoneFormat: إضافة تحويل الأرقام العربية إلى إنجليزية
+- [x] تحديث usePhoneFormat: إضافة validateYemeniPhone (يبدأ بـ 7، 9 أرقام)
+- [x] تحديث usePhoneFormat: تحديث formatPhoneDisplay لتعمل أثناء الإدخال
+- [x] تحديث DoctorDetailPage: التحقق من رقم الهاتف اليمني في النموذج
+- [x] تحديث OfferDetailPage: التحقق من رقم الهاتف اليمني في النموذج
+- [x] تحديث CampDetailPage: التحقق من رقم الهاتف اليمني في النموذج
+- [x] Backend appointments.ts: منع تكرار الحجز بنفس الرقم ونفس الطبيب خلال 3 أيام
+- [x] Backend offerLeads.ts: منع تكرار الطلب بنفس الرقم ونفس العرض خلال 3 أيام
+- [x] Backend campRegistrations.ts: منع تكرار التسجيل بنفس الرقم ونفس المخيم خلال 3 أيام
+- [x] Backend Zod: إضافة validation لرقم الهاتف اليمني في الـ 3 routers

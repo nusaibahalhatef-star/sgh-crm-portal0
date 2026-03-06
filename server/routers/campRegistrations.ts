@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { eq, desc } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
+import { eq, desc, and, gte } from "drizzle-orm";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { getDb } from "../db";
 import { campRegistrations } from "../../drizzle/schema";
@@ -14,7 +15,10 @@ export const campRegistrationsRouter = router({
       z.object({
         campId: z.number(),
         fullName: z.string().min(1),
-        phone: z.string().min(1),
+        phone: z.string().min(9).regex(
+          /^(\+?967)?7\d{8}$|^07\d{8}$|^7\d{8}$/,
+          "رقم الهاتف يجب أن يبدأ بالرقم 7 ويتكون من 9 أرقام"
+        ),
         email: z.string().email().optional(),
         age: z.number().optional(),
         procedures: z.string().optional(), // JSON string of selected procedures
@@ -36,6 +40,27 @@ export const campRegistrationsRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
+
+      // التحقق من عدم تكرار التسجيل بنفس الرقم ونفس المخيم خلال 3 أيام
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      const existingReg = await db
+        .select({ id: campRegistrations.id })
+        .from(campRegistrations)
+        .where(
+          and(
+            eq(campRegistrations.phone, input.phone),
+            eq(campRegistrations.campId, input.campId),
+            gte(campRegistrations.createdAt, threeDaysAgo)
+          )
+        )
+        .limit(1);
+      if (existingReg.length > 0) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "لقد تم تسجيل طلب بنفس رقم الهاتف لهذا المخيم خلال الأيام الثلاثة الماضية",
+        });
+      }
 
       const [registration] = await db.insert(campRegistrations).values({
         campId: input.campId,

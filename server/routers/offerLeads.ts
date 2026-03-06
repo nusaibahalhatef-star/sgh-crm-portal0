@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { eq, desc } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
+import { eq, desc, and, gte } from "drizzle-orm";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { getDb } from "../db";
 import { offerLeads } from "../../drizzle/schema";
@@ -14,7 +15,10 @@ export const offerLeadsRouter = router({
       z.object({
         offerId: z.number(),
         fullName: z.string().min(1),
-        phone: z.string().min(1),
+        phone: z.string().min(9).regex(
+          /^(\+?967)?7\d{8}$|^07\d{8}$|^7\d{8}$/,
+          "رقم الهاتف يجب أن يبدأ بالرقم 7 ويتكون من 9 أرقام"
+        ),
         email: z.string().email().optional(),
         notes: z.string().optional(),
         source: z.string().optional(),
@@ -33,6 +37,27 @@ export const offerLeadsRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
+
+      // التحقق من عدم تكرار الطلب بنفس الرقم ونفس العرض خلال 3 أيام
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      const existingLead = await db
+        .select({ id: offerLeads.id })
+        .from(offerLeads)
+        .where(
+          and(
+            eq(offerLeads.phone, input.phone),
+            eq(offerLeads.offerId, input.offerId),
+            gte(offerLeads.createdAt, threeDaysAgo)
+          )
+        )
+        .limit(1);
+      if (existingLead.length > 0) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "لقد تم تسجيل طلب بنفس رقم الهاتف لهذا العرض خلال الأيام الثلاثة الماضية",
+        });
+      }
 
       const [lead] = await db.insert(offerLeads).values({
         offerId: input.offerId,

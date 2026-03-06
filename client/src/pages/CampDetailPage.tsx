@@ -32,9 +32,10 @@ export default function CampDetailPage() {
 }
 
 function CampDetailContent({ slug }: { slug: string }) {
-  const { formatPhoneDisplay, getWhatsAppLink, getCallLink } = usePhoneFormat();
+  const { formatPhoneDisplay, getWhatsAppLink, getCallLink, validateYemeniPhone, processPhoneInput } = usePhoneFormat();
   const { formatDate, formatDateTime } = useFormatDate();
   const [, setLocation] = useLocation();
+  const [phoneError, setPhoneError] = useState<string>("");
 
   const { data: camp, isLoading } = trpc.camps.getBySlug.useQuery(
     { slug },
@@ -80,6 +81,15 @@ function CampDetailContent({ slug }: { slug: string }) {
       return;
     }
 
+    // التحقق من رقم الهاتف اليمني
+    const phoneValidation = validateYemeniPhone(formData.phone);
+    if (!phoneValidation.valid) {
+      setPhoneError(phoneValidation.message || "رقم الهاتف غير صحيح");
+      toast.error(phoneValidation.message || "رقم الهاتف غير صحيح");
+      return;
+    }
+    setPhoneError("");
+
     if (!formData.age || parseInt(formData.age) <= 0) {
       toast.error("الرجاء إدخال العمر بشكل صحيح");
       return;
@@ -122,8 +132,13 @@ function CampDetailContent({ slug }: { slug: string }) {
       setTimeout(() => {
         setLocation(`/thank-you?${params.toString()}`);
       }, 1500);
-    } catch (error) {
-      toast.error("حدث خطأ أثناء التسجيل");
+    } catch (error: unknown) {
+      const msg = (error as { message?: string })?.message;
+      if (msg && (msg.includes("تكرار") || msg.includes("طلب") || msg.includes("مخيم"))) {
+        toast.error(msg);
+      } else {
+        toast.error("حدث خطأ أثناء التسجيل");
+      }
     }
   };
 
@@ -474,13 +489,31 @@ function CampDetailContent({ slug }: { slug: string }) {
                         <Input
                           id="phone"
                           type="tel"
-                          value={formatPhoneDisplay(formData.phone)}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          value={formData.phone}
+                          onChange={(e) => {
+                            const processed = processPhoneInput(e.target.value);
+                            setFormData({ ...formData, phone: processed });
+                            if (phoneError) {
+                              const v = validateYemeniPhone(processed);
+                              setPhoneError(v.valid ? "" : (v.message || ""));
+                            }
+                          }}
+                          onBlur={() => {
+                            if (formData.phone) {
+                              const v = validateYemeniPhone(formData.phone);
+                              setPhoneError(v.valid ? "" : (v.message || ""));
+                            }
+                          }}
                           placeholder="مثال: 771234567"
                           required
-                          className="mt-1.5 pr-10 h-11"
+                          className={`mt-1.5 pr-10 h-11 ${phoneError ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                          dir="ltr"
+                          inputMode="numeric"
                         />
                       </div>
+                      {phoneError && (
+                        <p className="text-red-500 text-xs mt-1">{phoneError}</p>
+                      )}
                     </div>
                     <div>
                       <Label htmlFor="age" className="text-sm font-medium text-foreground">
