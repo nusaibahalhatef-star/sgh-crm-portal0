@@ -18,6 +18,7 @@ import { getCompleteTrackingData } from "@/lib/tracking";
 import { toast } from "sonner";
 
 import { usePhoneFormat } from "@/hooks/usePhoneFormat";
+import { usePatientStorage } from "@/hooks/usePatientStorage";
 
 export default function CampDetailPage() {
   const params = useParams();
@@ -33,6 +34,7 @@ export default function CampDetailPage() {
 
 function CampDetailContent({ slug }: { slug: string }) {
   const { formatPhoneDisplay, getWhatsAppLink, getCallLink, validateYemeniPhone, processPhoneInput } = usePhoneFormat();
+  const { getSavedPatientInfo, savePatientInfo } = usePatientStorage();
   const { formatDate, formatDateTime } = useFormatDate();
   const [, setLocation] = useLocation();
   const [phoneError, setPhoneError] = useState<string>("");
@@ -43,11 +45,13 @@ function CampDetailContent({ slug }: { slug: string }) {
   );
   const submitRegistration = trpc.campRegistrations.submit.useMutation();
 
+  const savedInfo = getSavedPatientInfo();
   const [formData, setFormData] = useState({
-    fullName: "",
-    phone: "",
+    fullName: savedInfo?.fullName || "",
+    phone: savedInfo?.phone || "",
     email: "",
     age: "",
+    gender: (savedInfo?.gender || "") as "male" | "female" | "",
     procedures: [] as string[],
   });
   const [showAllFreeOffers, setShowAllFreeOffers] = useState(false);
@@ -100,12 +104,20 @@ function CampDetailContent({ slug }: { slug: string }) {
     try {
       const trackingData = getCompleteTrackingData();
       
+      // حفظ بيانات المريض في localStorage بعد الإرسال الناجح
+      savePatientInfo({
+        fullName: formData.fullName,
+        phone: formData.phone,
+        gender: formData.gender || undefined,
+      });
+
       await submitRegistration.mutateAsync({
         campId: camp.id,
         fullName: formData.fullName,
         phone: formData.phone,
         email: formData.email || undefined,
         age: parseInt(formData.age),
+        gender: formData.gender as "male" | "female" | undefined || undefined,
         procedures: formData.procedures.length > 0 ? JSON.stringify(formData.procedures) : undefined,
         source: trackingData.source,
         utmSource: trackingData.utmSource,
@@ -473,6 +485,7 @@ function CampDetailContent({ slug }: { slug: string }) {
                       id="fullName"
                       name="name"
                       autoComplete="name"
+                      enterKeyHint="next"
                       value={formData.fullName}
                       onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                       placeholder="أدخل اسمك الكامل"
@@ -493,6 +506,7 @@ function CampDetailContent({ slug }: { slug: string }) {
                           name="tel"
                           type="tel"
                           autoComplete="tel-national"
+                          enterKeyHint="next"
                           value={formData.phone}
                           onChange={(e) => {
                             const processed = processPhoneInput(e.target.value);
@@ -528,6 +542,7 @@ function CampDetailContent({ slug }: { slug: string }) {
                         name="age"
                         type="number"
                         autoComplete="off"
+                        enterKeyHint="done"
                         min="1"
                         max="120"
                         value={formData.age}
@@ -536,6 +551,37 @@ function CampDetailContent({ slug }: { slug: string }) {
                         required
                         className="mt-1.5 h-11"
                       />
+                    </div>
+                  </div>
+
+                  {/* حقل الجنس */}
+                  <div>
+                    <Label className="text-sm font-medium text-foreground">
+                      الجنس <span className="text-red-500">*</span>
+                    </Label>
+                    <div className="grid grid-cols-2 gap-3 mt-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, gender: "male" })}
+                        className={`h-11 rounded-lg border-2 text-sm font-medium transition-all ${
+                          formData.gender === "male"
+                            ? "border-green-600 bg-green-50 text-green-700"
+                            : "border-border bg-background text-foreground hover:border-green-400"
+                        }`}
+                      >
+                        ذكر
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, gender: "female" })}
+                        className={`h-11 rounded-lg border-2 text-sm font-medium transition-all ${
+                          formData.gender === "female"
+                            ? "border-green-600 bg-green-50 text-green-700"
+                            : "border-border bg-background text-foreground hover:border-green-400"
+                        }`}
+                      >
+                        أنثى
+                      </button>
                     </div>
                   </div>
 

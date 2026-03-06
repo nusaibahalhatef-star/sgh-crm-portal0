@@ -21,6 +21,7 @@ export const campRegistrationsRouter = router({
         ),
         email: z.string().email().optional(),
         age: z.number().optional(),
+        gender: z.enum(["male", "female"]).optional(),
         procedures: z.string().optional(), // JSON string of selected procedures
         medicalCondition: z.string().optional(),
         notes: z.string().optional(),
@@ -68,6 +69,7 @@ export const campRegistrationsRouter = router({
         phone: input.phone,
         email: input.email,
         age: input.age,
+        gender: input.gender,
         procedures: input.procedures,
         medicalCondition: input.medicalCondition,
         notes: input.notes,

@@ -167,6 +167,7 @@ export const appointments = mysqlTable("appointments", {
   phone: varchar("phone", { length: 20 }).notNull(),
   email: varchar("email", { length: 320 }),
   age: int("age"), // Patient age
+  gender: mysqlEnum("gender", ["male", "female"]), // Patient gender
   procedure: varchar("procedure", { length: 255 }), // Selected procedure
   preferredDate: varchar("preferredDate", { length: 50 }),
   preferredTime: varchar("preferredTime", { length: 50 }),

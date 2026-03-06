@@ -18,6 +18,7 @@ import { getCompleteTrackingData } from "@/lib/tracking";
 import { toast } from "sonner";
 
 import { usePhoneFormat } from "@/hooks/usePhoneFormat";
+import { usePatientStorage } from "@/hooks/usePatientStorage";
 
 export default function OfferDetailPage() {
   const params = useParams();
@@ -33,6 +34,7 @@ export default function OfferDetailPage() {
 
 function OfferDetailContent({ slug }: { slug: string }) {
   const { formatPhoneDisplay, getWhatsAppLink, getCallLink, validateYemeniPhone, processPhoneInput } = usePhoneFormat();
+  const { getSavedPatientInfo, savePatientInfo } = usePatientStorage();
   const { formatDate, formatDateTime } = useFormatDate();
   const [, setLocation] = useLocation();
   const [phoneError, setPhoneError] = useState<string>("");
@@ -43,9 +45,10 @@ function OfferDetailContent({ slug }: { slug: string }) {
   );
   const submitLead = trpc.offerLeads.submit.useMutation();
 
+  const savedInfo = getSavedPatientInfo();
   const [formData, setFormData] = useState({
-    fullName: "",
-    phone: "",
+    fullName: savedInfo?.fullName || "",
+    phone: savedInfo?.phone || "",
     email: "",
   });
 
@@ -78,6 +81,12 @@ function OfferDetailContent({ slug }: { slug: string }) {
     try {
       const trackingData = getCompleteTrackingData();
       
+      // حفظ بيانات المريض في localStorage بعد الإرسال الناجح
+      savePatientInfo({
+        fullName: formData.fullName,
+        phone: formData.phone,
+      });
+
       await submitLead.mutateAsync({
         offerId: offer.id,
         fullName: formData.fullName,
@@ -370,6 +379,7 @@ function OfferDetailContent({ slug }: { slug: string }) {
                     id="fullName"
                     name="name"
                     autoComplete="name"
+                    enterKeyHint="next"
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                     placeholder="أدخل اسمك الكامل"
@@ -389,6 +399,7 @@ function OfferDetailContent({ slug }: { slug: string }) {
                       name="tel"
                       type="tel"
                       autoComplete="tel-national"
+                      enterKeyHint="next"
                       value={formData.phone}
                       onChange={(e) => {
                         const processed = processPhoneInput(e.target.value);
@@ -427,6 +438,7 @@ function OfferDetailContent({ slug }: { slug: string }) {
                       name="email"
                       type="email"
                       autoComplete="email"
+                      enterKeyHint="done"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="example@email.com"

@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { usePhoneFormat } from "@/hooks/usePhoneFormat";
+import { usePatientStorage } from "@/hooks/usePatientStorage";
 
 export default function DoctorDetailPage() {
   const [, params] = useRoute("/doctors/:slug");
@@ -33,6 +34,7 @@ export default function DoctorDetailPage() {
 
 function DoctorDetailContent({ slug }: { slug: string }) {
   const { formatPhoneDisplay, getWhatsAppLink, getCallLink, validateYemeniPhone, processPhoneInput } = usePhoneFormat();
+  const { getSavedPatientInfo, savePatientInfo } = usePatientStorage();
   const [phoneError, setPhoneError] = useState<string>("");
 
   const { data: doctor, isLoading } = trpc.doctors.getBySlug.useQuery(
@@ -41,11 +43,13 @@ function DoctorDetailContent({ slug }: { slug: string }) {
   );
   const submitAppointment = trpc.appointments.submit.useMutation();
 
+  const savedInfo = getSavedPatientInfo();
   const [formData, setFormData] = useState({
-    fullName: "",
-    phone: "",
+    fullName: savedInfo?.fullName || "",
+    phone: savedInfo?.phone || "",
     email: "",
     age: "",
+    gender: (savedInfo?.gender || "") as "male" | "female" | "",
     procedure: "",
     preferredDate: "",
     preferredTime: "",
@@ -80,12 +84,20 @@ function DoctorDetailContent({ slug }: { slug: string }) {
     try {
       const trackingData = getCompleteTrackingData();
       
+      // حفظ بيانات المريض في localStorage بعد الإرسال الناجح
+      savePatientInfo({
+        fullName: formData.fullName,
+        phone: formData.phone,
+        gender: formData.gender || undefined,
+      });
+
       await submitAppointment.mutateAsync({
         doctorId: doctor.id,
         fullName: formData.fullName,
         phone: formData.phone,
         email: formData.email || undefined,
         age: formData.age ? parseInt(formData.age) : undefined,
+        gender: formData.gender as "male" | "female" | undefined || undefined,
         procedure: formData.procedure || undefined,
         preferredDate: formData.preferredDate,
         preferredTime: formData.preferredTime || undefined,
@@ -453,6 +465,7 @@ function DoctorDetailContent({ slug }: { slug: string }) {
                       id="fullName"
                       name="name"
                       autoComplete="name"
+                      enterKeyHint="next"
                       value={formData.fullName}
                       onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                       required
@@ -471,6 +484,7 @@ function DoctorDetailContent({ slug }: { slug: string }) {
                         name="tel"
                         type="tel"
                         autoComplete="tel-national"
+                        enterKeyHint="next"
                         value={formData.phone}
                         onChange={(e) => {
                           const processed = processPhoneInput(e.target.value);
@@ -505,6 +519,7 @@ function DoctorDetailContent({ slug }: { slug: string }) {
                         name="age"
                         type="number"
                         autoComplete="off"
+                        enterKeyHint="next"
                         min="1"
                         max="150"
                         value={formData.age}
@@ -513,6 +528,37 @@ function DoctorDetailContent({ slug }: { slug: string }) {
                         placeholder="مثال: 30"
                         className="mt-1.5 h-11"
                       />
+                    </div>
+                  </div>
+
+                  {/* حقل الجنس */}
+                  <div>
+                    <Label className="text-sm font-medium text-foreground">
+                      الجنس <span className="text-red-500">*</span>
+                    </Label>
+                    <div className="grid grid-cols-2 gap-3 mt-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, gender: "male" })}
+                        className={`h-11 rounded-lg border-2 text-sm font-medium transition-all ${
+                          formData.gender === "male"
+                            ? "border-green-600 bg-green-50 text-green-700"
+                            : "border-border bg-background text-foreground hover:border-green-400"
+                        }`}
+                      >
+                        ذكر
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, gender: "female" })}
+                        className={`h-11 rounded-lg border-2 text-sm font-medium transition-all ${
+                          formData.gender === "female"
+                            ? "border-green-600 bg-green-50 text-green-700"
+                            : "border-border bg-background text-foreground hover:border-green-400"
+                        }`}
+                      >
+                        أنثى
+                      </button>
                     </div>
                   </div>
 
@@ -546,6 +592,7 @@ function DoctorDetailContent({ slug }: { slug: string }) {
                     <Input
                       id="preferredDate"
                       type="date"
+                      enterKeyHint="done"
                       value={formData.preferredDate}
                       onChange={(e) => setFormData({ ...formData, preferredDate: e.target.value })}
                       required
