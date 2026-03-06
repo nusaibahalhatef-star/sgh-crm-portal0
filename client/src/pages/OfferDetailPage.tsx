@@ -50,6 +50,7 @@ function OfferDetailContent({ slug }: { slug: string }) {
     fullName: savedInfo?.fullName || "",
     phone: savedInfo?.phone || "",
     email: "",
+    gender: (savedInfo?.gender || "") as "male" | "female" | "",
   });
 
   useEffect(() => {
@@ -85,6 +86,7 @@ function OfferDetailContent({ slug }: { slug: string }) {
       savePatientInfo({
         fullName: formData.fullName,
         phone: formData.phone,
+        gender: formData.gender || undefined,
       });
 
       await submitLead.mutateAsync({
@@ -92,6 +94,7 @@ function OfferDetailContent({ slug }: { slug: string }) {
         fullName: formData.fullName,
         phone: formData.phone,
         email: formData.email || undefined,
+        gender: formData.gender as "male" | "female" | undefined || undefined,
         source: trackingData.source,
         utmSource: trackingData.utmSource,
         utmMedium: trackingData.utmMedium,
@@ -438,12 +441,43 @@ function OfferDetailContent({ slug }: { slug: string }) {
                       name="email"
                       type="email"
                       autoComplete="email"
-                      enterKeyHint="done"
+                      enterKeyHint="next"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="example@email.com"
                       className="mt-1.5 pr-10 h-11"
                     />
+                  </div>
+                </div>
+
+                {/* حقل الجنس */}
+                <div>
+                  <Label className="text-sm font-medium text-foreground">
+                    الجنس (اختياري)
+                  </Label>
+                  <div className="grid grid-cols-2 gap-3 mt-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, gender: "male" })}
+                      className={`h-11 rounded-lg border-2 text-sm font-medium transition-colors ${
+                        formData.gender === "male"
+                          ? "border-green-600 bg-green-50 text-green-700"
+                          : "border-border bg-background text-foreground hover:border-green-400"
+                      }`}
+                    >
+                      ذكر
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, gender: "female" })}
+                      className={`h-11 rounded-lg border-2 text-sm font-medium transition-colors ${
+                        formData.gender === "female"
+                          ? "border-pink-500 bg-pink-50 text-pink-700"
+                          : "border-border bg-background text-foreground hover:border-pink-400"
+                      }`}
+                    >
+                      أنثى
+                    </button>
                   </div>
                 </div>
 

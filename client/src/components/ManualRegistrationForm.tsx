@@ -49,6 +49,9 @@ export default function ManualRegistrationForm() {
   const [appointmentProcedure, setAppointmentProcedure] = useState("");
   const [additionalNotes, setAdditionalNotes] = useState("");
   
+  // Gender
+  const [gender, setGender] = useState<"male" | "female" | "">("" );
+
   // Offer specific
   const [offerId, setOfferId] = useState("");
   
@@ -240,6 +243,7 @@ export default function ManualRegistrationForm() {
     setCampAge("");
     setCampProcedure("");
     setMedicalCondition("");
+    setGender("");
     setRegistrationStatus("new");
   };
 
@@ -262,6 +266,7 @@ export default function ManualRegistrationForm() {
       fullName,
       phone,
       email: email || undefined,
+      gender: gender as "male" | "female" | undefined || undefined,
       notes: notes || undefined,
       source: "manual" as const,
       status: registrationStatus as any, // Type will be validated by backend schema
@@ -605,6 +610,46 @@ export default function ManualRegistrationForm() {
               </div>
             </>
           )}
+
+          {/* Gender */}
+          <div className="space-y-2">
+            <Label>الجنس (اختياري)</Label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setGender("male")}
+                className={`h-10 rounded-lg border-2 text-sm font-medium transition-colors ${
+                  gender === "male"
+                    ? "border-blue-600 bg-blue-50 text-blue-700"
+                    : "border-border bg-background text-foreground hover:border-blue-400"
+                }`}
+              >
+                ذكر
+              </button>
+              <button
+                type="button"
+                onClick={() => setGender("female")}
+                className={`h-10 rounded-lg border-2 text-sm font-medium transition-colors ${
+                  gender === "female"
+                    ? "border-pink-500 bg-pink-50 text-pink-700"
+                    : "border-border bg-background text-foreground hover:border-pink-400"
+                }`}
+              >
+                أنثى
+              </button>
+              <button
+                type="button"
+                onClick={() => setGender("")}
+                className={`h-10 rounded-lg border-2 text-sm font-medium transition-colors ${
+                  gender === ""
+                    ? "border-gray-400 bg-gray-50 text-gray-600"
+                    : "border-border bg-background text-muted-foreground hover:border-gray-400"
+                }`}
+              >
+                غير محدد
+              </button>
+            </div>
+          </div>
 
           {/* Notes */}
           <div className="space-y-2">

@@ -275,6 +275,7 @@ export const offerLeads = mysqlTable("offerLeads", {
   fullName: varchar("fullName", { length: 255 }).notNull(),
   phone: varchar("phone", { length: 20 }).notNull(),
   email: varchar("email", { length: 320 }),
+  gender: mysqlEnum("gender", ["male", "female"]), // Patient gender
   notes: text("notes"),
   status: mysqlEnum("status", ["new", "contacted", "booked", "not_interested", "no_answer", "pending", "confirmed", "completed", "cancelled"]).default("new").notNull(),
   statusNotes: text("statusNotes"),
