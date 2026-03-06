@@ -28,8 +28,9 @@ export default function DoctorAppointments() {
 }
 
 function DoctorAppointmentsContent() {
-  const { formatPhoneDisplay, getWhatsAppLink, getCallLink } = usePhoneFormat();
+  const { formatPhoneDisplay, getWhatsAppLink, getCallLink, validateYemeniPhone, processPhoneInput } = usePhoneFormat();
   const [, setLocation] = useLocation();
+  const [phoneError, setPhoneError] = useState("");
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -59,7 +60,12 @@ function DoctorAppointmentsContent() {
       setLocation("/thank-you");
     },
     onError: (error: any) => {
-      toast.error("حدث خطأ أثناء حجز الموعد. يرجى المحاولة مرة أخرى.");
+      const msg = error?.message;
+      if (msg && (msg.includes("تكرار") || msg.includes("حجز"))) {
+        toast.error(msg);
+      } else {
+        toast.error("حدث خطأ أثناء حجز الموعد. يرجى المحاولة مرة أخرى.");
+      }
       console.error(error);
     },
   });
@@ -71,6 +77,15 @@ function DoctorAppointmentsContent() {
       toast.error("يرجى ملء جميع الحقول المطلوبة");
       return;
     }
+
+    // التحقق من رقم الهاتف اليمني
+    const phoneValidation = validateYemeniPhone(formData.phone);
+    if (!phoneValidation.valid) {
+      setPhoneError(phoneValidation.message || "رقم الهاتف غير صحيح");
+      toast.error(phoneValidation.message || "رقم الهاتف غير صحيح");
+      return;
+    }
+    setPhoneError("");
 
     // Track Meta Lead
     trackMetaLead({ fullName: formData.fullName, phone: formData.phone });
@@ -238,11 +253,30 @@ function DoctorAppointmentsContent() {
                       <Input
                         id="phone"
                         type="tel"
-                        placeholder="مثال: 777123456"
-                        value={formatPhoneDisplay(formData.phone)}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        placeholder="مثال: 771234567"
+                        value={formData.phone}
+                        onChange={(e) => {
+                          const processed = processPhoneInput(e.target.value);
+                          setFormData({ ...formData, phone: processed });
+                          if (phoneError) {
+                            const v = validateYemeniPhone(processed);
+                            setPhoneError(v.valid ? "" : (v.message || ""));
+                          }
+                        }}
+                        onBlur={() => {
+                          if (formData.phone) {
+                            const v = validateYemeniPhone(formData.phone);
+                            setPhoneError(v.valid ? "" : (v.message || ""));
+                          }
+                        }}
                         required
+                        dir="ltr"
+                        inputMode="numeric"
+                        className={phoneError ? 'border-red-500 focus-visible:ring-red-500' : ''}
                       />
+                      {phoneError && (
+                        <p className="text-red-500 text-xs mt-1">{phoneError}</p>
+                      )}
                     </div>
 
                     {/* Email */}

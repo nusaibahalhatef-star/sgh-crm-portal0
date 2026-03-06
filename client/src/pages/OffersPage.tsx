@@ -5,6 +5,7 @@
  */
 import { useFormatDate } from "@/hooks/useFormatDate";
 import { useState } from "react";
+import { usePhoneFormat } from "@/hooks/usePhoneFormat";
 import Navbar from "@/components/Navbar";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ export default function OffersPage() {
 
 function OffersPageContent() {
   const { formatDate, formatDateTime } = useFormatDate();
+  const { validateYemeniPhone, processPhoneInput } = usePhoneFormat();
   const [selectedOffer, setSelectedOffer] = useState<number | null>(null);
   const [formData, setFormData] = useState<OfferFormData>({
     fullName: "",
@@ -42,6 +44,7 @@ function OffersPageContent() {
     email: "",
     notes: "",
   });
+  const [phoneError, setPhoneError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -55,9 +58,13 @@ function OffersPageContent() {
       setSubmitted(true);
       setFormData({ fullName: "", phone: "", email: "", notes: "" });
     },
-    onError: () => {
-      toast.error("حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى");
-      
+    onError: (error) => {
+      const msg = error?.message;
+      if (msg && (msg.includes("تكرار") || msg.includes("طلب"))) {
+        toast.error(msg);
+      } else {
+        toast.error("حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى");
+      }
     },
   });
 
@@ -67,6 +74,15 @@ function OffersPageContent() {
       toast.error("يرجى اختيار عرض أولاً");
       return;
     }
+
+    // التحقق من رقم الهاتف اليمني
+    const phoneValidation = validateYemeniPhone(formData.phone);
+    if (!phoneValidation.valid) {
+      setPhoneError(phoneValidation.message || "رقم الهاتف غير صحيح");
+      toast.error(phoneValidation.message || "رقم الهاتف غير صحيح");
+      return;
+    }
+    setPhoneError("");
 
     setIsSubmitting(true);
     try {
@@ -235,11 +251,29 @@ function OffersPageContent() {
                       id="phone"
                       type="tel"
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onChange={(e) => {
+                        const processed = processPhoneInput(e.target.value);
+                        setFormData({ ...formData, phone: processed });
+                        if (phoneError) {
+                          const v = validateYemeniPhone(processed);
+                          setPhoneError(v.valid ? "" : (v.message || ""));
+                        }
+                      }}
+                      onBlur={() => {
+                        if (formData.phone) {
+                          const v = validateYemeniPhone(formData.phone);
+                          setPhoneError(v.valid ? "" : (v.message || ""));
+                        }
+                      }}
                       placeholder="مثال: 771234567"
                       required
                       dir="ltr"
+                      inputMode="numeric"
+                      className={phoneError ? 'border-red-500 focus-visible:ring-red-500' : ''}
                     />
+                    {phoneError && (
+                      <p className="text-red-500 text-xs mt-1">{phoneError}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">

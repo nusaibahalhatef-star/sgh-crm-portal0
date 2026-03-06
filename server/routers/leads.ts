@@ -25,7 +25,7 @@ export const leadsRouter = router({
     .input(z.object({
       campaignSlug: z.string(),
       fullName: z.string().min(1),
-      phone: z.string().min(1),
+      phone: z.string().min(1).regex(/^7[0-9]{8}$/, "رقم الهاتف اليمني يجب أن يبدأ بالرقم 7 ويتكون من 9 أرقام"),
       email: z.string().email().optional(),
       notes: z.string().optional(),
       status: z.enum(["new", "contacted", "booked", "not_interested", "no_answer", "pending", "confirmed", "completed", "cancelled"]).optional(),

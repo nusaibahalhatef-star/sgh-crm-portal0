@@ -5,6 +5,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { processPhoneInput, validateYemeniPhone } from "@/hooks/usePhoneFormat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -79,8 +80,9 @@ export default function PatientPortalLogin() {
   });
 
   const handleSendOtp = () => {
-    if (!phone || phone.length < 9) {
-      toast.error("يرجى إدخال رقم هاتف صحيح");
+    const phoneValidation = validateYemeniPhone(phone);
+    if (!phoneValidation.valid) {
+      toast.error(phoneValidation.message || "يرجى إدخال رقم هاتف صحيح");
       return;
     }
     sendOtpMutation.mutate({ phone });
@@ -155,11 +157,12 @@ export default function PatientPortalLogin() {
                   <Input
                     id="phone"
                     type="tel"
-                    placeholder="مثال: 777123456"
+                    placeholder="مثال: 771234567"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                    onChange={(e) => setPhone(processPhoneInput(e.target.value))}
                     className="mt-1.5 text-base h-11 sm:h-12"
                     dir="ltr"
+                    inputMode="numeric"
                     maxLength={15}
                   />
                 </div>

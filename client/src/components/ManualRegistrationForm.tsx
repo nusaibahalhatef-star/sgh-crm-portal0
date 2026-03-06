@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
+import { processPhoneInput, validateYemeniPhone } from "@/hooks/usePhoneFormat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -140,8 +141,13 @@ export default function ManualRegistrationForm() {
       setDialogOpen(false);
       setShouldPrint(false);
     },
-    onError: () => {
-      toast.error("حدث خطأ أثناء إضافة الموعد");
+    onError: (error: any) => {
+      const msg = error?.message;
+      if (msg && (msg.includes("تكرار") || msg.includes("حجز"))) {
+        toast.error(msg);
+      } else {
+        toast.error("حدث خطأ أثناء إضافة الموعد");
+      }
       setShouldPrint(false);
     },
   });
@@ -171,8 +177,13 @@ export default function ManualRegistrationForm() {
       setDialogOpen(false);
       setShouldPrint(false);
     },
-    onError: () => {
-      toast.error("حدث خطأ أثناء إضافة حجز العرض");
+    onError: (error: any) => {
+      const msg = error?.message;
+      if (msg && (msg.includes("تكرار") || msg.includes("طلب"))) {
+        toast.error(msg);
+      } else {
+        toast.error("حدث خطأ أثناء إضافة حجز العرض");
+      }
       setShouldPrint(false);
     },
   });
@@ -202,8 +213,13 @@ export default function ManualRegistrationForm() {
       setDialogOpen(false);
       setShouldPrint(false);
     },
-    onError: () => {
-      toast.error("حدث خطأ أثناء إضافة تسجيل المخيم");
+    onError: (error: any) => {
+      const msg = error?.message;
+      if (msg && (msg.includes("تكرار") || msg.includes("مخيم"))) {
+        toast.error(msg);
+      } else {
+        toast.error("حدث خطأ أثناء إضافة تسجيل المخيم");
+      }
       setShouldPrint(false);
     },
   });
@@ -232,6 +248,13 @@ export default function ManualRegistrationForm() {
 
     if (!fullName || !phone) {
       toast.error("الرجاء إدخال الاسم ورقم الهاتف");
+      return;
+    }
+
+    // التحقق من رقم الهاتف اليمني
+    const phoneValidation = validateYemeniPhone(phone);
+    if (!phoneValidation.valid) {
+      toast.error(phoneValidation.message || "رقم الهاتف غير صحيح");
       return;
     }
 
@@ -393,12 +416,15 @@ export default function ManualRegistrationForm() {
               <Label htmlFor="phone">رقم الهاتف *</Label>
               <Input
                 id="phone"
+                type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="مثال: 967xxxxxxxxx"
-                className="text-right"
+                onChange={(e) => setPhone(processPhoneInput(e.target.value))}
+                placeholder="مثال: 771234567"
+                dir="ltr"
+                inputMode="numeric"
                 required
               />
+              <p className="text-xs text-muted-foreground">يجب أن يبدأ بالرقم 7 ويتكون من 9 أرقام</p>
             </div>
           </div>
 
