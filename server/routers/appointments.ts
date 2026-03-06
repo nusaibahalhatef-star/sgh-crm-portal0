@@ -142,9 +142,15 @@ export const appointmentsRouter = router({
       }
 
       // Notify owner
+      const ownerNotifyParts = [
+        `تم حجز موعد جديد من ${input.fullName} مع ${doctor?.name || "غير محدد"}`,
+        `الهاتف: ${input.phone}`,
+      ];
+      if (input.procedure) ownerNotifyParts.push(`الإجراء: ${input.procedure}`);
+      if (input.patientMessage) ownerNotifyParts.push(`رسالة المريض: ${input.patientMessage}`);
       await notifyOwner({
         title: "حجز موعد جديد",
-        content: `تم حجز موعد جديد من ${input.fullName} مع ${doctor?.name || "غير محدد"}`,
+        content: ownerNotifyParts.join(" | "),
       });
 
       // Send Telegram notification
@@ -155,6 +161,8 @@ export const appointmentsRouter = router({
         doctorName: doctor?.name || "غير محدد",
         preferredDate: input.preferredDate,
         preferredTime: input.preferredTime,
+        procedure: input.procedure,
+        patientMessage: input.patientMessage,
       });
 
       // Send automated booking confirmation message (Patient Journey)

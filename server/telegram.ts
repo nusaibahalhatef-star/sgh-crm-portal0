@@ -98,10 +98,26 @@ export async function sendNewAppointmentTelegram(params: {
   doctorName: string;
   preferredDate?: string;
   preferredTime?: string;
+  procedure?: string;
+  patientMessage?: string;
 }): Promise<boolean> {
+  const lines = [
+    `الاسم: ${params.fullName}`,
+    `الهاتف: ${params.phone}`,
+    `البريد: ${params.email || "غير متوفر"}`,
+    `الطبيب: ${params.doctorName}`,
+    `التاريخ: ${params.preferredDate || "غير محدد"}`,
+    `الوقت: ${params.preferredTime || "غير محدد"}`,
+  ];
+  if (params.procedure) {
+    lines.push(`الإجراء المطلوب: ${params.procedure}`);
+  }
+  if (params.patientMessage) {
+    lines.push(`رسالة المريض: ${params.patientMessage}`);
+  }
   return sendTelegramNotification({
     title: "موعد جديد",
-    content: `الاسم: ${params.fullName}\nالهاتف: ${params.phone}\nالبريد: ${params.email || "غير متوفر"}\nالطبيب: ${params.doctorName}\nالتاريخ: ${params.preferredDate || "غير محدد"}\nالوقت: ${params.preferredTime || "غير محدد"}`,
+    content: lines.join("\n"),
     type: "appointment",
   });
 }
@@ -114,10 +130,24 @@ export async function sendNewOfferLeadTelegram(params: {
   phone: string;
   email?: string;
   offerTitle: string;
+  age?: number;
+  patientMessage?: string;
 }): Promise<boolean> {
+  const lines = [
+    `الاسم: ${params.fullName}`,
+    `الهاتف: ${params.phone}`,
+    `البريد: ${params.email || "غير متوفر"}`,
+    `العرض: ${params.offerTitle}`,
+  ];
+  if (params.age) {
+    lines.push(`العمر: ${params.age}`);
+  }
+  if (params.patientMessage) {
+    lines.push(`رسالة المريض: ${params.patientMessage}`);
+  }
   return sendTelegramNotification({
     title: "حجز عرض جديد",
-    content: `الاسم: ${params.fullName}\nالهاتف: ${params.phone}\nالبريد: ${params.email || "غير متوفر"}\nالعرض: ${params.offerTitle}`,
+    content: lines.join("\n"),
     type: "offer",
   });
 }
@@ -131,10 +161,32 @@ export async function sendNewCampRegistrationTelegram(params: {
   email?: string;
   campTitle: string;
   age?: number;
+  procedures?: string;
+  patientMessage?: string;
 }): Promise<boolean> {
+  const lines = [
+    `الاسم: ${params.fullName}`,
+    `الهاتف: ${params.phone}`,
+    `البريد: ${params.email || "غير متوفر"}`,
+    `المخيم: ${params.campTitle}`,
+    `العمر: ${params.age || "غير محدد"}`,
+  ];
+  if (params.procedures) {
+    try {
+      const parsed = JSON.parse(params.procedures);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        lines.push(`الإجراءات المطلوبة: ${parsed.join("، ")}`);
+      }
+    } catch {
+      lines.push(`الإجراءات المطلوبة: ${params.procedures}`);
+    }
+  }
+  if (params.patientMessage) {
+    lines.push(`رسالة المريض: ${params.patientMessage}`);
+  }
   return sendTelegramNotification({
     title: "تسجيل مخيم جديد",
-    content: `الاسم: ${params.fullName}\nالهاتف: ${params.phone}\nالبريد: ${params.email || "غير متوفر"}\nالمخيم: ${params.campTitle}\nالعمر: ${params.age || "غير محدد"}`,
+    content: lines.join("\n"),
     type: "camp",
   });
 }

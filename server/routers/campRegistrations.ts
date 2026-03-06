@@ -100,6 +100,8 @@ export const campRegistrationsRouter = router({
           email: input.email,
           campTitle: camp.name,
           age: input.age,
+          procedures: input.procedures,
+          patientMessage: input.patientMessage,
         });
       }
 

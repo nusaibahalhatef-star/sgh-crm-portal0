@@ -95,6 +95,8 @@ export const offerLeadsRouter = router({
           phone: input.phone,
           email: input.email,
           offerTitle: offer.title,
+          age: input.age,
+          patientMessage: input.patientMessage,
         });
       }
 
