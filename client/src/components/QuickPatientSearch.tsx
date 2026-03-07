@@ -118,41 +118,18 @@ function PatientCard({ patient, onClose, onUpdateStatus }: PatientCardProps) {
     return <Badge variant={status_info.variant}>{status_info.label}</Badge>;
   };
 
-  // Get status options based on type
-  const getStatusOptions = () => {
-    if (patient.type === 'appointment') {
-      return [
-        { value: 'pending', label: 'قيد الانتظار' },
-        { value: 'confirmed', label: 'مؤكد' },
-        { value: 'completed', label: 'مكتمل' },
-        { value: 'cancelled', label: 'ملغي' },
-      ];
-    } else if (patient.type === 'offerLead') {
-      return [
-        { value: 'new', label: 'جديد' },
-        { value: 'contacted', label: 'تم التواصل' },
-        { value: 'booked', label: 'تم الحجز' },
-        { value: 'not_interested', label: 'غير مهتم' },
-        { value: 'no_answer', label: 'لم يرد' },
-      ];
-    } else if (patient.type === 'campRegistration') {
-      return [
-        { value: 'pending', label: 'قيد الانتظار' },
-        { value: 'confirmed', label: 'مؤكد' },
-        { value: 'attended', label: 'حضر' },
-        { value: 'cancelled', label: 'ملغي' },
-      ];
-    } else {
-      // Default for leads
-      return [
-        { value: 'new', label: 'جديد' },
-        { value: 'contacted', label: 'تم التواصل' },
-        { value: 'booked', label: 'تم الحجز' },
-        { value: 'not_interested', label: 'غير مهتم' },
-        { value: 'no_answer', label: 'لم يرد' },
-      ];
-    }
-  };
+  // الحالات الموحدة السبع لجميع أنواع التسجيلات
+  const UNIFIED_STATUS_OPTIONS = [
+    { value: 'pending', label: 'قيد الانتظار' },
+    { value: 'contacted', label: 'تم التواصل' },
+    { value: 'no_answer', label: 'لم يرد' },
+    { value: 'confirmed', label: 'مؤكد' },
+    { value: 'attended', label: 'حضر' },
+    { value: 'completed', label: 'مكتمل' },
+    { value: 'cancelled', label: 'ملغي' },
+  ];
+  // Get status options based on type - unified 7 statuses for all types
+  const getStatusOptions = () => UNIFIED_STATUS_OPTIONS;
 
   const getTypeLabel = () => {
     if (patient.type === 'lead') return 'عميل';

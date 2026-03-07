@@ -597,34 +597,22 @@ export default function ManualRegistrationForm() {
 
               {availableCampProcedures.length > 0 && (
                 <div className="space-y-2">
-                  <Label>الإجراءات المطلوبة</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {availableCampProcedures.map((proc: string, idx: number) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => {
-                          setCampProcedures(prev =>
-                            prev.includes(proc)
-                              ? prev.filter(p => p !== proc)
-                              : [...prev, proc]
-                          );
-                        }}
-                        className={`px-3 py-1.5 rounded-lg border-2 text-sm font-medium transition-colors ${
-                          campProcedures.includes(proc)
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border bg-background text-foreground hover:border-primary/50"
-                        }`}
-                      >
-                        {proc}
-                      </button>
-                    ))}
-                  </div>
-                  {campProcedures.length > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      المختار: {campProcedures.join("، ")}
-                    </p>
-                  )}
+                  <Label htmlFor="campProcedure">الإجراء المطلوب</Label>
+                  <Select
+                    value={campProcedures[0] || ""}
+                    onValueChange={(val) => setCampProcedures(val ? [val] : [])}
+                  >
+                    <SelectTrigger id="campProcedure">
+                      <SelectValue placeholder="اختر الإجراء" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableCampProcedures.map((proc: string, idx: number) => (
+                        <SelectItem key={idx} value={proc}>
+                          {proc}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
 

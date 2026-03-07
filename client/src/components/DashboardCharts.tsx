@@ -29,29 +29,33 @@ const COLORS = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  new: "#3b82f6",
-  contacted: "#f59e0b",
-  booked: "#10b981",
-  not_interested: "#ef4444",
-  no_answer: "#6b7280",
+  // الحالات الموحدة السبع
   pending: "#f59e0b",
+  contacted: "#f97316",
+  no_answer: "#6b7280",
   confirmed: "#10b981",
+  attended: "#3b82f6",
   completed: "#059669",
   cancelled: "#ef4444",
-  attended: "#8b5cf6",
+  // حالات العملاء المحتملين (للتوافق مع البيانات القديمة)
+  new: "#3b82f6",
+  booked: "#10b981",
+  not_interested: "#ef4444",
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  new: "جديد",
+  // الحالات الموحدة السبع
+  pending: "قيد الانتظار",
   contacted: "تم التواصل",
-  booked: "تم الحجز",
-  not_interested: "غير مهتم",
   no_answer: "لم يرد",
-  pending: "معلق",
   confirmed: "مؤكد",
+  attended: "حضر",
   completed: "مكتمل",
   cancelled: "ملغي",
-  attended: "حضر",
+  // حالات العملاء المحتملين (للتوافق مع البيانات القديمة)
+  new: "جديد",
+  booked: "تم الحجز",
+  not_interested: "غير مهتم",
 };
 
 const PIE_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#f43f5e", "#6b7280"];
