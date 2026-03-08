@@ -30,6 +30,7 @@ import {
   HelpCircle,
   MoreHorizontal,
   Pencil,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
@@ -66,6 +67,7 @@ const allNavItems: NavItem[] = [
   { id: "tasks", title: "المهام", href: "/dashboard/bookings/tasks", icon: CheckSquare },
   { id: "reports", title: "التقارير", href: "/dashboard/reports", icon: FileText },
   { id: "analytics", title: "التحليلات", href: "/dashboard/analytics", icon: BarChart3 },
+  { id: "bi", title: "ذكاء الأعمال (BI)", href: "/dashboard/bi", icon: TrendingUp },
   { id: "whatsapp", title: "واتساب", href: "/dashboard/whatsapp", icon: MessageCircle },
   { id: "messages", title: "الرسائل", href: "/dashboard/messages", icon: MessageSquare },
   { id: "message-settings", title: "إعدادات الرسائل", href: "/dashboard/message-settings", icon: SettingsIcon },
@@ -131,6 +133,7 @@ const allToolsGroups: NavGroup[] = [
     items: [
       { id: "reports", title: "التقارير", href: "/dashboard/reports", icon: FileText },
       { id: "analytics", title: "التحليلات", href: "/dashboard/analytics", icon: BarChart3 },
+      { id: "bi", title: "ذكاء الأعمال (BI)", href: "/dashboard/bi", icon: TrendingUp },
     ],
   },
   {

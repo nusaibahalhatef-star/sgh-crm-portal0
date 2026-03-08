@@ -84,6 +84,11 @@ export default function Footer() {
           <p>
             © {new Date().getFullYear()} {APP_TITLE}. جميع الحقوق محفوظة.
           </p>
+          <div className="mt-2 flex items-center justify-center gap-3">
+            <Link href="/privacy-policy">
+              <span className="hover:text-green-200 transition-colors cursor-pointer">سياسة الخصوصية</span>
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

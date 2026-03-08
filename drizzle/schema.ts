@@ -1029,3 +1029,69 @@ export const pwaInstalls = mysqlTable("pwaInstalls", {
 
 export type PwaInstall = typeof pwaInstalls.$inferSelect;
 export type InsertPwaInstall = typeof pwaInstalls.$inferInsert;
+
+/**
+ * Visit Sessions Table - جلسات الزيارة
+ * يتتبع كل زيارة للموقع مع مصدرها ومسار التنقل
+ */
+export const visitSessions = mysqlTable("visitSessions", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: varchar("sessionId", { length: 64 }).notNull(),
+  source: varchar("source", { length: 64 }),
+  utmSource: varchar("utmSource", { length: 128 }),
+  utmMedium: varchar("utmMedium", { length: 128 }),
+  utmCampaign: varchar("utmCampaign", { length: 256 }),
+  utmContent: varchar("utmContent", { length: 256 }),
+  utmTerm: varchar("utmTerm", { length: 256 }),
+  fbclid: varchar("fbclid", { length: 256 }),
+  gclid: varchar("gclid", { length: 256 }),
+  landingPage: varchar("landingPage", { length: 512 }),
+  referrer: varchar("referrer", { length: 512 }),
+  userAgent: text("userAgent"),
+  converted: boolean("converted").default(false),
+  conversionType: varchar("conversionType", { length: 64 }),
+  conversionId: int("conversionId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type VisitSession = typeof visitSessions.$inferSelect;
+export type InsertVisitSession = typeof visitSessions.$inferInsert;
+
+/**
+ * Abandoned Forms Table - النماذج غير المكتملة (الفرص الضائعة)
+ */
+export const abandonedForms = mysqlTable("abandonedForms", {
+  id: int("id").autoincrement().primaryKey(),
+  formType: mysqlEnum("formType", ["appointment", "offer", "camp", "general"]).notNull(),
+  phone: varchar("phone", { length: 32 }),
+  name: varchar("name", { length: 256 }),
+  relatedId: int("relatedId"),
+  relatedName: varchar("relatedName", { length: 256 }),
+  formData: text("formData"),
+  source: varchar("source", { length: 64 }),
+  utmSource: varchar("utmSource", { length: 128 }),
+  utmCampaign: varchar("utmCampaign", { length: 256 }),
+  sessionId: varchar("sessionId", { length: 64 }),
+  contacted: boolean("contacted").default(false),
+  contactedAt: timestamp("contactedAt"),
+  converted: boolean("converted").default(false),
+  convertedAt: timestamp("convertedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type AbandonedForm = typeof abandonedForms.$inferSelect;
+export type InsertAbandonedForm = typeof abandonedForms.$inferInsert;
+
+/**
+ * Tracking Events Table - أحداث التتبع
+ */
+export const trackingEvents = mysqlTable("trackingEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: varchar("sessionId", { length: 64 }),
+  eventType: varchar("eventType", { length: 64 }).notNull(),
+  page: varchar("page", { length: 512 }),
+  metadata: text("metadata"),
+  source: varchar("source", { length: 64 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type TrackingEvent = typeof trackingEvents.$inferSelect;
+export type InsertTrackingEvent = typeof trackingEvents.$inferInsert;

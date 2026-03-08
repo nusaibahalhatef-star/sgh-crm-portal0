@@ -38,6 +38,7 @@ import { customersRouter } from "./routers/customers";
 import { auditLogsRouter } from "./routers/auditLogs";
 import { savedFiltersRouter } from "./routers/savedFilters";
 import { chartsRouter } from "./routers/charts";
+import { trackingRouter } from "./routers/tracking";
 import { patientPortalRouter } from "./routers/patientPortal";
 import { pwaRouter } from "./routers/pwa";
 import { generatePDF, type ExportMetadata } from "./pdfService";
@@ -47,6 +48,7 @@ export const appRouter = router({
   tasks: tasksRouter,
   system: systemRouter,
   charts: chartsRouter,
+  tracking: trackingRouter,
   patientPortal: patientPortalRouter,
   pwa: pwaRouter,
   whatsapp: whatsappRouter,

@@ -45,6 +45,7 @@ const CustomersPage = lazy(() => import("./pages/CustomersPage"));
 const TasksPage = lazy(() => import("./pages/TasksPage"));
 import PWAManager from "./components/PWAManager";
 import OfflineIndicator from "./components/OfflineIndicator";
+import CookieConsentBanner from "./components/CookieConsentBanner";
 const DigitalMarketingTeamPage = lazy(() => import("./pages/DigitalMarketingTeamPage"));
 const MediaTeamPage = lazy(() => import("./pages/MediaTeamPage"));
 const FieldMarketingTeamPage = lazy(() => import("./pages/FieldMarketingTeamPage"));
@@ -58,6 +59,8 @@ const PatientDashboard = lazy(() => import("./pages/PatientDashboard"));
 const MessageSettingsPage = lazy(() => import("./pages/MessageSettingsPage"));
 const QueueDashboard = lazy(() => import("./pages/QueueDashboard"));
 const PWAStatsPage = lazy(() => import("./pages/PWAStatsPage"));
+const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
+const BIPage = lazy(() => import("./pages/BIPage"));
 
 
 function Router() {
@@ -86,6 +89,7 @@ function Router() {
       <Route path={"/camps"} component={CampsListPage} />
       <Route path={"/camps/:slug"} component={CampDetailPage} />
       <Route path={"/thank-you"} component={ThankYou} />
+      <Route path={"/privacy-policy"} component={PrivacyPolicyPage} />
       <Route path={"/unauthorized"} component={Unauthorized} />
       <Route path={"/access-request"} component={AccessRequest} />
       <Route path={"/dashboard"} component={AdminDashboard} />
@@ -103,6 +107,7 @@ function Router() {
       <Route path={"/dashboard/reports"} component={ReportsPageNew} />
       <Route path={"/dashboard/campaigns"} component={CampaignsPage} />
       <Route path={"/dashboard/analytics"} component={AnalyticsPage} />
+      <Route path={"/dashboard/bi"} component={BIPage} />
        <Route path={"/dashboard/camp-stats"} component={CampStatsPage} />
       <Route path={"/dashboard/bookings"} component={BookingsManagementPage} />
       <Route path={"/dashboard/bookings/leads"} component={LeadsManagementPage} />
@@ -156,6 +161,7 @@ function App() {
           <Toaster />
           <PWAManager />
           <OfflineIndicator />
+          <CookieConsentBanner />
           <Router />
         </TooltipProvider>
       </ThemeProvider>

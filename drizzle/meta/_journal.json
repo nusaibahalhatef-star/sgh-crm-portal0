@@ -267,6 +267,13 @@
       "when": 1772840086924,
       "tag": "0037_wooden_jack_flag",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "5",
+      "when": 1773010086202,
+      "tag": "0038_pretty_vapor",
+      "breakpoints": true
     }
   ]
 }

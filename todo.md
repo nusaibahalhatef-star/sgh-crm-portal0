@@ -3705,3 +3705,37 @@
 - [x] Backend offerLeads.ts: منع تكرار الطلب بنفس الرقم ونفس العرض خلال 3 أيام
 - [x] Backend campRegistrations.ts: منع تكرار التسجيل بنفس الرقم ونفس المخيم خلال 3 أيام
 - [x] Backend Zod: إضافة validation لرقم الهاتف اليمني في الـ 3 routers
+
+## منظومة BI وتتبع الأحداث - الرؤية الاستراتيجية
+
+### المرحلة 1: سياسة الخصوصية الرسمية
+- [ ] بناء صفحة /privacy-policy متوافقة مع Meta/WhatsApp API وSGH
+- [ ] إضافة بند WhatsApp API (رقم الهاتف لإرسال تنبيهات عبر Meta)
+- [ ] إضافة بند Lead Recovery (حفظ مسودات النماذج مؤقتاً)
+- [ ] إضافة بند PWA/LocalStorage (التخزين المحلي للأداء)
+- [ ] إضافة خيار إلغاء الاشتراك وحذف البيانات
+- [ ] إضافة رابط سياسة الخصوصية في Footer الموقع
+- [ ] إضافة مسار /privacy-policy في App.tsx
+
+### المرحلة 2: Cookie Consent Banner
+- [ ] بناء مكوّن CookieConsentBanner في الواجهة العامة
+- [ ] إضافة خيارات: أساسية، تحليلية، تسويقية
+- [ ] حفظ تفضيلات المستخدم في localStorage
+- [ ] ربط الموافقة بتفعيل/تعطيل التتبع
+
+### المرحلة 3: بنية تتبع الأحداث (Tracking Infrastructure)
+- [ ] إضافة جدول visitor_sessions في schema
+- [ ] إضافة جدول page_views في schema
+- [ ] إضافة جدول form_drafts (مسودات النماذج غير المكتملة)
+- [ ] إضافة جدول conversion_events في schema
+- [ ] بناء useTracker hook في الواجهة
+- [ ] بناء tracking router في backend
+- [ ] تسجيل مصدر الزيارة (UTM + Referrer) تلقائياً
+- [ ] حفظ مسودات النماذج غير المكتملة (Lead Recovery)
+
+### المرحلة 4: واجهات تحليلات BI
+- [ ] بناء صفحة AnalyticsPage في لوحة التحكم
+- [ ] رسم قمع التحويل (Conversion Funnel)
+- [ ] رسم ROI حسب المصدر الإعلاني
+- [ ] جدول الفرص الضائعة (أرقام بدأت ولم تكمل)
+- [ ] إضافة مسار /analytics في App.tsx وDashboardLayout
