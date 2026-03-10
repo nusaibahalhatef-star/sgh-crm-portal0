@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, Phone, Mail, Calendar, CheckCircle2, Loader2, Tag, Clock, Sparkles, Stethoscope, Shield, HeartPulse, MessageSquare } from "lucide-react";
 import { getCompleteTrackingData } from "@/lib/tracking";
+import { trackViewContent } from "@/components/MetaPixel";
 import { toast } from "sonner";
 
 import { usePhoneFormat } from "@/hooks/usePhoneFormat";
@@ -66,6 +67,18 @@ function OfferDetailContent({ slug }: { slug: string }) {
     getFormData: () => ({ name: formData.fullName, phone: formData.phone }),
     submitted,
   });
+
+  // إرسال حدث ViewContent عند تحميل صفحة العرض
+  useEffect(() => {
+    if (offer) {
+      trackViewContent({
+        content_name: offer.title || "Offer",
+        content_category: "Healthcare Offer",
+        content_ids: [String(offer.id)],
+        content_type: "offer",
+      });
+    }
+  }, [offer?.id]);
 
   useEffect(() => {
     if (!isLoading && !offer) {

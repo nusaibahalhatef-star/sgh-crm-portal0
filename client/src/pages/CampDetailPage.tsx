@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, Phone, Calendar, MapPin, Loader2, Heart, Users, CheckCircle2, Clock, Star, MessageSquare, Tag, ChevronDown, ChevronUp } from "lucide-react";
 import { getCompleteTrackingData } from "@/lib/tracking";
+import { trackViewContent } from "@/components/MetaPixel";
 import { toast } from "sonner";
 
 import { usePhoneFormat } from "@/hooks/usePhoneFormat";
@@ -81,6 +82,18 @@ function CampDetailContent({ slug }: { slug: string }) {
       return camp.availableProcedures.split('\n').filter((p: string) => p.trim());
     }
   }, [camp]);
+
+  // إرسال حدث ViewContent عند تحميل صفحة المخيم
+  useEffect(() => {
+    if (camp) {
+      trackViewContent({
+        content_name: camp.name || "Medical Camp",
+        content_category: "Healthcare Camp",
+        content_ids: [String(camp.id)],
+        content_type: "camp",
+      });
+    }
+  }, [camp?.id]);
 
   useEffect(() => {
     if (!isLoading && !camp) {

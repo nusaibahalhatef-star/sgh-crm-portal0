@@ -20,12 +20,19 @@ declare global {
 
 const PIXEL_ID = (import.meta.env.VITE_META_PIXEL_ID as string | undefined) || "";
 
+// مفاتيح localStorage — يجب أن تتطابق مع CookieConsentBanner.tsx
+const COOKIE_CONSENT_KEY = "sgh_cookie_consent";
+const COOKIE_PREFS_KEY = "sgh_cookie_preferences";
+
 /** تحقق من موافقة المستخدم على الكوكيز التسويقية */
 function hasMarketingConsent(): boolean {
   try {
-    const consent = localStorage.getItem("cookie_consent");
-    if (!consent) return false;
-    const parsed = JSON.parse(consent);
+    // التحقق من الموافقة العامة أولاً
+    if (localStorage.getItem(COOKIE_CONSENT_KEY) !== "true") return false;
+    // ثم التحقق من تفضيل التسويق
+    const prefs = localStorage.getItem(COOKIE_PREFS_KEY);
+    if (!prefs) return false;
+    const parsed = JSON.parse(prefs);
     return parsed?.marketing === true;
   } catch {
     return false;
@@ -90,6 +97,32 @@ export function trackMetaCompleteRegistration(data?: { content_name?: string; co
   }
 }
 
+/** إرسال حدث ViewContent عند مشاهدة صفحة محتوى */
+export function trackViewContent(data: {
+  content_name: string;
+  content_category?: string;
+  content_ids?: string[];
+  content_type?: string;
+}): void {
+  if (typeof window !== "undefined" && window.fbq) {
+    window.fbq("track", "ViewContent", {
+      content_category: "Healthcare",
+      content_type: "product",
+      ...data,
+    });
+  }
+}
+
+/** إرسال حدث InitiateCheckout عند بدء ملء نموذج الحجز */
+export function trackInitiateCheckout(data?: { content_name?: string; content_category?: string }): void {
+  if (typeof window !== "undefined" && window.fbq) {
+    window.fbq("track", "InitiateCheckout", {
+      content_category: "Healthcare",
+      ...data,
+    });
+  }
+}
+
 /** إرسال حدث مخصص */
 export function trackMetaEvent(eventName: string, data?: Record<string, unknown>): void {
   if (typeof window !== "undefined" && window.fbq) {
@@ -119,9 +152,10 @@ export default function MetaPixel() {
     // محاولة التهيئة فوراً
     tryInit();
 
-    // استمع لتحديثات الموافقة (يُطلَق من CookieConsentBanner)
-    window.addEventListener("cookie_consent_updated", tryInit);
-    return () => window.removeEventListener("cookie_consent_updated", tryInit);
+    // استمع لحدث التحديث من CookieConsentBanner (يُطلَق باسم "cookieConsentUpdated")
+    const handleConsent = () => tryInit();
+    window.addEventListener("cookieConsentUpdated", handleConsent);
+    return () => window.removeEventListener("cookieConsentUpdated", handleConsent);
   }, []);
 
   // إرسال PageView عند كل تنقل

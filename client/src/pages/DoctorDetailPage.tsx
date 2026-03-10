@@ -3,11 +3,12 @@
  * 
  * Individual doctor page with profile and appointment booking
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRoute, Link, useLocation } from "wouter";
 import Navbar from "@/components/Navbar";
 import { ArrowRight, Calendar, Phone, Award, Loader2, CheckCircle, Star, Users, Clock, CheckCircle2, TrendingUp, Stethoscope, Globe, CreditCard, MessageSquare } from "lucide-react";
 import { getCompleteTrackingData } from "@/lib/tracking";
+import { trackViewContent } from "@/components/MetaPixel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,18 @@ function DoctorDetailContent({ slug }: { slug: string }) {
     { enabled: !!slug && slug !== ":slug" }
   );
   const submitAppointment = trpc.appointments.submit.useMutation();
+
+  // إرسال حدث ViewContent عند تحميل صفحة الطبيب
+  useEffect(() => {
+    if (doctor) {
+      trackViewContent({
+        content_name: doctor.name || "Doctor",
+        content_category: doctor.specialty || "Healthcare",
+        content_ids: [String(doctor.id)],
+        content_type: "doctor",
+      });
+    }
+  }, [doctor?.id]);
 
   const savedInfo = getSavedPatientInfo();
   const [formData, setFormData] = useState({
