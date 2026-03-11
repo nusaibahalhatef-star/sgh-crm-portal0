@@ -3739,3 +3739,11 @@
 - [ ] رسم ROI حسب المصدر الإعلاني
 - [ ] جدول الفرص الضائعة (أرقام بدأت ولم تكمل)
 - [ ] إضافة مسار /analytics في App.tsx وDashboardLayout
+
+## تحديثات نظام التتبع - مارس 2026
+
+- [x] إضافة Meta Domain Verification meta-tag في index.html
+- [x] تفعيل PageView لجميع الزوار بدون شرط Cookie Consent
+- [x] إصلاح CAPI Payload: action_source صحيح + external_id + SHA-256 صحيح
+- [x] إزالة البيانات الطبية الحساسة من أحداث CAPI
+- [x] إضافة external_id لتحسين Event Match Quality

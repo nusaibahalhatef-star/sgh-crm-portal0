@@ -51,7 +51,7 @@ export const appointmentsRouter = router({
       fbclid: z.string().optional(),
       gclid: z.string().optional(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       // التحقق من عدم تكرار الحجز بنفس الرقم ونفس الطبيب خلال 3 أيام
       const db = await getDb();
       if (db) {
@@ -195,13 +195,15 @@ export const appointmentsRouter = router({
       }
 
       // Send Facebook Conversions API event (fire-and-forget)
+      // لا تُرسَل بيانات طبية حساسة وفق سياسة Meta لمزودي الرعاية الصحية
       sendAppointmentLeadEvent({
         fullName: input.fullName,
         phone: input.phone,
         email: input.email,
-        doctorName: doctor?.name,
-        procedure: input.procedure,
-        campaignName: campaign.name,
+        clientIpAddress: ctx.req.ip || (ctx.req.socket as any)?.remoteAddress,
+        clientUserAgent: ctx.req.headers["user-agent"] as string,
+        fbc: ctx.req.cookies?.["_fbc"],
+        fbp: ctx.req.cookies?.["_fbp"],
         eventSourceUrl: input.referrer,
         eventId: `appt_${appointment?.insertId || Date.now()}`,
       }).catch((err) => console.error("[CAPI] Appointment lead error:", err));

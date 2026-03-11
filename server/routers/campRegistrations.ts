@@ -40,7 +40,7 @@ export const campRegistrationsRouter = router({
         gclid: z.string().optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
@@ -135,12 +135,15 @@ export const campRegistrationsRouter = router({
       }
 
       // Send Facebook Conversions API event (fire-and-forget)
+      // لا تُرسَل بيانات طبية حساسة وفق سياسة Meta لمزودي الرعاية الصحية
       sendCampRegistrationEvent({
         fullName: input.fullName,
         phone: input.phone,
         email: input.email,
-        campName: camp?.name,
-        procedures: input.procedures,
+        clientIpAddress: ctx.req.ip || (ctx.req.socket as any)?.remoteAddress,
+        clientUserAgent: ctx.req.headers["user-agent"] as string,
+        fbc: ctx.req.cookies?.["_fbc"],
+        fbp: ctx.req.cookies?.["_fbp"],
         eventSourceUrl: input.referrer,
         eventId: `camp_${registration?.insertId || Date.now()}`,
       }).catch((err) => console.error("[CAPI] Camp registration error:", err));

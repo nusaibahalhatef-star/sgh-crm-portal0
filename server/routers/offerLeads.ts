@@ -38,7 +38,7 @@ export const offerLeadsRouter = router({
         gclid: z.string().optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
@@ -129,11 +129,15 @@ export const offerLeadsRouter = router({
       }
 
       // Send Facebook Conversions API event (fire-and-forget)
+      // لا تُرسَل بيانات طبية حساسة وفق سياسة Meta لمزودي الرعاية الصحية
       sendOfferLeadEvent({
         fullName: input.fullName,
         phone: input.phone,
         email: input.email,
-        offerName: offer?.title,
+        clientIpAddress: ctx.req.ip || (ctx.req.socket as any)?.remoteAddress,
+        clientUserAgent: ctx.req.headers["user-agent"] as string,
+        fbc: ctx.req.cookies?.["_fbc"],
+        fbp: ctx.req.cookies?.["_fbp"],
         eventSourceUrl: input.referrer,
         eventId: `offer_${lead?.insertId || Date.now()}`,
       }).catch((err) => console.error("[CAPI] Offer lead error:", err));
