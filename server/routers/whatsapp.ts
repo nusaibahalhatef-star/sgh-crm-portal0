@@ -286,6 +286,52 @@ export const whatsappRouter = router({
           readAt: new Date(),
         });
       }),
+
+    /**
+     * Send a WhatsApp Business API approved template by conversationId.
+     * Use this when the 24-hour messaging window has expired.
+     */
+    sendTemplateByConversation: protectedProcedure
+      .input(
+        z.object({
+          conversationId: z.number(),
+          templateName: z.string(),
+          languageCode: z.string().default("ar"),
+          components: z.array(z.any()).optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const conversation = await db.getWhatsAppConversationById(input.conversationId);
+        if (!conversation) throw new Error("المحادثة غير موجودة");
+
+        const formattedPhone = formatPhoneNumber(conversation.phoneNumber);
+        const result = await sendWhatsAppTemplateMessage(formattedPhone, {
+          templateName: input.templateName,
+          languageCode: input.languageCode,
+          components: input.components || [],
+        });
+
+        if (!result.success) throw new Error(result.error || "فشل إرسال قالب الرسالة");
+
+        await db.createWhatsAppMessage({
+          conversationId: input.conversationId,
+          direction: "outbound",
+          content: `[قالب: ${input.templateName}]`,
+          messageType: "text",
+          status: "sent",
+          whatsappMessageId: result.messageId || null,
+          sentBy: ctx.user.id,
+          isAutomated: 1,
+          sentAt: new Date(),
+        });
+
+        await db.updateWhatsAppConversation(input.conversationId, {
+          lastMessage: `[قالب: ${input.templateName}]`,
+          lastMessageAt: new Date(),
+        });
+
+        return { success: true, messageId: result.messageId };
+      }),
   }),
 
   // Templates (local templates in database)

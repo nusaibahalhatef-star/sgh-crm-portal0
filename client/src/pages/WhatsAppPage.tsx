@@ -1,210 +1,211 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useCallback, memo } from "react";
 import { processPhoneInput } from "@/hooks/usePhoneFormat";
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter,
+  DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { MessageCircle, Send, Search, Plus, FileText, Clock, CheckCheck, Check, User, Phone, Smartphone, Wifi, WifiOff, Loader2 as LoaderIcon, ArrowRight, ChevronLeft } from "lucide-react";
+import {
+  MessageCircle, Send, Search, Plus, FileText, User, Phone,
+  Smartphone, Wifi, WifiOff, Loader2 as LoaderIcon, ArrowRight,
+  ChevronLeft, AlertCircle,
+} from "lucide-react";
 import ChatWindow from "@/components/ChatWindow";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ar } from "date-fns/locale";
 import { Link } from "wouter";
 
-export default function WhatsAppPage() {
-  return (
-    <DashboardLayout pageTitle="واتساب" pageDescription="إدارة رسائل واتساب">
-      <WhatsAppContent />
-    </DashboardLayout>
-  );
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface Conversation {
+  id: number;
+  customerName?: string | null;
+  phoneNumber: string;
+  lastMessage?: string | null;
+  lastMessageAt?: string | Date | null;
+  unreadCount: number;
 }
 
-function WhatsAppContent() {
-  const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
-  const [messageText, setMessageText] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [newMessagePhone, setNewMessagePhone] = useState("");
-  const [newMessageText, setNewMessageText] = useState("");
-  const [isNewMessageOpen, setIsNewMessageOpen] = useState(false);
-  const [mobileShowChat, setMobileShowChat] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+interface Template {
+  id: number;
+  name: string;
+  content: string;
+  category: string;
+  variables?: string | null;
+  isActive: number;
+}
 
-  // Queries
-  const { data: conversations, isLoading: conversationsLoading, refetch: refetchConversations } =
-    trpc.whatsapp.conversations.list.useQuery();
+// ─── ConversationsList — defined OUTSIDE WhatsAppContent to prevent re-mount ─
+interface ConversationsListProps {
+  filteredConversations: Conversation[] | undefined;
+  conversationsLoading: boolean;
+  selectedConversation: number | null;
+  searchQuery: string;
+  onSearchChange: (v: string) => void;
+  onSelectConversation: (id: number) => void;
+  isNewMessageOpen: boolean;
+  onNewMessageOpenChange: (v: boolean) => void;
+  newMessagePhone: string;
+  onNewMessagePhoneChange: (v: string) => void;
+  newMessageText: string;
+  onNewMessageTextChange: (v: string) => void;
+  newMessageTemplateId: number | null;
+  onNewMessageTemplateIdChange: (v: number | null) => void;
+  templates: Template[] | undefined;
+  onSendNewMessage: () => void;
+  isSendingNewMessage: boolean;
+  connectionStatus: { isReady?: boolean; isConnecting?: boolean } | undefined;
+  statusLoading: boolean;
+}
 
-  const { data: messages, isLoading: messagesLoading, refetch: refetchMessages } =
-    trpc.whatsapp.messages.listByConversation.useQuery(
-      { conversationId: selectedConversation! },
-      { enabled: selectedConversation !== null }
-    );
-
-  const { data: templates } = trpc.whatsapp.templates.list.useQuery();
-
-  const { data: connectionStatus, isLoading: statusLoading } =
-    trpc.whatsapp.connection.status.useQuery(undefined, {
-      refetchInterval: 5000,
-    });
-
-  // Mutations
-  const sendMessageMutation = trpc.whatsapp.messages.send.useMutation({
-    onSuccess: () => {
-      toast.success("تم إرسال الرسالة بنجاح");
-      setMessageText("");
-      refetchMessages();
-      refetchConversations();
-    },
-    onError: (error) => {
-      toast.error(`فشل إرسال الرسالة: ${error.message}`);
-    },
-  });
-
-  const sendNewMessageMutation = trpc.whatsapp.messages.sendDirect.useMutation({
-    onSuccess: () => {
-      toast.success("تم إرسال الرسالة بنجاح");
-      setNewMessagePhone("");
-      setNewMessageText("");
-      setIsNewMessageOpen(false);
-      refetchConversations();
-    },
-    onError: (error) => {
-      toast.error(`فشل إرسال الرسالة: ${error.message}`);
-    },
-  });
-
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  // Filter conversations based on search
-  const filteredConversations = conversations?.filter((conv: any) =>
-    conv.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    conv.phoneNumber?.includes(searchQuery)
-  );
-
-  // Get selected conversation details
-  const selectedConv = conversations?.find((c: any) => c.id === selectedConversation);
-
-  const handleSelectConversation = (id: number) => {
-    setSelectedConversation(id);
-    setMobileShowChat(true);
-  };
-
-  const handleBackToList = () => {
-    setMobileShowChat(false);
-  };
-
-  const handleSendMessage = () => {
-    if (!messageText.trim() || !selectedConversation) return;
-    sendMessageMutation.mutate({
-      conversationId: selectedConversation,
-      content: messageText.trim(),
-    });
-  };
-
-  const handleSendNewMessage = () => {
-    if (!newMessagePhone.trim() || !newMessageText.trim()) {
-      toast.error("يرجى إدخال رقم الهاتف والرسالة");
-      return;
-    }
-    sendNewMessageMutation.mutate({
-      phone: newMessagePhone,
-      content: newMessageText,
-    });
-  };
-
-  const handleUseTemplate = (content: string) => {
-    setMessageText(content);
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "delivered":
-        return <CheckCheck className="h-3 w-3 text-blue-300" />;
-      case "read":
-        return <CheckCheck className="h-3 w-3 text-blue-400" />;
-      case "sent":
-        return <Check className="h-3 w-3 text-white/70" />;
-      case "failed":
-        return <span className="text-red-300 text-[10px]">!</span>;
-      default:
-        return <Clock className="h-3 w-3 text-white/50" />;
-    }
-  };
-
-  // ─── Conversations List Panel ───
-  const ConversationsList = () => (
+const ConversationsList = memo(function ConversationsList({
+  filteredConversations,
+  conversationsLoading,
+  selectedConversation,
+  searchQuery,
+  onSearchChange,
+  onSelectConversation,
+  isNewMessageOpen,
+  onNewMessageOpenChange,
+  newMessagePhone,
+  onNewMessagePhoneChange,
+  newMessageText,
+  onNewMessageTextChange,
+  newMessageTemplateId,
+  onNewMessageTemplateIdChange,
+  templates,
+  onSendNewMessage,
+  isSendingNewMessage,
+  connectionStatus,
+  statusLoading,
+}: ConversationsListProps) {
+  return (
     <div className="flex flex-col h-full">
-      {/* Search + New Message */}
-      <div className="p-3 border-b dark:border-gray-800 bg-gradient-to-r from-green-500 to-emerald-600">
-        <div className="flex gap-2 mb-2">
-          <div className="relative flex-1">
-            <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/70" />
-            <Input
-              placeholder="بحث في المحادثات..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pr-8 h-8 text-xs bg-white/20 border-white/30 text-white placeholder:text-white/60 focus:bg-white/30"
-            />
+      {/* Header */}
+      <div className="p-3 sm:p-4 border-b dark:border-gray-800 bg-gradient-to-r from-green-500 to-emerald-600">
+        <div className="flex items-center justify-between mb-2 sm:mb-3">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+            <h2 className="text-sm sm:text-base font-bold text-white">المحادثات</h2>
           </div>
-          <Dialog open={isNewMessageOpen} onOpenChange={setIsNewMessageOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="secondary" className="h-8 px-2 bg-white/20 hover:bg-white/30 text-white border-white/30">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent dir="rtl">
-              <DialogHeader>
-                <DialogTitle>رسالة جديدة</DialogTitle>
-                <DialogDescription>أرسل رسالة واتساب لرقم جديد</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-2">
-                <div className="space-y-1.5">
-                  <Label>رقم الهاتف</Label>
-                  <Input
-                    placeholder="7XXXXXXXX"
-                    value={newMessagePhone}
-                    onChange={(e) => setNewMessagePhone(processPhoneInput(e.target.value))}
-                    dir="ltr"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>الرسالة</Label>
-                  <Textarea
-                    placeholder="اكتب رسالتك هنا..."
-                    value={newMessageText}
-                    onChange={(e) => setNewMessageText(e.target.value)}
-                    rows={3}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  onClick={handleSendNewMessage}
-                  disabled={sendNewMessageMutation.isPending}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {sendNewMessageMutation.isPending ? (
-                    <LoaderIcon className="h-4 w-4 animate-spin ml-2" />
-                  ) : (
-                    <Send className="h-4 w-4 ml-2" />
-                  )}
-                  إرسال
+          <div className="flex items-center gap-1 sm:gap-2">
+            {statusLoading ? (
+              <Badge className="gap-1 text-[10px] h-5 bg-white/20 text-white border-0">
+                <LoaderIcon className="h-2.5 w-2.5 animate-spin" />
+              </Badge>
+            ) : connectionStatus?.isReady ? (
+              <Badge className="bg-white/20 text-white border-0 gap-1 text-[10px] h-5">
+                <Wifi className="h-2.5 w-2.5" />
+                <span className="hidden sm:inline">متصل</span>
+              </Badge>
+            ) : (
+              <Badge className="bg-red-500/80 text-white border-0 gap-1 text-[10px] h-5">
+                <WifiOff className="h-2.5 w-2.5" />
+                <span className="hidden sm:inline">غير متصل</span>
+              </Badge>
+            )}
+            <Dialog open={isNewMessageOpen} onOpenChange={onNewMessageOpenChange}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="secondary" className="h-7 px-2 gap-1 text-[10px] bg-white/20 hover:bg-white/30 text-white border-0">
+                  <Plus className="h-3 w-3" />
+                  <span className="hidden sm:inline">جديد</span>
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md" dir="rtl">
+                <DialogHeader>
+                  <DialogTitle>إرسال رسالة جديدة</DialogTitle>
+                  <DialogDescription>أرسل رسالة مباشرة لرقم هاتف</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-2">
+                  <div className="space-y-1.5">
+                    <Label>رقم الهاتف</Label>
+                    <Input
+                      placeholder="7XXXXXXXX"
+                      value={newMessagePhone}
+                      onChange={(e) => onNewMessagePhoneChange(processPhoneInput(e.target.value))}
+                      dir="ltr"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="flex items-center gap-1.5">
+                      قالب الرسالة
+                      <span className="text-[10px] text-muted-foreground font-normal">(مطلوب للمحادثات الجديدة أو بعد 24 ساعة)</span>
+                    </Label>
+                    <Select
+                      value={newMessageTemplateId ? String(newMessageTemplateId) : "none"}
+                      onValueChange={(v) => onNewMessageTemplateIdChange(v === "none" ? null : Number(v))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر قالباً أو اكتب رسالة" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">بدون قالب (للمحادثات النشطة فقط)</SelectItem>
+                        {templates?.map((t) => (
+                          <SelectItem key={t.id} value={String(t.id)}>
+                            {t.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {newMessageTemplateId && (
+                      <div className="flex items-start gap-1.5 text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
+                        <AlertCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                        <span>سيتم إرسال القالب المحدد — تأكد من أن القالب معتمد من Meta</span>
+                      </div>
+                    )}
+                  </div>
+                  {!newMessageTemplateId && (
+                    <div className="space-y-1.5">
+                      <Label>الرسالة</Label>
+                      <Textarea
+                        placeholder="اكتب رسالتك هنا..."
+                        value={newMessageText}
+                        onChange={(e) => onNewMessageTextChange(e.target.value)}
+                        rows={3}
+                      />
+                    </div>
+                  )}
+                </div>
+                <DialogFooter>
+                  <Button
+                    onClick={onSendNewMessage}
+                    disabled={isSendingNewMessage || !newMessagePhone.trim() || (!newMessageTemplateId && !newMessageText.trim())}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {isSendingNewMessage ? (
+                      <LoaderIcon className="h-4 w-4 animate-spin ml-2" />
+                    ) : (
+                      <Send className="h-4 w-4 ml-2" />
+                    )}
+                    إرسال
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/60" />
+          <Input
+            placeholder="بحث في المحادثات..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pr-8 h-8 text-xs bg-white/20 border-white/30 text-white placeholder:text-white/60 focus:bg-white/30"
+          />
         </div>
       </div>
-
-      {/* Conversations */}
+      {/* List */}
       <ScrollArea className="flex-1">
         {conversationsLoading ? (
           <div className="p-8 text-center text-muted-foreground">
@@ -213,14 +214,11 @@ function WhatsAppContent() {
           </div>
         ) : filteredConversations && filteredConversations.length > 0 ? (
           <div className="divide-y dark:divide-gray-800">
-            {filteredConversations.map((conv: any, index: number) => (
+            {filteredConversations.map((conv, index) => (
               <div
                 key={conv.id}
-                onClick={() => handleSelectConversation(conv.id)}
-                style={{
-                  opacity: 0,
-                  animation: `row-enter 0.35s ease-out ${Math.min(index * 60, 600)}ms forwards`,
-                }}
+                onClick={() => onSelectConversation(conv.id)}
+                style={{ opacity: 0, animation: `row-enter 0.35s ease-out ${Math.min(index * 60, 600)}ms forwards` }}
                 className={`p-3 sm:p-4 cursor-pointer transition-colors hover:bg-green-50 dark:hover:bg-green-900/20 active:bg-green-100 ${
                   selectedConversation === conv.id ? "bg-green-100 dark:bg-green-900/30 border-r-4 border-green-600" : ""
                 }`}
@@ -235,21 +233,18 @@ function WhatsAppContent() {
                         {conv.customerName || "عميل جديد"}
                       </h3>
                       {conv.unreadCount > 0 && (
-                        <Badge variant="destructive" className="rounded-full px-1.5 text-[10px] sm:text-xs h-5 sm:h-auto flex-shrink-0 mr-1">
+                        <Badge variant="destructive" className="rounded-full px-1.5 text-[10px] sm:text-xs h-5 flex-shrink-0 mr-1">
                           {conv.unreadCount}
                         </Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground mb-0.5">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-0.5">
                       <Phone className="h-3 w-3 flex-shrink-0" />
                       <span dir="ltr" className="truncate">{conv.phoneNumber}</span>
                     </div>
                     <p className="text-[10px] sm:text-xs text-muted-foreground">
                       {conv.lastMessageAt
-                        ? formatDistanceToNow(new Date(conv.lastMessageAt), {
-                            addSuffix: true,
-                            locale: ar,
-                          })
+                        ? formatDistanceToNow(new Date(conv.lastMessageAt), { addSuffix: true, locale: ar })
                         : "لا توجد رسائل"}
                     </p>
                   </div>
@@ -267,173 +262,184 @@ function WhatsAppContent() {
       </ScrollArea>
     </div>
   );
+});
 
-  // ─── Chat Area Panel ───
-  const ChatArea = () => (
-    <div className="flex flex-col h-full">
-      {selectedConversation ? (
-        <>
-          {/* Chat Header */}
-          <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-3 sm:p-4 rounded-t-lg lg:rounded-tr-lg lg:rounded-tl-none">
-            <div className="flex items-center gap-2.5 sm:gap-3">
-              <button
-                onClick={handleBackToList}
-                className="lg:hidden p-1.5 hover:bg-white/20 rounded-full transition-colors"
-              >
-                <ArrowRight className="h-5 w-5" />
-              </button>
-              <div className="bg-white/20 p-1.5 sm:p-2 rounded-full flex-shrink-0">
-                <User className="h-5 w-5 sm:h-6 sm:w-6" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-sm sm:text-lg font-bold truncate">
-                  {selectedConv?.customerName || "عميل جديد"}
-                </h2>
-                <p className="text-white/80 text-xs sm:text-sm" dir="ltr">
-                  {selectedConv?.phoneNumber}
-                </p>
-              </div>
-            </div>
-          </div>
+// ─── ChatAreaHeader — defined OUTSIDE to prevent re-mount ────────────────────
+interface ChatAreaHeaderProps {
+  selectedConv: Conversation | undefined;
+  onBackToList: () => void;
+}
 
-          {/* Messages Area */}
-          <div
-            className="flex-1 overflow-y-auto p-3 sm:p-4 bg-[#e5ddd5] dark:bg-gray-900/50"
-            style={{
-              backgroundImage:
-                "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
-            }}
-          >
-            {messagesLoading ? (
-              <div className="text-center text-muted-foreground py-8">
-                <LoaderIcon className="h-6 w-6 animate-spin mx-auto mb-2" />
-                جاري تحميل الرسائل...
-              </div>
-            ) : messages && messages.length > 0 ? (
-              <div className="space-y-2 sm:space-y-3">
-                {messages.map((msg: any, index: number) => (
-                  <div
-                    key={msg.id}
-                    className={`flex ${msg.direction === "outbound" ? "justify-start" : "justify-end"}`}
-                    style={{
-                      opacity: 0,
-                      animation: `row-enter 0.3s ease-out ${Math.min(index * 50, 500)}ms forwards`,
-                    }}
-                  >
-                    <div
-                      className={`max-w-[85%] sm:max-w-[70%] rounded-lg p-2.5 sm:p-3 shadow-sm ${
-                        msg.direction === "outbound"
-                          ? "bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-bl-none"
-                          : "bg-white dark:bg-gray-800 text-foreground rounded-br-none"
-                      }`}
-                    >
-                      <p className="whitespace-pre-wrap break-words text-sm sm:text-base leading-relaxed">{msg.content}</p>
-                      <div
-                        className={`flex items-center gap-1 mt-1 text-[10px] sm:text-xs ${
-                          msg.direction === "outbound" ? "text-white/70" : "text-muted-foreground"
-                        }`}
-                      >
-                        <span>
-                          {new Date(msg.sentAt).toLocaleTimeString("ar-EG", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
-                        {msg.direction === "outbound" && getStatusIcon(msg.status)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
-            ) : (
-              <div className="text-center text-muted-foreground py-12">
-                <MessageCircle className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 text-gray-300" />
-                <p className="text-sm sm:text-base">لا توجد رسائل في هذه المحادثة</p>
-              </div>
-            )}
-          </div>
-
-          {/* Templates Quick Access */}
-          {templates && templates.length > 0 && (
-            <div className="border-t dark:border-gray-700 px-3 py-2 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-1.5">
-                  <FileText className="h-3.5 w-3.5 text-purple-600" />
-                  <span className="text-xs font-semibold text-purple-900 dark:text-purple-300">ردود سريعة:</span>
-                </div>
-                <Link href="/dashboard/whatsapp/templates">
-                  <Button size="sm" variant="ghost" className="text-[10px] sm:text-xs text-purple-600 hover:text-purple-700 h-6 px-2">
-                    عرض الكل
-                  </Button>
-                </Link>
-              </div>
-              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
-                {templates.map((template: any) => (
-                  <Button
-                    key={template.id}
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleUseTemplate(template.content)}
-                    className="text-[10px] sm:text-xs bg-white dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 border-purple-200 dark:border-purple-700 hover:border-purple-300 h-7 px-2 flex-shrink-0 whitespace-nowrap"
-                  >
-                    <FileText className="h-3 w-3 ml-1" />
-                    {template.name}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Message Input */}
-          <div className="border-t dark:border-gray-700 p-2.5 sm:p-3 bg-white dark:bg-gray-900">
-            <div className="flex gap-2 items-end">
-              <Textarea
-                placeholder="اكتب رسالتك هنا..."
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-                rows={1}
-                className="flex-1 resize-none min-h-[40px] max-h-[120px] text-sm sm:text-base"
-              />
-              <Button
-                onClick={handleSendMessage}
-                disabled={!messageText.trim() || sendMessageMutation.isPending}
-                size="icon"
-                className="bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 h-10 w-10 flex-shrink-0"
-              >
-                {sendMessageMutation.isPending ? (
-                  <LoaderIcon className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
-        </>
-      ) : (
-        <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-900/30 rounded-lg">
-          <div className="text-center text-muted-foreground p-8">
-            <div className="bg-green-100 dark:bg-green-900/30 p-6 rounded-full w-24 h-24 mx-auto mb-4 flex items-center justify-center">
-              <MessageCircle className="h-12 w-12 text-green-500" />
-            </div>
-            <p className="text-lg font-medium mb-1">إدارة محادثات واتساب</p>
-            <p className="text-sm">اختر محادثة من القائمة لبدء المراسلة</p>
-          </div>
+const ChatAreaHeader = memo(function ChatAreaHeader({ selectedConv, onBackToList }: ChatAreaHeaderProps) {
+  return (
+    <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-3 sm:p-4 flex-shrink-0">
+      <div className="flex items-center gap-2.5 sm:gap-3">
+        <button
+          onClick={onBackToList}
+          className="lg:hidden p-1.5 hover:bg-white/20 rounded-full transition-colors"
+        >
+          <ArrowRight className="h-5 w-5" />
+        </button>
+        <div className="bg-white/20 p-1.5 sm:p-2 rounded-full flex-shrink-0">
+          <User className="h-5 w-5 sm:h-6 sm:w-6" />
         </div>
-      )}
+        <div className="flex-1 min-w-0">
+          <h2 className="text-sm sm:text-lg font-bold truncate">
+            {selectedConv?.customerName || "عميل جديد"}
+          </h2>
+          <p className="text-white/80 text-xs sm:text-sm" dir="ltr">
+            {selectedConv?.phoneNumber}
+          </p>
+        </div>
+        <Link href="/dashboard/whatsapp/templates">
+          <Button variant="ghost" size="sm" className="h-7 px-2 text-white hover:bg-white/20 gap-1 text-[10px]">
+            <FileText className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">القوالب</span>
+          </Button>
+        </Link>
+      </div>
     </div>
   );
+});
+
+// ─── EmptyChatPlaceholder — defined OUTSIDE ──────────────────────────────────
+const EmptyChatPlaceholder = memo(function EmptyChatPlaceholder() {
+  return (
+    <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-900/30">
+      <div className="text-center text-muted-foreground p-8">
+        <div className="bg-green-100 dark:bg-green-900/30 p-6 rounded-full w-24 h-24 mx-auto mb-4 flex items-center justify-center">
+          <MessageCircle className="h-12 w-12 text-green-500" />
+        </div>
+        <p className="text-lg font-medium mb-1">إدارة محادثات واتساب</p>
+        <p className="text-sm">اختر محادثة من القائمة لبدء المراسلة</p>
+      </div>
+    </div>
+  );
+});
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+export default function WhatsAppPage() {
+  return (
+    <DashboardLayout pageTitle="واتساب" pageDescription="إدارة رسائل واتساب">
+      <WhatsAppContent />
+    </DashboardLayout>
+  );
+}
+
+function WhatsAppContent() {
+  const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [newMessagePhone, setNewMessagePhone] = useState("");
+  const [newMessageText, setNewMessageText] = useState("");
+  const [newMessageTemplateId, setNewMessageTemplateId] = useState<number | null>(null);
+  const [isNewMessageOpen, setIsNewMessageOpen] = useState(false);
+  const [mobileShowChat, setMobileShowChat] = useState(false);
+
+  // Queries
+  const { data: conversations, isLoading: conversationsLoading, refetch: refetchConversations } =
+    trpc.whatsapp.conversations.list.useQuery();
+  const { data: templates } = trpc.whatsapp.templates.list.useQuery();
+  const { data: connectionStatus, isLoading: statusLoading } =
+    trpc.whatsapp.connection.status.useQuery(undefined, { refetchInterval: 5000 });
+
+  // Mutations
+  const sendNewMessageMutation = trpc.whatsapp.messages.sendDirect.useMutation({
+    onSuccess: () => {
+      toast.success("تم إرسال الرسالة بنجاح");
+      setNewMessagePhone("");
+      setNewMessageText("");
+      setNewMessageTemplateId(null);
+      setIsNewMessageOpen(false);
+      refetchConversations();
+    },
+    onError: (error) => toast.error(`فشل إرسال الرسالة: ${error.message}`),
+  });
+
+  const sendTemplateMutation = trpc.whatsapp.messages.sendTemplate.useMutation({
+    onSuccess: () => {
+      toast.success("تم إرسال القالب بنجاح");
+      setNewMessagePhone("");
+      setNewMessageText("");
+      setNewMessageTemplateId(null);
+      setIsNewMessageOpen(false);
+      refetchConversations();
+    },
+    onError: (error) => toast.error(`فشل إرسال القالب: ${error.message}`),
+  });
+
+  // Stable callbacks — useCallback prevents new references on every render
+  const handleSelectConversation = useCallback((id: number) => {
+    setSelectedConversation(id);
+    setMobileShowChat(true);
+  }, []);
+
+  const handleBackToList = useCallback(() => setMobileShowChat(false), []);
+  const handleSearchChange = useCallback((v: string) => setSearchQuery(v), []);
+  const handleNewMessagePhoneChange = useCallback((v: string) => setNewMessagePhone(v), []);
+  const handleNewMessageTextChange = useCallback((v: string) => setNewMessageText(v), []);
+  const handleNewMessageTemplateIdChange = useCallback((v: number | null) => setNewMessageTemplateId(v), []);
+  const handleNewMessageOpenChange = useCallback((v: boolean) => setIsNewMessageOpen(v), []);
+
+  const handleSendNewMessage = useCallback(() => {
+    if (!newMessagePhone.trim()) {
+      toast.error("يرجى إدخال رقم الهاتف");
+      return;
+    }
+    if (newMessageTemplateId) {
+      const template = templates?.find((t: Template) => t.id === newMessageTemplateId);
+      if (!template) { toast.error("القالب غير موجود"); return; }
+      sendTemplateMutation.mutate({
+        phone: newMessagePhone,
+        templateName: template.name,
+        languageCode: "ar",
+        components: [],
+      });
+    } else {
+      if (!newMessageText.trim()) {
+        toast.error("يرجى إدخال الرسالة أو اختيار قالب");
+        return;
+      }
+      sendNewMessageMutation.mutate({ phone: newMessagePhone, content: newMessageText });
+    }
+  }, [newMessagePhone, newMessageTemplateId, newMessageText, templates, sendTemplateMutation, sendNewMessageMutation]);
+
+  const handleConversationUpdate = useCallback(() => refetchConversations(), [refetchConversations]);
+
+  // Derived
+  const filteredConversations = conversations?.filter((conv: Conversation) =>
+    conv.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    conv.phoneNumber?.includes(searchQuery)
+  );
+  const selectedConv = conversations?.find((c: Conversation) => c.id === selectedConversation);
+  const isSendingNewMessage = sendNewMessageMutation.isPending || sendTemplateMutation.isPending;
+
+  // Shared props for ConversationsList
+  const listProps = {
+    filteredConversations,
+    conversationsLoading,
+    selectedConversation,
+    searchQuery,
+    onSearchChange: handleSearchChange,
+    onSelectConversation: handleSelectConversation,
+    isNewMessageOpen,
+    onNewMessageOpenChange: handleNewMessageOpenChange,
+    newMessagePhone,
+    onNewMessagePhoneChange: handleNewMessagePhoneChange,
+    newMessageText,
+    onNewMessageTextChange: handleNewMessageTextChange,
+    newMessageTemplateId,
+    onNewMessageTemplateIdChange: handleNewMessageTemplateIdChange,
+    templates,
+    onSendNewMessage: handleSendNewMessage,
+    isSendingNewMessage,
+    connectionStatus,
+    statusLoading,
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950" dir="rtl">
       <div className="container mx-auto p-2 sm:p-4 md:p-6 max-w-7xl">
-        {/* Header */}
+        {/* Page Header */}
         <div className="mb-3 sm:mb-4 md:mb-6">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-2 sm:p-3 rounded-xl shadow-lg flex-shrink-0">
@@ -444,27 +450,6 @@ function WhatsAppContent() {
               <p className="text-[10px] sm:text-xs md:text-sm text-muted-foreground hidden xs:block">تواصل مع العملاء عبر واتساب بيزنس</p>
             </div>
             <div className="flex gap-1 sm:gap-2 items-center flex-shrink-0">
-              {statusLoading ? (
-                <Badge variant="secondary" className="gap-1 text-[10px] sm:text-xs h-6 sm:h-auto">
-                  <LoaderIcon className="h-3 w-3 animate-spin" />
-                  <span className="hidden sm:inline">جاري التحقق...</span>
-                </Badge>
-              ) : connectionStatus?.isReady ? (
-                <Badge className="bg-green-500 hover:bg-green-600 gap-1 text-[10px] sm:text-xs h-6 sm:h-auto">
-                  <Wifi className="h-3 w-3" />
-                  <span>متصل</span>
-                </Badge>
-              ) : connectionStatus?.isConnecting ? (
-                <Badge variant="secondary" className="gap-1 text-[10px] sm:text-xs h-6 sm:h-auto">
-                  <LoaderIcon className="h-3 w-3 animate-spin" />
-                  <span className="hidden sm:inline">جاري الاتصال...</span>
-                </Badge>
-              ) : (
-                <Badge variant="destructive" className="gap-1 text-[10px] sm:text-xs h-6 sm:h-auto">
-                  <WifiOff className="h-3 w-3" />
-                  <span className="hidden xs:inline">غير متصل</span>
-                </Badge>
-              )}
               <Link href="/dashboard/whatsapp/connection">
                 <Button variant="outline" size="sm" className="gap-1 text-[10px] sm:text-xs h-7 sm:h-8 px-1.5 sm:px-2.5">
                   <Smartphone className="h-3.5 w-3.5" />
@@ -486,22 +471,36 @@ function WhatsAppContent() {
           className="bg-white dark:bg-gray-900 rounded-xl shadow-xl overflow-hidden border dark:border-gray-800"
           style={{ height: "calc(100vh - 140px)", minHeight: "400px" }}
         >
-          {/* Desktop: side-by-side layout */}
+          {/* Desktop */}
           <div className="hidden lg:grid lg:grid-cols-[340px_1fr] h-full">
-            <div className="border-l dark:border-gray-800 h-full overflow-hidden">
-              <ConversationsList />
+            <div className="border-l dark:border-gray-800 h-full overflow-hidden flex flex-col">
+              <ConversationsList {...listProps} />
             </div>
-            <div className="h-full overflow-hidden">
-              <ChatArea />
+            <div className="h-full overflow-hidden flex flex-col">
+              {selectedConversation ? (
+                <>
+                  <ChatAreaHeader selectedConv={selectedConv} onBackToList={handleBackToList} />
+                  <div className="flex-1 overflow-hidden">
+                    <ChatWindow conversationId={selectedConversation} lastMessageAt={selectedConv?.lastMessageAt} onConversationUpdate={handleConversationUpdate} />
+                  </div>
+                </>
+              ) : (
+                <EmptyChatPlaceholder />
+              )}
             </div>
           </div>
 
-          {/* Mobile: toggle between conversations and chat */}
-          <div className="lg:hidden h-full">
+          {/* Mobile */}
+          <div className="lg:hidden h-full flex flex-col">
             {mobileShowChat && selectedConversation ? (
-              <ChatArea />
+              <>
+                <ChatAreaHeader selectedConv={selectedConv} onBackToList={handleBackToList} />
+                <div className="flex-1 overflow-hidden">
+                  <ChatWindow conversationId={selectedConversation} lastMessageAt={selectedConv?.lastMessageAt} onConversationUpdate={handleConversationUpdate} />
+                </div>
+              </>
             ) : (
-              <ConversationsList />
+              <ConversationsList {...listProps} />
             )}
           </div>
         </div>
