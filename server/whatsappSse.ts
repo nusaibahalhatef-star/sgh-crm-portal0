@@ -1,6 +1,8 @@
 import { Router, Request, Response } from "express";
 import { subscribe, channelForConversation, channelForUser } from "./_core/pubsub";
 
+const GLOBAL_CHANNEL = "global:whatsapp";
+
 /** Shared SSE headers — disables proxy/Nginx buffering for real-time delivery */
 const SSE_HEADERS = {
   'Content-Type': 'text/event-stream',
@@ -35,6 +37,26 @@ export function createWhatsAppSseRouter(): Router {
     const unsub = subscribe(channelForConversation(conversationId), send);
 
     // Keep-alive comment every 15 s (shorter than most proxy 30 s idle timeouts)
+    const keepAlive = setInterval(() => {
+      try { if (!res.writableEnded) res.write(': ping\n\n'); } catch (_) {}
+    }, 15000);
+
+    req.on('close', () => {
+      clearInterval(keepAlive);
+      unsub();
+    });
+  });
+
+  // ── Global stream (new inbound messages for sidebar badge) ─────────────────
+  // userId=0 is a special value meaning "subscribe to all inbound messages"
+  router.get('/api/whatsapp/stream/user/0', (req: Request, res: Response) => {
+    res.set(SSE_HEADERS);
+    res.flushHeaders();
+    res.write('event: connected\ndata: {}\n\n');
+
+    const send = (event: string, data: unknown) => safeSend(res, event, data);
+    const unsub = subscribe(GLOBAL_CHANNEL, send);
+
     const keepAlive = setInterval(() => {
       try { if (!res.writableEnded) res.write(': ping\n\n'); } catch (_) {}
     }, 15000);

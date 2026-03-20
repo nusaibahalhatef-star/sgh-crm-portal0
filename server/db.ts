@@ -794,10 +794,11 @@ export async function createWhatsAppMessage(message: any) {
   
   const { whatsappMessages } = await import('../drizzle/schema');
   const result = await db.insert(whatsappMessages).values(message);
+  // NOTE: SSE publishing for INBOUND messages is handled by webhookRoutes.ts
+  // to avoid double-publishing. For OUTBOUND messages, publish here.
   try {
-    // publish event to subscribers of this conversation (if id available)
     const convId = message.conversationId;
-    if (convId) {
+    if (convId && message.direction === 'outbound') {
       publish(channelForConversation(convId), 'message_created', { ...message, id: (result as any)?.[0]?.insertId || null });
     }
   } catch (err) {

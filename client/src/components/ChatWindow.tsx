@@ -25,10 +25,34 @@ function isOutsideWindow(lastMessageAt?: string | Date | null): boolean {
   return Date.now() - last > 24 * 60 * 60 * 1000;
 }
 
+/** Merge two message arrays: DB data takes priority, then local additions */
+function mergeMessages(dbMsgs: any[], localMsgs: any[]): any[] {
+  const map = new Map<string | number, any>();
+  // DB messages first (authoritative)
+  for (const m of dbMsgs) {
+    if (m.id != null) map.set(m.id, m);
+  }
+  // Local messages: only add those not in DB (new SSE arrivals or optimistic)
+  for (const m of localMsgs) {
+    const key = m.id;
+    if (key != null && !map.has(key)) {
+      map.set(key, m);
+    } else if (key != null && String(key).startsWith('temp-')) {
+      // Keep optimistic messages that haven't been confirmed yet
+      map.set(key, m);
+    }
+  }
+  return Array.from(map.values()).sort(
+    (a: any, b: any) => new Date(a.sentAt || a.createdAt).getTime() - new Date(b.sentAt || b.createdAt).getTime()
+  );
+}
+
 export default function ChatWindow({ conversationId, lastMessageAt, onConversationUpdate }: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [messageText, setMessageText] = useState("");
   const [localMessages, setLocalMessages] = useState<any[]>([]);
+  // Track the last conversationId to reset state on change
+  const prevConvIdRef = useRef<number | null>(null);
 
   const outsideWindow = isOutsideWindow(lastMessageAt);
 
@@ -63,77 +87,118 @@ export default function ChatWindow({ conversationId, lastMessageAt, onConversati
     },
   });
 
-  // ── Scroll helper — defined before SSE callback so it can be referenced ──
+  // ── Scroll helper ──────────────────────────────────────────────────────────
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     }, 50);
   }, []);
 
-  // SSE subscription for this conversation
-  useSSE(conversationId ? `/api/whatsapp/stream/${conversationId}` : null, (e) => {
-    try {
-      // SSE events are named (event: <name>\ndata: ...) — e.type holds the event name
-      const eventName = (e as any).type || 'message';
-      const payload = JSON.parse(e.data);
+  // ── Reset local state when conversation changes ────────────────────────────
+  useEffect(() => {
+    if (prevConvIdRef.current !== conversationId) {
+      prevConvIdRef.current = conversationId;
+      setLocalMessages([]);
+    }
+  }, [conversationId]);
 
-      // Handle new_message (inbound from webhook) or message_created (from db helper)
-      if (eventName === 'new_message' || eventName === 'message_created' || payload?.event === 'message_created') {
-        const msg = eventName === 'new_message' ? payload : payload?.data;
-        if (!msg) return;
-        if (String(msg.conversationId) === String(conversationId)) {
-          setLocalMessages((prev) => {
-            // Avoid duplicate by id or whatsappMessageId
-            if (prev.some((m) => m.id === msg.id || (m.whatsappMessageId && msg.whatsappMessageId && m.whatsappMessageId === msg.whatsappMessageId))) return prev;
-            // Replace optimistic pending message if content and direction match
-            const idx = prev.findIndex((m) => m.id && String(m.id).startsWith('temp-') && m.content === msg.content && m.direction === msg.direction);
-            if (idx >= 0) {
-              const copy = [...prev];
-              copy[idx] = { ...copy[idx], ...msg };
-              return copy;
-            }
-            return [...prev, msg];
-          });
-          scrollToBottom();
-          onConversationUpdate?.();
-        }
-      } else if (eventName === 'message_updated' || payload?.event === 'message_updated') {
-        // Update delivery status (delivered ✓✓ / read ✓✓ blue)
-        const msg = eventName === 'message_updated' ? payload : payload?.data;
-        if (!msg) return;
-        setLocalMessages((prev) => {
-          const idx = prev.findIndex((m) =>
-            m.id === msg.messageId ||
-            m.id === msg.id ||
-            (m.whatsappMessageId && msg.whatsappMessageId && m.whatsappMessageId === msg.whatsappMessageId)
-          );
-          if (idx >= 0) {
-            const copy = [...prev];
-            copy[idx] = { ...copy[idx], ...msg, id: copy[idx].id };
-            return copy;
-          }
-          return prev;
-        });
-      } else if (payload?.event === 'conversation_updated') {
-        onConversationUpdate?.();
-      }
-    } catch (_) {}
-  });
-
+  // ── Sync DB data into localMessages ───────────────────────────────────────
   useEffect(() => {
     if (messagesData && Array.isArray(messagesData)) {
-      const map = new Map<string | number, any>();
-      messagesData.forEach((m: any) => map.set(m.id, m));
-      localMessages.forEach((m) => map.set(m.id, m));
-      const merged = Array.from(map.values()).sort((a: any, b: any) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime());
-      setLocalMessages(merged);
+      setLocalMessages((prev) => mergeMessages(messagesData, prev));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messagesData]);
 
+  // ── SSE subscription for this conversation ────────────────────────────────
+  useSSE(conversationId ? `/api/whatsapp/stream/${conversationId}` : null, useCallback((e: MessageEvent) => {
+    try {
+      const eventName = (e as any).type || 'message';
+      let payload: any;
+      try { payload = JSON.parse(e.data); } catch { return; }
+
+      // ── New inbound message (from webhook via pubsub) ──
+      if (eventName === 'new_message') {
+        const msg = payload;
+        if (!msg || String(msg.conversationId) !== String(conversationId)) return;
+        setLocalMessages((prev) => {
+          // Avoid duplicate by id or whatsappMessageId
+          const isDuplicate = prev.some(
+            (m) =>
+              (m.id != null && m.id === msg.id) ||
+              (m.whatsappMessageId && msg.whatsappMessageId && m.whatsappMessageId === msg.whatsappMessageId)
+          );
+          if (isDuplicate) return prev;
+          const newMsg = { ...msg, id: msg.id ?? `sse-${Date.now()}` };
+          return [...prev, newMsg].sort(
+            (a, b) => new Date(a.sentAt || a.createdAt).getTime() - new Date(b.sentAt || b.createdAt).getTime()
+          );
+        });
+        scrollToBottom();
+        onConversationUpdate?.();
+        // Trigger a background refetch to get the DB-assigned ID
+        setTimeout(() => refetchMessages(), 1500);
+        return;
+      }
+
+      // ── Message created (from db.ts helper for outbound) ──
+      if (eventName === 'message_created') {
+        const msg = payload;
+        if (!msg || String(msg.conversationId) !== String(conversationId)) return;
+        setLocalMessages((prev) => {
+          // Replace optimistic temp message if content matches
+          const tempIdx = prev.findIndex(
+            (m) => String(m.id).startsWith('temp-') && m.content === msg.content && m.direction === msg.direction
+          );
+          if (tempIdx >= 0) {
+            const copy = [...prev];
+            copy[tempIdx] = { ...copy[tempIdx], ...msg };
+            return copy;
+          }
+          // Avoid duplicate
+          if (prev.some((m) => m.id === msg.id)) return prev;
+          return [...prev, msg].sort(
+            (a, b) => new Date(a.sentAt || a.createdAt).getTime() - new Date(b.sentAt || b.createdAt).getTime()
+          );
+        });
+        scrollToBottom();
+        return;
+      }
+
+      // ── Message status updated (delivered / read) ──
+      if (eventName === 'message_updated') {
+        const update = payload;
+        if (!update) return;
+        setLocalMessages((prev) => {
+          const idx = prev.findIndex(
+            (m) =>
+              m.id === update.messageId ||
+              m.id === update.id ||
+              (m.whatsappMessageId && update.whatsappMessageId && m.whatsappMessageId === update.whatsappMessageId)
+          );
+          if (idx < 0) return prev;
+          const copy = [...prev];
+          copy[idx] = { ...copy[idx], status: update.status, deliveredAt: update.deliveredAt, readAt: update.readAt };
+          return copy;
+        });
+        return;
+      }
+
+      // ── Conversation updated ──
+      if (eventName === 'conversation_updated' || payload?.event === 'conversation_updated') {
+        onConversationUpdate?.();
+      }
+    } catch (_) {}
+  }, [conversationId, scrollToBottom, onConversationUpdate, refetchMessages]));
+
   useEffect(() => {
     scrollToBottom();
-  }, [conversationId, localMessages, scrollToBottom]);
+  }, [conversationId, scrollToBottom]);
+
+  // Scroll when messages change
+  useEffect(() => {
+    if (localMessages.length > 0) scrollToBottom();
+  }, [localMessages.length, scrollToBottom]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -169,6 +234,7 @@ export default function ChatWindow({ conversationId, lastMessageAt, onConversati
       content: messageText.trim(),
       messageType: "text",
     });
+    setMessageText("");
   };
 
   const handleSendTemplate = (template: { id: number; name: string; content: string }) => {
@@ -193,20 +259,29 @@ export default function ChatWindow({ conversationId, lastMessageAt, onConversati
           </div>
         ) : (
           <div className="space-y-3">
-            {localMessages.map((msg: any, idx: number) => (
-              <div
-                key={msg.id || `${idx}`}
-                className={`flex ${msg.direction === "outbound" ? "justify-start" : "justify-end"}`}
-              >
-                <div className={`${msg.direction === "outbound" ? "bg-white dark:bg-gray-800 text-foreground rounded-bl-none" : "bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-br-none"} max-w-[85%] sm:max-w-[70%] rounded-lg p-2.5 sm:p-3 shadow-sm`}>
-                  <div className="whitespace-pre-wrap break-words text-sm sm:text-base leading-relaxed">{msg.content}</div>
-                  <div className={`flex items-center gap-1 mt-1 text-[10px] sm:text-xs ${msg.direction === "outbound" ? "text-muted-foreground" : "text-white/80"}`}>
-                    <span>{new Date(msg.sentAt).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })}</span>
-                    {msg.direction === "outbound" && <span className="ml-1">{getStatusIcon(msg.status || "pending")}</span>}
+            {localMessages.map((msg: any, idx: number) => {
+              // inbound = رسالة من العميل → تظهر على اليمين (في RTL)
+              // outbound = رسالة من الموظف → تظهر على اليسار (في RTL)
+              const isOutbound = msg.direction === "outbound";
+              return (
+                <div
+                  key={msg.id || `${idx}`}
+                  className={`flex ${isOutbound ? "justify-start" : "justify-end"}`}
+                >
+                  <div className={`${
+                    isOutbound
+                      ? "bg-white dark:bg-gray-800 text-foreground rounded-bl-none"
+                      : "bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-br-none"
+                  } max-w-[85%] sm:max-w-[70%] rounded-lg p-2.5 sm:p-3 shadow-sm`}>
+                    <div className="whitespace-pre-wrap break-words text-sm sm:text-base leading-relaxed">{msg.content}</div>
+                    <div className={`flex items-center gap-1 mt-1 text-[10px] sm:text-xs ${isOutbound ? "text-muted-foreground" : "text-white/80"}`}>
+                      <span>{new Date(msg.sentAt || msg.createdAt).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })}</span>
+                      {isOutbound && <span className="ml-1">{getStatusIcon(msg.status || "pending")}</span>}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             <div ref={messagesEndRef} />
           </div>
         )}

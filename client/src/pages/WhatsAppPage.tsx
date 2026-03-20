@@ -21,6 +21,7 @@ import {
   ChevronLeft, AlertCircle,
 } from "lucide-react";
 import ChatWindow from "@/components/ChatWindow";
+import useSSE from "@/hooks/useSSE";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -404,6 +405,16 @@ function WhatsAppContent() {
   }, [newMessagePhone, newMessageTemplateId, newMessageText, templates, sendTemplateMutation, sendNewMessageMutation]);
 
   const handleConversationUpdate = useCallback(() => refetchConversations(), [refetchConversations]);
+
+  // ── Global SSE: refresh conversation list when a new inbound message arrives ─────────────
+  useSSE('/api/whatsapp/stream/user/0', useCallback((e: MessageEvent) => {
+    try {
+      const eventName = (e as any).type || 'message';
+      if (eventName === 'new_inbound_message') {
+        refetchConversations();
+      }
+    } catch (_) {}
+  }, [refetchConversations]));
 
   // Derived
   const filteredConversations = conversations?.filter((conv: Conversation) =>
