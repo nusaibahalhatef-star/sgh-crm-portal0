@@ -61,12 +61,10 @@ class MetaApiService {
   }
 
   /**
-   * بناء URL كامل مع إضافة access_token تلقائياً في query string
-   * (بعض نقاط النهاية تتطلب التوكن في URL وليس في Header)
+   * بناء URL كامل بدون access_token (يُرسَل عبر Authorization header)
    */
   buildUrl(endpoint: string, params: Record<string, string> = {}): string {
     const url = new URL(`${GRAPH_API_BASE}/${endpoint.replace(/^\//, "")}`);
-    url.searchParams.set("access_token", this.accessToken);
     for (const [key, value] of Object.entries(params)) {
       url.searchParams.set(key, value);
     }
@@ -74,7 +72,7 @@ class MetaApiService {
   }
 
   /**
-   * طلب GET عام
+   * طلب GET عام — يستخدم Authorization: Bearer header حصراً
    * @param endpoint  مسار نقطة النهاية (مثل: "me", "123456/messages")
    * @param params    معاملات query string إضافية
    */
@@ -87,7 +85,10 @@ class MetaApiService {
     try {
       const res = await fetch(url, {
         method: "GET",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${this.accessToken}`,
+        },
       });
       const body = await res.json();
       return {
@@ -180,7 +181,9 @@ class MetaApiService {
       text: { preview_url: false, body: text },
     });
     if (!res.ok) {
-      return { success: false, error: res.error?.message ?? "خطأ غير معروف" };
+      const errMsg = this._formatMetaError(res.error);
+      console.error(`[MetaApiService] sendWhatsAppText failed:`, JSON.stringify(res.error));
+      return { success: false, error: errMsg };
     }
     return { success: true, messageId: res.data?.messages?.[0]?.id };
   }
@@ -202,11 +205,49 @@ class MetaApiService {
     };
     if (components.length > 0) payload.template.components = components;
 
+    console.log(`[MetaApiService] Sending template "${templateName}" (lang: ${languageCode}) to ${to}`);
     const res = await this.post(`${phoneNumberId}/messages`, payload);
     if (!res.ok) {
-      return { success: false, error: res.error?.message ?? "خطأ غير معروف" };
+      const errMsg = this._formatMetaError(res.error);
+      console.error(`[MetaApiService] sendWhatsAppTemplate failed:`, JSON.stringify(res.error));
+      return { success: false, error: errMsg };
     }
     return { success: true, messageId: res.data?.messages?.[0]?.id };
+  }
+
+  /**
+   * تحويل خطأ Meta API إلى رسالة واضحة للمستخدم
+   * وفق وثائق Meta الرسمية: https://developers.facebook.com/docs/whatsapp/cloud-api/support/error-codes
+   */
+  private _formatMetaError(error: any): string {
+    if (!error) return "خطأ غير معروف";
+    const code = error.code || 0;
+    const metaErrors: Record<number, string> = {
+      // Auth
+      190: "انتهت صلاحية توكن الوصول أو تم إلغاؤه",
+      // WhatsApp Business
+      131000: "خطأ في المعاملات — تحقق من صحة البيانات المُرسَلة",
+      131005: "ليس لديك صلاحية إرسال هذا النوع من الرسائل",
+      131008: "معامل مطلوب مفقود في الطلب",
+      131009: "قيمة معامل غير صحيحة",
+      131016: "الخدمة غير متاحة مؤقتاً، حاول مرة أخرى",
+      131021: "لا يمكن إرسال رسالة لنفس الرقم",
+      131026: "لا يمكن تسليم الرسالة — الرقم غير مسجل في واتساب أو محظور",
+      131042: "مشكلة في طريقة الدفع لحساب واتساب للأعمال",
+      131047: "انتهت نافذة 24 ساعة — يجب إرسال قالب معتمد من Meta",
+      131051: "نوع الرسالة غير مدعوم",
+      132000: "عدد متغيرات القالب لا يتطابق مع ما هو معرّف في Meta",
+      132001: "القالب غير موجود أو غير معتمد من Meta — تحقق من الاسم واللغة",
+      132005: "نص القالب بعد تعبئة المتغيرات طويل جداً",
+      132007: "محتوى القالب يخالف سياسة Meta",
+      132012: "تنسيق متغيرات القالب غير صحيح",
+      132015: "القالب متوقف مؤقتاً بسبب جودة منخفضة",
+      132016: "القالب معطّل نهائياً بسبب جودة منخفضة",
+    };
+    if (metaErrors[code]) {
+      return `${metaErrors[code]} (كود الخطأ: ${code})`;
+    }
+    return error.message || `خطأ من Meta API (كود: ${code})`;
   }
 
   /** جلب قوالب WhatsApp من WABA */

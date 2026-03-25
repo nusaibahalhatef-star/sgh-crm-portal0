@@ -1,0 +1,1 @@
+ALTER TABLE `whatsapp_messages` MODIFY COLUMN `status` enum('sent','delivered','read','failed','received') NOT NULL DEFAULT 'sent';

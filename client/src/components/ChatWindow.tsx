@@ -237,12 +237,15 @@ export default function ChatWindow({ conversationId, lastMessageAt, onConversati
     setMessageText("");
   };
 
-  const handleSendTemplate = (template: { id: number; name: string; content: string }) => {
+  const handleSendTemplate = (template: { id: number; name: string; content: string; metaName?: string | null; languageCode?: string | null }) => {
     if (!conversationId) return;
+    // استخدام metaName (الاسم المعتمد من Meta) إذا كان متاحاً، وإلا name
+    const templateName = template.metaName || template.name;
+    const languageCode = template.languageCode || "ar";
     sendTemplateMutation.mutate({
       conversationId,
-      templateName: template.name,
-      languageCode: "ar",
+      templateName,
+      languageCode,
       components: [],
     });
   };

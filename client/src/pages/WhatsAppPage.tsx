@@ -44,6 +44,8 @@ interface Template {
   category: string;
   variables?: string | null;
   isActive: number;
+  metaName?: string | null;
+  languageCode?: string | null;
 }
 
 // ─── ConversationsList — defined OUTSIDE WhatsAppContent to prevent re-mount ─
@@ -389,10 +391,13 @@ function WhatsAppContent() {
     if (newMessageTemplateId) {
       const template = templates?.find((t: Template) => t.id === newMessageTemplateId);
       if (!template) { toast.error("القالب غير موجود"); return; }
+      // استخدام metaName (الاسم المعتمد من Meta) إذا كان متاحاً، وإلا name
+      const templateName = template.metaName || template.name;
+      const languageCode = template.languageCode || "ar";
       sendTemplateMutation.mutate({
         phone: newMessagePhone,
-        templateName: template.name,
-        languageCode: "ar",
+        templateName,
+        languageCode,
         components: [],
       });
     } else {

@@ -305,10 +305,18 @@ export const whatsappRouter = router({
         const conversation = await db.getWhatsAppConversationById(input.conversationId);
         if (!conversation) throw new Error("المحادثة غير موجودة");
 
+        // جلب القالب من قاعدة البيانات للحصول على metaName وlanguageCode الصحيحين
+        const dbTemplate = await db.getWhatsAppTemplateByMetaName(input.templateName)
+          || (await db.getAllWhatsAppTemplates()).find((t: any) => t.name === input.templateName);
+
+        // استخدام metaName إذا كان متاحاً (مزامن من Meta)، وإلا استخدام الاسم المدخل
+        const resolvedTemplateName = dbTemplate?.metaName || input.templateName;
+        const resolvedLanguageCode = dbTemplate?.languageCode || input.languageCode;
+
         const formattedPhone = formatPhoneNumber(conversation.phoneNumber);
         const result = await sendWhatsAppTemplateMessage(formattedPhone, {
-          templateName: input.templateName,
-          languageCode: input.languageCode,
+          templateName: resolvedTemplateName,
+          languageCode: resolvedLanguageCode,
           components: input.components || [],
         });
 
@@ -411,20 +419,15 @@ export const whatsappRouter = router({
      */
     syncFromMeta: protectedProcedure
       .mutation(async ({ ctx }) => {
-        const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-
-        if (!meta.accessToken || !phoneNumberId) {
-          throw new Error("META_ACCESS_TOKEN أو WHATSAPP_PHONE_NUMBER_ID غير مُعد");
+        if (!meta.accessToken) {
+          throw new Error("META_ACCESS_TOKEN غير مُعد");
         }
 
-        // الحصول على WABA ID عبر MetaApiService المركزي
-        const wabaResult = await meta.getWabaIdFromPhoneNumberId(phoneNumberId);
-        if (!wabaResult.success || !wabaResult.wabaId) {
-          console.error('[syncFromMeta] Failed to get WABA ID:', wabaResult.error);
-          throw new Error("فشل في الحصول على معرف حساب WhatsApp Business. تحقق من META_ACCESS_TOKEN وWHATSAPP_PHONE_NUMBER_ID");
+        // استخدام WHATSAPP_BUSINESS_ACCOUNT_ID مباشرة من env
+        const wabaId = process.env.WHATSAPP_BUSINESS_ACCOUNT_ID;
+        if (!wabaId) {
+          throw new Error("WHATSAPP_BUSINESS_ACCOUNT_ID غير مُعد في متغيرات البيئة");
         }
-
-        const wabaId = wabaResult.wabaId;
 
         // جلب القوالب من Meta عبر MetaApiService المركزي
         const templatesResult = await meta.getWhatsAppTemplates(wabaId);

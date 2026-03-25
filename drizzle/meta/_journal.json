@@ -288,6 +288,13 @@
       "when": 1773792674525,
       "tag": "0040_warm_lionheart",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "5",
+      "when": 1774317610890,
+      "tag": "0041_calm_fixer",
+      "breakpoints": true
     }
   ]
 }
