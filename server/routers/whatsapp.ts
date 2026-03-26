@@ -79,6 +79,14 @@ export const whatsappRouter = router({
         const { id, ...data } = input;
         return await db.updateWhatsAppConversation(id, data);
       }),
+
+    markAsRead: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.updateWhatsAppConversation(input.id, {
+          unreadCount: 0,
+        });
+      }),
   }),
 
   // Messages

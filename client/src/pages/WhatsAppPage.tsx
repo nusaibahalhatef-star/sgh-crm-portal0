@@ -1,4 +1,4 @@
-import { useState, useCallback, memo } from "react";
+import { memo, useCallback, useState } from "react";
 import { processPhoneInput } from "@/hooks/usePhoneFormat";
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
@@ -21,6 +21,7 @@ import {
   ChevronLeft, AlertCircle,
 } from "lucide-react";
 import ChatWindow from "@/components/ChatWindow";
+import ConversationInfo from "@/components/ConversationInfo";
 import useSSE from "@/hooks/useSSE";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -209,8 +210,9 @@ const ConversationsList = memo(function ConversationsList({
         </div>
       </div>
       {/* List */}
-      <ScrollArea className="flex-1">
-        {conversationsLoading ? (
+      <ScrollArea className="flex-1 overflow-hidden">
+        <div className="h-full overflow-y-auto">
+          {conversationsLoading ? (
           <div className="p-8 text-center text-muted-foreground">
             <LoaderIcon className="h-8 w-8 animate-spin mx-auto mb-2 text-green-500" />
             <p className="text-sm">جاري تحميل المحادثات...</p>
@@ -262,6 +264,7 @@ const ConversationsList = memo(function ConversationsList({
             <p className="text-sm sm:text-base">لا توجد محادثات</p>
           </div>
         )}
+        </div>
       </ScrollArea>
     </div>
   );
@@ -346,6 +349,8 @@ function WhatsAppContent() {
     trpc.whatsapp.connection.status.useQuery(undefined, { refetchInterval: 5000 });
 
   // Mutations
+  const markConversationAsReadMutation = trpc.whatsapp.conversations.markAsRead.useMutation();
+  
   const sendNewMessageMutation = trpc.whatsapp.messages.sendDirect.useMutation({
     onSuccess: () => {
       toast.success("تم إرسال الرسالة بنجاح");
@@ -374,7 +379,9 @@ function WhatsAppContent() {
   const handleSelectConversation = useCallback((id: number) => {
     setSelectedConversation(id);
     setMobileShowChat(true);
-  }, []);
+    // Mark conversation as read when opened
+    markConversationAsReadMutation.mutate({ id });
+  }, [markConversationAsReadMutation]);
 
   const handleBackToList = useCallback(() => setMobileShowChat(false), []);
   const handleSearchChange = useCallback((v: string) => setSearchQuery(v), []);
@@ -425,7 +432,15 @@ function WhatsAppContent() {
   const filteredConversations = conversations?.filter((conv: Conversation) =>
     conv.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     conv.phoneNumber?.includes(searchQuery)
-  );
+  ).sort((a: Conversation, b: Conversation) => {
+    // Sort by unreadCount (unread first), then by lastMessageAt (newest first)
+    if (a.unreadCount !== b.unreadCount) {
+      return (b.unreadCount || 0) - (a.unreadCount || 0);
+    }
+    const aTime = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+    const bTime = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+    return bTime - aTime;
+  });
   const selectedConv = conversations?.find((c: Conversation) => c.id === selectedConversation);
   const isSendingNewMessage = sendNewMessageMutation.isPending || sendTemplateMutation.isPending;
 
@@ -488,7 +503,7 @@ function WhatsAppContent() {
           style={{ height: "calc(100vh - 140px)", minHeight: "400px" }}
         >
           {/* Desktop */}
-          <div className="hidden lg:grid lg:grid-cols-[340px_1fr] h-full">
+          <div className="hidden lg:grid lg:grid-cols-[340px_1fr_280px] h-full">
             <div className="border-l dark:border-gray-800 h-full overflow-hidden flex flex-col">
               <ConversationsList {...listProps} />
             </div>
@@ -502,6 +517,16 @@ function WhatsAppContent() {
                 </>
               ) : (
                 <EmptyChatPlaceholder />
+              )}
+            </div>
+            {/* Right Sidebar - Conversation Info */}
+            <div className="h-full overflow-y-auto border-l dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+              {selectedConv ? (
+                <ConversationInfo conversation={selectedConv} />
+              ) : (
+                <div className="p-4 text-center text-muted-foreground text-sm">
+                  اختر محادثة لعرض التفاصيل
+                </div>
               )}
             </div>
           </div>
