@@ -214,8 +214,8 @@ function WhatsAppTemplatesContent() {
                   <Button variant="outline" onClick={() => setIsCreateOpen(false)} className="text-xs sm:text-sm h-8 sm:h-9">
                     إلغاء
                   </Button>
-                  <Button onClick={handleCreate} disabled={createMutation.isPending} className="text-xs sm:text-sm h-8 sm:h-9">
-                    {createMutation.isPending ? "جاري الإنشاء..." : "إنشاء"}
+                  <Button onClick={handleCreate} className="text-xs sm:text-sm h-8 sm:h-9">
+                    إنشاء
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -342,9 +342,9 @@ function WhatsAppTemplatesContent() {
               <Button variant="outline" onClick={() => setIsEditOpen(false)} className="text-xs sm:text-sm h-8 sm:h-9">
                 إلغاء
               </Button>
-              <Button onClick={handleUpdate} disabled={updateMutation.isPending} className="text-xs sm:text-sm h-8 sm:h-9">
-                {updateMutation.isPending ? "جاري التحديث..." : "تحديث"}
-              </Button>
+                  <Button onClick={handleUpdate} className="text-xs sm:text-sm h-8 sm:h-9">
+                    تحديث
+                  </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
