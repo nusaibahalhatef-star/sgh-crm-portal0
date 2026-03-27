@@ -1,10 +1,9 @@
-import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
 import * as db from "../db";
 import { meta } from "../MetaApiService";
+import { z } from "zod";
 import { 
   sendWhatsAppTextMessage, 
-  sendWhatsAppTemplateMessage, 
   getWhatsAppAPIStatus,
   formatPhoneNumber 
 } from "../whatsappCloudAPI";
@@ -22,6 +21,18 @@ export const whatsappRouter = router({
     list: protectedProcedure.query(async () => {
       return await db.getAllWhatsAppConversations();
     }),
+
+    getCustomerInfo: protectedProcedure
+      .input(z.object({ phone: z.string() }))
+      .query(async ({ input }) => {
+        return await db.getCustomerInfoByPhone(input.phone);
+      }),
+
+    getCustomerRecords: protectedProcedure
+      .input(z.object({ phone: z.string() }))
+      .query(async ({ input }) => {
+        return await db.getAllCustomerRecordsByPhone(input.phone);
+      }),
 
     getById: protectedProcedure
       .input(z.object({ id: z.number() }))
@@ -101,257 +112,45 @@ export const whatsappRouter = router({
       .input(
         z.object({
           conversationId: z.number(),
-          content: z.string(),
-          messageType: z.enum(["text", "image", "document", "audio", "video"]).default("text"),
-          mediaUrl: z.string().optional(),
+          message: z.string(),
         })
       )
       .mutation(async ({ input, ctx }) => {
-        // Get conversation details
-        const conversation = await db.getWhatsAppConversationById(input.conversationId);
-        if (!conversation) {
-          throw new Error("المحادثة غير موجودة");
-        }
-
-        // Send via WhatsApp Cloud API
-        let whatsappMessageId: string | undefined;
-        let sendStatus: "sent" | "failed" = "sent";
-        let errorMsg: string | undefined;
-
         try {
+          const conv = await db.getWhatsAppConversationById(input.conversationId);
+          if (!conv) throw new Error("Conversation not found");
+
           const result = await sendWhatsAppTextMessage(
-            conversation.phoneNumber,
-            input.content
+            conv.phoneNumber,
+            input.message
           );
-          
+
           if (result.success) {
-            whatsappMessageId = result.messageId;
-          } else {
-            sendStatus = "failed";
-            errorMsg = result.error;
-            console.error("[WhatsApp] Failed to send:", result.error);
+            await db.createWhatsAppMessage({
+              conversationId: input.conversationId,
+              direction: "outbound",
+              content: input.message,
+              messageType: "text",
+              status: "sent",
+              sentBy: ctx.user.id,
+              whatsappMessageId: result.messageId,
+            });
+
+            await db.updateWhatsAppConversation(input.conversationId, {
+              lastMessage: input.message,
+              lastMessageAt: new Date(),
+            });
           }
+
+          return result;
         } catch (error: any) {
-          sendStatus = "failed";
-          errorMsg = error.message;
-          console.error("[WhatsApp] Exception sending message:", error);
+          console.error("[WhatsApp] Failed to send message:", error);
+          throw new Error(error.message || "Failed to send message");
         }
-
-        // Save to database
-        const message = await db.createWhatsAppMessage({
-          conversationId: input.conversationId,
-          direction: "outbound",
-          content: input.content,
-          messageType: input.messageType,
-          status: sendStatus,
-          whatsappMessageId: whatsappMessageId || null,
-          sentBy: ctx.user.id,
-          sentAt: new Date(),
-        });
-
-        // Update conversation lastMessageAt
-        await db.updateWhatsAppConversation(input.conversationId, {
-          lastMessage: input.content.substring(0, 100),
-          lastMessageAt: new Date(),
-        });
-
-        if (sendStatus === "failed") {
-          throw new Error(errorMsg || "فشل إرسال الرسالة عبر واتساب");
-        }
-
-        return message;
-      }),
-
-    // Send a new message to a phone number (creates conversation if needed)
-    sendDirect: protectedProcedure
-      .input(
-        z.object({
-          phone: z.string(),
-          content: z.string(),
-          customerName: z.string().optional(),
-        })
-      )
-      .mutation(async ({ input, ctx }) => {
-        const formattedPhone = formatPhoneNumber(input.phone);
-        
-        // Find or create conversation
-        let conversation = await db.getWhatsAppConversationByPhone(formattedPhone);
-        
-        if (!conversation) {
-          await db.createWhatsAppConversation({
-            phoneNumber: formattedPhone,
-            customerName: input.customerName || null,
-            lastMessageAt: new Date(),
-            unreadCount: 0,
-            isImportant: 0,
-            isArchived: 0,
-          });
-          conversation = await db.getWhatsAppConversationByPhone(formattedPhone);
-          if (!conversation) {
-            throw new Error("فشل إنشاء المحادثة");
-          }
-        }
-
-        // Send via WhatsApp Cloud API
-        const result = await sendWhatsAppTextMessage(formattedPhone, input.content);
-        
-        if (!result.success) {
-          throw new Error(result.error || "فشل إرسال الرسالة");
-        }
-
-        // Save to database
-        const message = await db.createWhatsAppMessage({
-          conversationId: conversation.id,
-          direction: "outbound",
-          content: input.content,
-          messageType: "text",
-          status: "sent",
-          whatsappMessageId: result.messageId || null,
-          sentBy: ctx.user.id,
-          sentAt: new Date(),
-        });
-
-        // Update conversation
-        await db.updateWhatsAppConversation(conversation.id, {
-          lastMessage: input.content.substring(0, 100),
-          lastMessageAt: new Date(),
-          customerName: input.customerName || conversation.customerName,
-        });
-
-        return { 
-          success: true, 
-          messageId: result.messageId,
-          conversationId: conversation.id 
-        };
-      }),
-
-    // Send template message
-    sendTemplate: protectedProcedure
-      .input(
-        z.object({
-          phone: z.string(),
-          templateName: z.string(),
-          languageCode: z.string().default("ar"),
-          components: z.array(z.any()).optional(),
-          customerName: z.string().optional(),
-        })
-      )
-      .mutation(async ({ input, ctx }) => {
-        const formattedPhone = formatPhoneNumber(input.phone);
-        
-        const result = await sendWhatsAppTemplateMessage(
-          formattedPhone,
-          {
-            templateName: input.templateName,
-            languageCode: input.languageCode,
-            components: input.components || [],
-          }
-        );
-
-        if (!result.success) {
-          throw new Error(result.error || "فشل إرسال قالب الرسالة");
-        }
-
-        // Find or create conversation and save message
-        let conversation = await db.getWhatsAppConversationByPhone(formattedPhone);
-        if (!conversation) {
-          await db.createWhatsAppConversation({
-            phoneNumber: formattedPhone,
-            customerName: input.customerName || null,
-            lastMessageAt: new Date(),
-            unreadCount: 0,
-            isImportant: 0,
-            isArchived: 0,
-          });
-          conversation = await db.getWhatsAppConversationByPhone(formattedPhone);
-        }
-
-        if (conversation) {
-          await db.createWhatsAppMessage({
-            conversationId: conversation.id,
-            direction: "outbound",
-            content: `[قالب: ${input.templateName}]`,
-            messageType: "text",
-            status: "sent",
-            whatsappMessageId: result.messageId || null,
-            sentBy: ctx.user.id,
-            isAutomated: 1,
-            sentAt: new Date(),
-          });
-
-          await db.updateWhatsAppConversation(conversation.id, {
-            lastMessage: `[قالب: ${input.templateName}]`,
-            lastMessageAt: new Date(),
-          });
-        }
-
-        return { success: true, messageId: result.messageId };
-      }),
-
-    markAsRead: protectedProcedure
-      .input(z.object({ messageId: z.number() }))
-      .mutation(async ({ input }) => {
-        return await db.updateWhatsAppMessage(input.messageId, {
-          readAt: new Date(),
-        });
-      }),
-
-    /**
-     * Send a WhatsApp Business API approved template by conversationId.
-     * Use this when the 24-hour messaging window has expired.
-     */
-    sendTemplateByConversation: protectedProcedure
-      .input(
-        z.object({
-          conversationId: z.number(),
-          templateName: z.string(),
-          languageCode: z.string().default("ar"),
-          components: z.array(z.any()).optional(),
-        })
-      )
-      .mutation(async ({ input, ctx }) => {
-        const conversation = await db.getWhatsAppConversationById(input.conversationId);
-        if (!conversation) throw new Error("المحادثة غير موجودة");
-
-        // جلب القالب من قاعدة البيانات للحصول على metaName وlanguageCode الصحيحين
-        const dbTemplate = await db.getWhatsAppTemplateByMetaName(input.templateName)
-          || (await db.getAllWhatsAppTemplates()).find((t: any) => t.name === input.templateName);
-
-        // استخدام metaName إذا كان متاحاً (مزامن من Meta)، وإلا استخدام الاسم المدخل
-        const resolvedTemplateName = dbTemplate?.metaName || input.templateName;
-        const resolvedLanguageCode = dbTemplate?.languageCode || input.languageCode;
-
-        const formattedPhone = formatPhoneNumber(conversation.phoneNumber);
-        const result = await sendWhatsAppTemplateMessage(formattedPhone, {
-          templateName: resolvedTemplateName,
-          languageCode: resolvedLanguageCode,
-          components: input.components || [],
-        });
-
-        if (!result.success) throw new Error(result.error || "فشل إرسال قالب الرسالة");
-
-        await db.createWhatsAppMessage({
-          conversationId: input.conversationId,
-          direction: "outbound",
-          content: `[قالب: ${input.templateName}]`,
-          messageType: "text",
-          status: "sent",
-          whatsappMessageId: result.messageId || null,
-          sentBy: ctx.user.id,
-          isAutomated: 1,
-          sentAt: new Date(),
-        });
-
-        await db.updateWhatsAppConversation(input.conversationId, {
-          lastMessage: `[قالب: ${input.templateName}]`,
-          lastMessageAt: new Date(),
-        });
-
-        return { success: true, messageId: result.messageId };
       }),
   }),
 
-  // Templates (local templates in database)
+  // Templates
   templates: router({
     list: protectedProcedure.query(async () => {
       return await db.getAllWhatsAppTemplates();
@@ -362,182 +161,5 @@ export const whatsappRouter = router({
       .query(async ({ input }) => {
         return await db.getWhatsAppTemplateById(input.id);
       }),
-
-    create: protectedProcedure
-      .input(
-        z.object({
-          name: z.string(),
-          content: z.string(),
-          category: z.enum(["confirmation", "reminder", "followup", "thank_you", "custom"]),
-          variables: z.array(z.string()).optional(),
-        })
-      )
-      .mutation(async ({ input, ctx }) => {
-        return await db.createWhatsAppTemplate({
-          ...input,
-          isActive: 1,
-          createdBy: ctx.user.id,
-        });
-      }),
-
-    update: protectedProcedure
-      .input(
-        z.object({
-          id: z.number(),
-          name: z.string().optional(),
-          content: z.string().optional(),
-          category: z.enum(["confirmation", "reminder", "followup", "thank_you", "custom"]).optional(),
-          variables: z.array(z.string()).optional(),
-          active: z.boolean().optional(),
-        })
-      )
-      .mutation(async ({ input }) => {
-        const { id, ...data } = input;
-        return await db.updateWhatsAppTemplate(id, data);
-      }),
-
-    delete: protectedProcedure
-      .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
-        return await db.deleteWhatsAppTemplate(input.id);
-      }),
-
-    preview: protectedProcedure
-      .input(
-        z.object({
-          templateId: z.number(),
-          variables: z.record(z.string(), z.string()),
-        })
-      )
-      .query(async ({ input }) => {
-        const template = await db.getWhatsAppTemplateById(input.templateId);
-        if (!template) throw new Error("القالب غير موجود");
-
-        let content = template.content;
-        for (const [key, value] of Object.entries(input.variables)) {
-          content = content.replaceAll(`{${key}}`, String(value));
-        }
-
-        return { content };
-      }),
-
-    /**
-     * Sync approved templates from Meta Business Manager
-     * يجلب القوالب المعتمدة من Meta Business Manager ويحفظها في قاعدة البيانات
-     */
-    syncFromMeta: protectedProcedure
-      .mutation(async ({ ctx }) => {
-        if (!meta.accessToken) {
-          throw new Error("META_ACCESS_TOKEN غير مُعد");
-        }
-
-        // استخدام WHATSAPP_BUSINESS_ACCOUNT_ID مباشرة من env
-        const wabaId = process.env.WHATSAPP_BUSINESS_ACCOUNT_ID;
-        if (!wabaId) {
-          throw new Error("WHATSAPP_BUSINESS_ACCOUNT_ID غير مُعد في متغيرات البيئة");
-        }
-
-        // جلب القوالب من Meta عبر MetaApiService المركزي
-        const templatesResult = await meta.getWhatsAppTemplates(wabaId);
-        if (!templatesResult.success) {
-          console.error('[syncFromMeta] Failed to fetch templates:', templatesResult.error);
-          throw new Error("فشل في جلب القوالب من Meta");
-        }
-
-        const metaTemplates = (templatesResult.templates || []) as any[];
-        const approvedTemplates = metaTemplates.filter((t: any) => t.status === 'APPROVED');
-
-        let synced = 0;
-        let updated = 0;
-
-        for (const metaTemplate of approvedTemplates) {
-          try {
-            const bodyComponent = metaTemplate.components?.find((c: any) => c.type === 'BODY');
-            const headerComponent = metaTemplate.components?.find((c: any) => c.type === 'HEADER' && c.format === 'TEXT');
-            const footerComponent = metaTemplate.components?.find((c: any) => c.type === 'FOOTER');
-
-            const bodyText = bodyComponent?.text || metaTemplate.name;
-            const headerText = headerComponent?.text || null;
-            const footerText = footerComponent?.text || null;
-
-            // Extract {{1}}, {{2}} style variables
-            const variableMatches = bodyText.match(/\{\{\d+\}\}/g) || [];
-            const variables = variableMatches.map((_: string, i: number) => `var${i + 1}`);
-
-            const categoryMap: Record<string, string> = {
-              'UTILITY': 'confirmation',
-              'MARKETING': 'custom',
-              'AUTHENTICATION': 'confirmation',
-            };
-            const mappedCategory = (categoryMap[metaTemplate.category] || 'custom') as any;
-
-            // Check if template already exists by metaName
-            const existing = await db.getWhatsAppTemplateByMetaName(metaTemplate.name);
-
-            if (existing) {
-              await db.updateWhatsAppTemplate(existing.id, {
-                metaName: metaTemplate.name,
-                languageCode: metaTemplate.language,
-                metaStatus: metaTemplate.status,
-                metaCategory: metaTemplate.category,
-                content: bodyText,
-                headerText,
-                footerText,
-                variables: JSON.stringify(variables),
-              });
-              updated++;
-            } else {
-              await db.createWhatsAppTemplate({
-                name: metaTemplate.name.replace(/_/g, ' '),
-                category: mappedCategory,
-                content: bodyText,
-                variables: JSON.stringify(variables),
-                isActive: 1,
-                usageCount: 0,
-                createdBy: ctx.user.id,
-                metaName: metaTemplate.name,
-                languageCode: metaTemplate.language,
-                metaStatus: metaTemplate.status,
-                metaCategory: metaTemplate.category,
-                headerText,
-                footerText,
-              });
-              synced++;
-            }
-          } catch (err) {
-            console.error(`[syncFromMeta] Failed to sync template ${metaTemplate.name}:`, err);
-          }
-        }
-
-        return {
-          success: true,
-          total: approvedTemplates.length,
-          synced,
-          updated,
-          message: `تمت المزامنة: ${synced} قالب جديد، ${updated} قالب محدّث من أصل ${approvedTemplates.length} قالب معتمد`,
-        };
-      }),
   }),
-
-  // Quick test endpoint
-  testSend: protectedProcedure
-    .input(
-      z.object({
-        phone: z.string(),
-        message: z.string().optional(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const formattedPhone = formatPhoneNumber(input.phone);
-      
-      if (input.message) {
-        return await sendWhatsAppTextMessage(formattedPhone, input.message);
-      } else {
-        return await sendWhatsAppTemplateMessage(formattedPhone, {
-          templateName: "hello_world",
-          languageCode: "en_US",
-          components: [],
-        });
-      }
-    }),
 });

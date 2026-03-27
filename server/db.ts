@@ -723,6 +723,95 @@ export async function getAllUnifiedLeads() {
 }
 
 // WhatsApp queries
+// Get customer info from phone number (searches across leads, appointments, offers, registrations)
+export async function getCustomerInfoByPhone(phone: string) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const { leads, appointments, offerLeads, campRegistrations } = await import('../drizzle/schema');
+  
+  // Search in leads
+  const leadResult = await db.select().from(leads).where(eq(leads.phone, phone)).limit(1);
+  if (leadResult.length > 0) {
+    return {
+      type: 'lead',
+      id: leadResult[0].id,
+      name: leadResult[0].fullName,
+      phone: leadResult[0].phone,
+      email: leadResult[0].email,
+      status: leadResult[0].status,
+      source: leadResult[0].source,
+      createdAt: leadResult[0].createdAt,
+    };
+  }
+  
+  // Search in appointments
+  const appointmentResult = await db.select().from(appointments).where(eq(appointments.phone, phone)).limit(1);
+  if (appointmentResult.length > 0) {
+    return {
+      type: 'appointment',
+      id: appointmentResult[0].id,
+      name: appointmentResult[0].fullName,
+      phone: appointmentResult[0].phone,
+      email: appointmentResult[0].email,
+      status: appointmentResult[0].status,
+      createdAt: appointmentResult[0].createdAt,
+    };
+  }
+  
+  // Search in offer leads
+  const offerResult = await db.select().from(offerLeads).where(eq(offerLeads.phone, phone)).limit(1);
+  if (offerResult.length > 0) {
+    return {
+      type: 'offer',
+      id: offerResult[0].id,
+      name: offerResult[0].fullName,
+      phone: offerResult[0].phone,
+      email: offerResult[0].email,
+      status: offerResult[0].status,
+      createdAt: offerResult[0].createdAt,
+    };
+  }
+  
+  // Search in camp registrations
+  const campResult = await db.select().from(campRegistrations).where(eq(campRegistrations.phone, phone)).limit(1);
+  if (campResult.length > 0) {
+    return {
+      type: 'camp',
+      id: campResult[0].id,
+      name: campResult[0].fullName,
+      phone: campResult[0].phone,
+      email: campResult[0].email,
+      status: campResult[0].status,
+      createdAt: campResult[0].createdAt,
+    };
+  }
+  
+  return null;
+}
+
+// Get all customer records by phone number
+export async function getAllCustomerRecordsByPhone(phone: string) {
+  const db = await getDb();
+  if (!db) return { leads: [], appointments: [], offers: [], camps: [] };
+  
+  const { leads, appointments, offerLeads, campRegistrations } = await import('../drizzle/schema');
+  
+  const [leadsList, appointmentsList, offersList, campsList] = await Promise.all([
+    db.select().from(leads).where(eq(leads.phone, phone)).orderBy(desc(leads.createdAt)),
+    db.select().from(appointments).where(eq(appointments.phone, phone)).orderBy(desc(appointments.createdAt)),
+    db.select().from(offerLeads).where(eq(offerLeads.phone, phone)).orderBy(desc(offerLeads.createdAt)),
+    db.select().from(campRegistrations).where(eq(campRegistrations.phone, phone)).orderBy(desc(campRegistrations.createdAt)),
+  ]);
+  
+  return {
+    leads: leadsList,
+    appointments: appointmentsList,
+    offers: offersList,
+    camps: campsList,
+  };
+}
+
 export async function getAllWhatsAppConversations() {
   const db = await getDb();
   if (!db) return [];
