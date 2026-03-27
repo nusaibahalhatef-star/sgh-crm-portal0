@@ -45,39 +45,9 @@ function WhatsAppTemplatesContent() {
   });
 
   // Mutations
-  const createMutation = trpc.whatsapp.templates.create.useMutation({
-    onSuccess: () => {
-      toast.success("تم إنشاء القالب بنجاح");
-      setIsCreateOpen(false);
-      resetForm();
-      refetch();
-    },
-    onError: (error) => {
-      toast.error(`فشل إنشاء القالب: ${error.message}`);
-    },
-  });
 
-  const updateMutation = trpc.whatsapp.templates.update.useMutation({
-    onSuccess: () => {
-      toast.success("تم تحديث القالب بنجاح");
-      setIsEditOpen(false);
-      resetForm();
-      refetch();
-    },
-    onError: (error) => {
-      toast.error(`فشل تحديث القالب: ${error.message}`);
-    },
-  });
 
-  const deleteMutation = trpc.whatsapp.templates.delete.useMutation({
-    onSuccess: () => {
-      toast.success("تم حذف القالب بنجاح");
-      refetch();
-    },
-    onError: (error) => {
-      toast.error(`فشل حذف القالب: ${error.message}`);
-    },
-  });
+
 
   const resetForm = () => {
     setName("");
@@ -87,15 +57,7 @@ function WhatsAppTemplatesContent() {
   };
 
   const handleCreate = () => {
-    if (!name.trim() || !content.trim()) {
-      toast.error("يرجى إدخال اسم القالب والمحتوى");
-      return;
-    }
-    createMutation.mutate({
-      name: name.trim(),
-      content: content.trim(),
-      category,
-    });
+    toast.info("هذه الميزة قيد التطوير");
   };
 
   const handleEdit = (template: any) => {
@@ -107,22 +69,30 @@ function WhatsAppTemplatesContent() {
   };
 
   const handleUpdate = () => {
-    if (!selectedTemplate || !name.trim() || !content.trim()) {
-      toast.error("يرجى إدخال اسم القالب والمحتوى");
-      return;
-    }
-    updateMutation.mutate({
-      id: selectedTemplate.id,
-      name: name.trim(),
-      content: content.trim(),
-      category,
-    });
+    toast.info("هذه الميزة قيد التطوير");
   };
 
   const handleDelete = (id: number, templateName: string) => {
-    if (confirm(`هل أنت متأكد من حذف القالب "${templateName}"؟`)) {
-      deleteMutation.mutate({ id });
-    }
+    toast.info("هذه الميزة قيد التطوير");
+  };
+
+  const handleOpenCreate = () => {
+    resetForm();
+    setIsCreateOpen(true);
+  };
+
+  const handleOpenEdit = (template: any) => {
+    handleEdit(template);
+  };
+
+  const handleCloseCreate = () => {
+    setIsCreateOpen(false);
+    resetForm();
+  };
+
+  const handleCloseEdit = () => {
+    setIsEditOpen(false);
+    resetForm();
   };
 
   const handleCopy = (content: string) => {
