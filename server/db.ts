@@ -4,6 +4,15 @@ import { InsertUser, users, campaigns, leads, leadStatusHistory, settings, docto
 import { ENV } from './_core/env';
 import { publish, channelForConversation } from './_core/pubsub';
 
+/**
+ * Normalize phone number to standard format (remove +, spaces, dashes)
+ * Example: "+967 777 165 305" -> "967777165305"
+ */
+export function normalizePhoneNumber(phone: string): string {
+  if (!phone) return '';
+  return phone.replace(/[^0-9]/g, ''); // Remove all non-digit characters
+}
+
 let _db: ReturnType<typeof drizzle> | null = null;
 
 export async function getDb() {
@@ -729,61 +738,66 @@ export async function getCustomerInfoByPhone(phone: string) {
   if (!db) return null;
   
   const { leads, appointments, offerLeads, campRegistrations } = await import('../drizzle/schema');
+  const normalizedPhone = normalizePhoneNumber(phone);
   
-  // Search in leads
-  const leadResult = await db.select().from(leads).where(eq(leads.phone, phone)).limit(1);
-  if (leadResult.length > 0) {
+  // Search in leads - compare normalized phone numbers
+  const leadResult = await db.select().from(leads).limit(1000);
+  const matchedLead = leadResult.find(l => normalizePhoneNumber(l.phone) === normalizedPhone);
+  if (matchedLead) {
     return {
       type: 'lead',
-      id: leadResult[0].id,
-      name: leadResult[0].fullName,
-      phone: leadResult[0].phone,
-      email: leadResult[0].email,
-      status: leadResult[0].status,
-      source: leadResult[0].source,
-      createdAt: leadResult[0].createdAt,
+      id: matchedLead.id,
+      name: matchedLead.fullName,
+      phone: matchedLead.phone,
+      email: matchedLead.email,
+      status: matchedLead.status,
+      source: matchedLead.source,
+      createdAt: matchedLead.createdAt,
     };
   }
   
   // Search in appointments
-  const appointmentResult = await db.select().from(appointments).where(eq(appointments.phone, phone)).limit(1);
-  if (appointmentResult.length > 0) {
+  const appointmentResult = await db.select().from(appointments).limit(1000);
+  const matchedAppointment = appointmentResult.find(a => normalizePhoneNumber(a.phone) === normalizedPhone);
+  if (matchedAppointment) {
     return {
       type: 'appointment',
-      id: appointmentResult[0].id,
-      name: appointmentResult[0].fullName,
-      phone: appointmentResult[0].phone,
-      email: appointmentResult[0].email,
-      status: appointmentResult[0].status,
-      createdAt: appointmentResult[0].createdAt,
+      id: matchedAppointment.id,
+      name: matchedAppointment.fullName,
+      phone: matchedAppointment.phone,
+      email: matchedAppointment.email,
+      status: matchedAppointment.status,
+      createdAt: matchedAppointment.createdAt,
     };
   }
   
   // Search in offer leads
-  const offerResult = await db.select().from(offerLeads).where(eq(offerLeads.phone, phone)).limit(1);
-  if (offerResult.length > 0) {
+  const offerResult = await db.select().from(offerLeads).limit(1000);
+  const matchedOffer = offerResult.find(o => normalizePhoneNumber(o.phone) === normalizedPhone);
+  if (matchedOffer) {
     return {
       type: 'offer',
-      id: offerResult[0].id,
-      name: offerResult[0].fullName,
-      phone: offerResult[0].phone,
-      email: offerResult[0].email,
-      status: offerResult[0].status,
-      createdAt: offerResult[0].createdAt,
+      id: matchedOffer.id,
+      name: matchedOffer.fullName,
+      phone: matchedOffer.phone,
+      email: matchedOffer.email,
+      status: matchedOffer.status,
+      createdAt: matchedOffer.createdAt,
     };
   }
   
   // Search in camp registrations
-  const campResult = await db.select().from(campRegistrations).where(eq(campRegistrations.phone, phone)).limit(1);
-  if (campResult.length > 0) {
+  const campResult = await db.select().from(campRegistrations).limit(1000);
+  const matchedCamp = campResult.find(c => normalizePhoneNumber(c.phone) === normalizedPhone);
+  if (matchedCamp) {
     return {
       type: 'camp',
-      id: campResult[0].id,
-      name: campResult[0].fullName,
-      phone: campResult[0].phone,
-      email: campResult[0].email,
-      status: campResult[0].status,
-      createdAt: campResult[0].createdAt,
+      id: matchedCamp.id,
+      name: matchedCamp.fullName,
+      phone: matchedCamp.phone,
+      email: matchedCamp.email,
+      status: matchedCamp.status,
+      createdAt: matchedCamp.createdAt,
     };
   }
   
@@ -796,12 +810,13 @@ export async function getAllCustomerRecordsByPhone(phone: string) {
   if (!db) return { leads: [], appointments: [], offers: [], camps: [] };
   
   const { leads, appointments, offerLeads, campRegistrations } = await import('../drizzle/schema');
+  const normalizedPhone = normalizePhoneNumber(phone);
   
   const [leadsList, appointmentsList, offersList, campsList] = await Promise.all([
-    db.select().from(leads).where(eq(leads.phone, phone)).orderBy(desc(leads.createdAt)),
-    db.select().from(appointments).where(eq(appointments.phone, phone)).orderBy(desc(appointments.createdAt)),
-    db.select().from(offerLeads).where(eq(offerLeads.phone, phone)).orderBy(desc(offerLeads.createdAt)),
-    db.select().from(campRegistrations).where(eq(campRegistrations.phone, phone)).orderBy(desc(campRegistrations.createdAt)),
+    db.select().from(leads).limit(1000).then(items => items.filter(l => normalizePhoneNumber(l.phone) === normalizedPhone).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())),
+    db.select().from(appointments).limit(1000).then(items => items.filter(a => normalizePhoneNumber(a.phone) === normalizedPhone).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())),
+    db.select().from(offerLeads).limit(1000).then(items => items.filter(o => normalizePhoneNumber(o.phone) === normalizedPhone).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())),
+    db.select().from(campRegistrations).limit(1000).then(items => items.filter(c => normalizePhoneNumber(c.phone) === normalizedPhone).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())),
   ]);
   
   return {
