@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { router, publicProcedure, protectedProcedure } from "../_core/trpc";
-import { getDb } from "../db";
+import { getDb, normalizePhoneNumber } from "../db";
 import { visitSessions, abandonedForms, trackingEvents } from "../../drizzle/schema";
 import { eq, desc, and, gte, lte, isNull, sql, count } from "drizzle-orm";
 
@@ -33,19 +33,21 @@ export const trackingRouter = router({
       if (!db) return { success: false };
 
       try {
+        // Normalize some fields for consistent analytics
+        const normalize = (s?: string) => s ? s.trim().toLowerCase() : null;
         await db.insert(visitSessions).values({
           sessionId: input.sessionId,
-          source: input.source,
-          utmSource: input.utmSource,
-          utmMedium: input.utmMedium,
-          utmCampaign: input.utmCampaign,
-          utmContent: input.utmContent,
-          utmTerm: input.utmTerm,
-          fbclid: input.fbclid,
-          gclid: input.gclid,
-          landingPage: input.landingPage,
-          referrer: input.referrer,
-          userAgent: input.userAgent,
+          source: normalize(input.source) || null,
+          utmSource: normalize(input.utmSource) || null,
+          utmMedium: normalize(input.utmMedium) || null,
+          utmCampaign: normalize(input.utmCampaign) || null,
+          utmContent: input.utmContent || null,
+          utmTerm: input.utmTerm || null,
+          fbclid: input.fbclid || null,
+          gclid: input.gclid || null,
+          landingPage: input.landingPage || null,
+          referrer: input.referrer || null,
+          userAgent: input.userAgent || null,
         }).onDuplicateKeyUpdate({
           set: { updatedAt: new Date() },
         });
@@ -71,12 +73,13 @@ export const trackingRouter = router({
       if (!db) return { success: false };
 
       try {
+        const normalize = (s?: string) => s ? s.trim().toLowerCase() : null;
         await db.insert(trackingEvents).values({
           sessionId: input.sessionId,
           eventType: input.eventType,
-          page: input.page,
+          page: input.page || null,
           metadata: input.metadata ? JSON.stringify(input.metadata) : null,
-          source: input.source,
+          source: normalize(input.source) || null,
         });
         return { success: true };
       } catch {
@@ -105,17 +108,18 @@ export const trackingRouter = router({
       if (!db) return { success: false };
 
       try {
+        const normalize = (s?: string) => s ? s.trim().toLowerCase() : null;
         await db.insert(abandonedForms).values({
           formType: input.formType,
-          phone: input.phone,
-          name: input.name,
-          relatedId: input.relatedId,
-          relatedName: input.relatedName,
+          phone: input.phone ? normalizePhoneNumber(input.phone) : null,
+          name: input.name || null,
+          relatedId: input.relatedId || null,
+          relatedName: input.relatedName || null,
           formData: input.formData ? JSON.stringify(input.formData) : null,
-          source: input.source,
-          utmSource: input.utmSource,
-          utmCampaign: input.utmCampaign,
-          sessionId: input.sessionId,
+          source: normalize(input.source) || null,
+          utmSource: normalize(input.utmSource) || null,
+          utmCampaign: normalize(input.utmCampaign) || null,
+          sessionId: input.sessionId || null,
         });
         return { success: true };
       } catch {
