@@ -509,6 +509,8 @@ export type InsertTaskAttachment = typeof taskAttachments.$inferInsert;
 export const whatsappConversations = mysqlTable("whatsapp_conversations", {
   id: int("id").autoincrement().primaryKey(),
   phoneNumber: varchar("phoneNumber", { length: 20 }).notNull(),
+  // digits-only normalized phone used for fast indexed lookups
+  normalizedPhone: varchar("normalizedPhone", { length: 64 }),
   customerName: varchar("customerName", { length: 255 }),
   lastMessage: text("lastMessage"),
   lastMessageAt: timestamp("lastMessageAt"),

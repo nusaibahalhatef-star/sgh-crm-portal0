@@ -850,12 +850,17 @@ export async function getWhatsAppConversationByPhone(phone: string) {
   
   const { whatsappConversations } = await import('../drizzle/schema');
   const normalizedPhone = normalizePhoneNumber(phone);
-  
-  // Get all conversations and filter by normalized phone number
-  // (since phoneNumber in DB might have different formats)
-  const allConversations = await db.select().from(whatsappConversations).limit(1000);
-  const result = allConversations.filter(c => normalizePhoneNumber(c.phoneNumber) === normalizedPhone).slice(0, 1);
-  return result.length > 0 ? result[0] : undefined;
+
+  // Use indexed normalizedPhone column for fast lookup
+  try {
+    const rows = await db.select().from(whatsappConversations).where(eq(whatsappConversations.normalizedPhone, normalizedPhone)).limit(1);
+    return rows.length > 0 ? rows[0] : undefined;
+  } catch (err) {
+    // Fallback: older DB without normalizedPhone column - scan limited set and compare
+    const allConversations = await db.select().from(whatsappConversations).limit(1000);
+    const result = allConversations.filter((c: any) => normalizePhoneNumber(c.phoneNumber) === normalizedPhone).slice(0, 1);
+    return result.length > 0 ? result[0] : undefined;
+  }
 }
 
 export async function createWhatsAppConversation(conversation: any) {
@@ -863,7 +868,10 @@ export async function createWhatsAppConversation(conversation: any) {
   if (!db) throw new Error("Database not available");
   
   const { whatsappConversations } = await import('../drizzle/schema');
-  const result = await db.insert(whatsappConversations).values(conversation);
+  // Ensure normalizedPhone is set for fast lookups
+  const toInsert = { ...conversation };
+  if (toInsert.phoneNumber) toInsert.normalizedPhone = normalizePhoneNumber(toInsert.phoneNumber);
+  const result = await db.insert(whatsappConversations).values(toInsert);
   return result;
 }
 
@@ -872,7 +880,9 @@ export async function updateWhatsAppConversation(id: number, conversation: any) 
   if (!db) throw new Error("Database not available");
   
   const { whatsappConversations } = await import('../drizzle/schema');
-  const result = await db.update(whatsappConversations).set(conversation).where(eq(whatsappConversations.id, id));
+  const toSet = { ...conversation };
+  if (toSet.phoneNumber) toSet.normalizedPhone = normalizePhoneNumber(toSet.phoneNumber);
+  const result = await db.update(whatsappConversations).set(toSet).where(eq(whatsappConversations.id, id));
   try {
     publish(channelForConversation(id), 'conversation_updated', { id, ...conversation });
   } catch (err) {
