@@ -447,7 +447,7 @@ export default function ChatWindow({ conversationId, lastMessageAt, onConversati
     setScheduledDate("");
   };
 
-  const handleSendTemplate = (template: { id: number; name: string; content: string; metaName?: string | null; languageCode?: string | null }) => {
+  const handleSendTemplate = (template: { id: number; name: string; content: string; metaName?: string | null; languageCode?: string | null; buttons?: string | null; headerText?: string | null; footerText?: string | null }) => {
     if (!conversationId) return;
     if (!phone) {
       toast.error("لا يوجد رقم هاتف لهذه المحادثة");
@@ -462,6 +462,9 @@ export default function ChatWindow({ conversationId, lastMessageAt, onConversati
       language: languageCode,
       conversationId,
       templateContent: template.content,
+      templateButtons: template.buttons || undefined,
+      headerText: template.headerText || undefined,
+      footerText: template.footerText || undefined,
     });
   };
 
@@ -513,13 +516,76 @@ export default function ChatWindow({ conversationId, lastMessageAt, onConversati
                       </div>
                     )}
                     
-                    {typeIcon && (
+                    {typeIcon && msg.messageType !== 'template' && msg.messageType !== 'button_reply' && msg.messageType !== 'list_reply' && (
                       <div className={`flex items-center gap-1.5 mb-1 ${isOutbound ? "text-muted-foreground" : "text-white/80"}`}>
                         {typeIcon}
                         <span className="text-[10px] uppercase font-medium">{msg.messageType}</span>
                       </div>
                     )}
-                    <div className="whitespace-pre-wrap break-words leading-relaxed" style={{ fontSize: `${messageFontSize}px` }}>{msg.content}</div>
+
+                    {/* عرض رسائل القالب مع الأزرار */}
+                    {msg.messageType === 'template' ? (() => {
+                      let meta: any = null;
+                      try { meta = msg.metadata ? JSON.parse(msg.metadata) : null; } catch {}
+                      const buttons: Array<{type: string; text: string}> = meta?.buttons || [];
+                      const headerText = meta?.headerText;
+                      const footerText = meta?.footerText;
+                      return (
+                        <div>
+                          {/* Header */}
+                          {headerText && (
+                            <div className={`text-[11px] font-bold mb-1 pb-1 border-b ${isOutbound ? 'border-gray-200 dark:border-gray-600' : 'border-white/30'}`}>
+                              {headerText}
+                            </div>
+                          )}
+                          {/* TEMPLATE badge */}
+                          <div className={`flex items-center gap-1 mb-1 ${isOutbound ? 'text-muted-foreground' : 'text-white/70'}`}>
+                            <MessageSquare className="h-3 w-3" />
+                            <span className="text-[10px] font-medium">TEMPLATE</span>
+                          </div>
+                          {/* Body */}
+                          <div className="whitespace-pre-wrap break-words leading-relaxed" style={{ fontSize: `${messageFontSize}px` }}>{msg.content}</div>
+                          {/* Footer */}
+                          {footerText && (
+                            <div className={`text-[10px] mt-1 ${isOutbound ? 'text-muted-foreground' : 'text-white/60'}`}>{footerText}</div>
+                          )}
+                          {/* Buttons */}
+                          {buttons.length > 0 && (
+                            <div className="mt-2 flex flex-col gap-1">
+                              {buttons.map((btn: any, i: number) => (
+                                <div
+                                  key={i}
+                                  className={`text-center text-[12px] font-medium py-1.5 px-3 rounded border cursor-default select-none ${
+                                    isOutbound
+                                      ? 'border-blue-300 text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-700 dark:text-blue-300'
+                                      : 'border-white/40 text-white bg-white/10'
+                                  }`}
+                                >
+                                  {btn.text || btn.title || btn}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })() : msg.messageType === 'button_reply' || msg.messageType === 'list_reply' ? (
+                      /* عرض رد زر العميل */
+                      <div>
+                        <div className={`flex items-center gap-1 mb-1 ${isOutbound ? 'text-muted-foreground' : 'text-white/70'}`}>
+                          <MessageSquare className="h-3 w-3" />
+                          <span className="text-[10px] font-medium">{msg.messageType === 'button_reply' ? 'رد زر' : 'اختيار قائمة'}</span>
+                        </div>
+                        <div className={`inline-block text-[12px] font-medium py-1 px-3 rounded-full border ${
+                          isOutbound
+                            ? 'border-gray-300 text-gray-700 bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200'
+                            : 'border-white/40 text-white bg-white/20'
+                        }`}>
+                          {msg.content.replace(/^🔘\s*/, '').replace(/^📋\s*/, '').replace(/\s*\(ID:.*\)$/, '')}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="whitespace-pre-wrap break-words leading-relaxed" style={{ fontSize: `${messageFontSize}px` }}>{msg.content}</div>
+                    )}
                     <div className={`flex items-center justify-between mt-1 text-[10px] sm:text-xs ${isOutbound ? "text-muted-foreground" : "text-white/80"}`}>
                       <span>{new Date(msg.sentAt || msg.createdAt).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })}</span>
                       <div className="flex items-center gap-1">

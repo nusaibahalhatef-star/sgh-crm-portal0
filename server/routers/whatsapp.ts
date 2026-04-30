@@ -596,6 +596,9 @@ export const whatsappRouter = router({
         language: z.string().optional(),
         conversationId: z.number().optional(), // لحفظ الرسالة في المحادثة
         templateContent: z.string().optional(), // محتوى القالب للحفظ
+        templateButtons: z.string().optional(), // أزرار القالب (JSON string)
+        headerText: z.string().optional(), // نص الـ header
+        footerText: z.string().optional(), // نص الـ footer
       })
     )
     .mutation(async ({ input }) => {
@@ -611,6 +614,13 @@ export const whatsappRouter = router({
         try {
           const { createWhatsAppMessage, updateWhatsAppConversation } = await import("../db");
           const content = input.templateContent || `[قالب: ${input.templateName}]`;
+          // حفظ بيانات القالب الكاملة في metadata
+          const metadata = JSON.stringify({
+            templateName: input.templateName,
+            buttons: input.templateButtons ? JSON.parse(input.templateButtons) : [],
+            headerText: input.headerText || null,
+            footerText: input.footerText || null,
+          });
           await createWhatsAppMessage({
             conversationId: input.conversationId,
             direction: "outbound",
@@ -619,6 +629,7 @@ export const whatsappRouter = router({
             status: "sent",
             whatsappMessageId: result.messageId || null,
             sentAt: new Date(),
+            metadata,
           });
           await updateWhatsAppConversation(input.conversationId, {
             lastMessage: content.substring(0, 200),

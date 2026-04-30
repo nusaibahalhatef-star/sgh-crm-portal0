@@ -192,8 +192,9 @@ async function handleIncomingMessage(message: any, metadata: any) {
       content = "📍 موقع";
       messageType = "location";
     } else if (type === "button" && button?.text) {
+      // عند الضغط على زر قالب قديم (non-interactive template button)
       content = button.text;
-      messageType = "interactive";
+      messageType = "button_reply";
     } else if (type === "interactive" && interactive) {
       // معالجة interactive messages (button_reply, list_reply, etc.)
       if (interactive.type === "button_reply" && interactive.button_reply) {
