@@ -131,7 +131,7 @@ export const campRegistrationsRouter = router({
           recipientName: input.fullName,
           variables: {
             name: input.fullName,
-            campName: camp.name,
+            camp_name: camp.name,
             date: camp.startDate ? new Date(camp.startDate).toLocaleDateString("ar-YE") : "غير محدد",
             location: "المستشفى السعودي الألماني - صنعاء",
           },
@@ -355,7 +355,7 @@ export const campRegistrationsRouter = router({
               recipientName: reg.fullName || undefined,
               variables: {
                 name: reg.fullName || "المسجل",
-                campName: camp?.name || "المخيم",
+                camp_name: camp?.name || "المخيم",
                 date: camp?.startDate ? new Date(camp.startDate).toLocaleDateString("ar-YE") : "غير محدد",
                 location: "المستشفى السعودي الألماني - صنعاء",
               },
