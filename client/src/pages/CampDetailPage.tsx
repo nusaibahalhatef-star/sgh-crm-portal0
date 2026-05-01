@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { usePhoneFormat } from "@/hooks/usePhoneFormat";
 import { usePatientStorage } from "@/hooks/usePatientStorage";
 import { useAbandonedFormTracking } from "@/hooks/useAbandonedFormTracking";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function CampDetailPage() {
   const params = useParams();
@@ -41,11 +42,13 @@ function CampDetailContent({ slug }: { slug: string }) {
   const [, setLocation] = useLocation();
   const [phoneError, setPhoneError] = useState<string>("");
 
+  const { user } = useAuth();
   const { data: camp, isLoading } = trpc.camps.getBySlug.useQuery(
     { slug },
     { enabled: !!slug && slug !== ":slug" }
   );
-  const { data: registrations } = trpc.campRegistrations.list.useQuery();
+  // استعلام محمي - يعمل فقط للمستخدمين المسجلين لتجنب خطأ UNAUTHORIZED
+  const { data: registrations } = trpc.campRegistrations.list.useQuery(undefined, { enabled: !!user });
   const submitRegistration = trpc.campRegistrations.submit.useMutation();
   // eventId موحّد لتجنب تكرار الحدث بين Pixel وCAPI (Deduplication)
   const [regEventId] = useState(() => `camp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);

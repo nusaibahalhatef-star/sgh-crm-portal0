@@ -243,44 +243,45 @@ export function createWebhookRouter(): Router {
 
             if (message.type === "button" && message.button) {
               const payload = message.button.payload;
-              console.log(`[Webhook] Button clicked: ${payload} from ${userPhone}`);
+              const buttonText = message.button.text || payload;
+              console.log(`[Webhook] Button clicked: "${buttonText}" (payload: ${payload}) from ${userPhone}`);
+
+              // حفظ رد الزر كرسالة في المحادثة لعرضها في واجهة الدردشة
+              await saveInboundMessage(userPhone, buttonText, 'button_reply', message.id, JSON.stringify({ payload, buttonText }));
 
               // Parse payload: CONFIRM_APPOINTMENT_123 or CANCEL_APPOINTMENT_123
-              const [action, type, id] = payload.split("_");
+              const parts = payload.split("_");
+              const action = parts[0];
+              const type = parts[1];
+              const id = parts[parts.length - 1];
 
-              if (!action || !type || !id) {
-                console.error(`[Webhook] Invalid payload format: ${payload}`);
-                continue;
-              }
-
-              const bookingId = parseInt(id);
-              if (isNaN(bookingId)) {
-                console.error(`[Webhook] Invalid booking ID: ${id}`);
-                continue;
-              }
-
-              // Update status based on booking type
-              if (type === "APPOINTMENT") {
-                const newStatus = action === "CONFIRM" ? "confirmed" : "cancelled";
-                await db
-                  .update(appointments)
-                  .set({ status: newStatus, updatedAt: new Date() })
-                  .where(eq(appointments.id, bookingId));
-                console.log(`[Webhook] Appointment ${bookingId} updated to ${newStatus}`);
-              } else if (type === "OFFER") {
-                const newStatus = action === "CONFIRM" ? "confirmed" : "cancelled";
-                await db
-                  .update(offerLeads)
-                  .set({ status: newStatus, updatedAt: new Date() })
-                  .where(eq(offerLeads.id, bookingId));
-                console.log(`[Webhook] Offer lead ${bookingId} updated to ${newStatus}`);
-              } else if (type === "CAMP") {
-                const newStatus = action === "CONFIRM" ? "confirmed" : "cancelled";
-                await db
-                  .update(campRegistrations)
-                  .set({ status: newStatus, updatedAt: new Date() })
-                  .where(eq(campRegistrations.id, bookingId));
-                console.log(`[Webhook] Camp registration ${bookingId} updated to ${newStatus}`);
+              if (action && type && id) {
+                const bookingId = parseInt(id);
+                if (!isNaN(bookingId)) {
+                  // Update status based on booking type
+                  if (type === "APPOINTMENT") {
+                    const newStatus = action === "CONFIRM" ? "confirmed" : "cancelled";
+                    await db
+                      .update(appointments)
+                      .set({ status: newStatus, updatedAt: new Date() })
+                      .where(eq(appointments.id, bookingId));
+                    console.log(`[Webhook] Appointment ${bookingId} updated to ${newStatus}`);
+                  } else if (type === "OFFER") {
+                    const newStatus = action === "CONFIRM" ? "confirmed" : "cancelled";
+                    await db
+                      .update(offerLeads)
+                      .set({ status: newStatus, updatedAt: new Date() })
+                      .where(eq(offerLeads.id, bookingId));
+                    console.log(`[Webhook] Offer lead ${bookingId} updated to ${newStatus}`);
+                  } else if (type === "CAMP") {
+                    const newStatus = action === "CONFIRM" ? "confirmed" : "cancelled";
+                    await db
+                      .update(campRegistrations)
+                      .set({ status: newStatus, updatedAt: new Date() })
+                      .where(eq(campRegistrations.id, bookingId));
+                    console.log(`[Webhook] Camp registration ${bookingId} updated to ${newStatus}`);
+                  }
+                }
               }
             } else if (message.type === "interactive" && message.interactive) {
               // معالجة الرسائل التفاعلية (قوائم، أزرار سريعة)
@@ -288,20 +289,32 @@ export function createWebhookRouter(): Router {
               
               const interactive = message.interactive;
               let content = "رسالة تفاعلية";
-              let payload = null;
+              let msgType = 'button_reply';
+              let metaPayload: any = null;
 
               if (interactive.type === "button_reply" && interactive.button_reply) {
-                payload = interactive.button_reply.payload;
-                content = `رد على زر: ${interactive.button_reply.title}`;
-                console.log(`[Webhook] Button reply: ${payload} - ${interactive.button_reply.title}`);
+                // رد زر من قالب interactive
+                content = interactive.button_reply.title;
+                msgType = 'button_reply';
+                metaPayload = { 
+                  buttonId: interactive.button_reply.id, 
+                  buttonTitle: interactive.button_reply.title 
+                };
+                console.log(`[Webhook] Button reply: "${content}" (id: ${interactive.button_reply.id})`);
               } else if (interactive.type === "list_reply" && interactive.list_reply) {
-                payload = interactive.list_reply.id;
-                content = `رد على قائمة: ${interactive.list_reply.title}`;
-                console.log(`[Webhook] List reply: ${payload} - ${interactive.list_reply.title}`);
+                // اختيار من قائمة
+                content = interactive.list_reply.title;
+                msgType = 'list_reply';
+                metaPayload = { 
+                  listId: interactive.list_reply.id, 
+                  listTitle: interactive.list_reply.title,
+                  listDescription: interactive.list_reply.description 
+                };
+                console.log(`[Webhook] List reply: "${content}" (id: ${interactive.list_reply.id})`);
               }
 
-              // حفظ الرسالة التفاعلية كرسالة نصية
-              await saveInboundMessage(userPhone, content, 'interactive', message.id, payload);
+              // حفظ رد الزر بالنوع الصحيح لعرضه في واجهة الدردشة
+              await saveInboundMessage(userPhone, content, msgType, message.id, metaPayload ? JSON.stringify(metaPayload) : undefined);
             } else if (message.type === "text" && message.text) {
               console.log(`[Webhook] Text message from ${userPhone}: ${message.text.body}`);
               await saveInboundMessage(userPhone, message.text.body, 'text', message.id);

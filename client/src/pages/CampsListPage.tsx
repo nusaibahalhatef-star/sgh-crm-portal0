@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import Navbar from "@/components/Navbar";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,8 +26,10 @@ function CampsListContent() {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
 
+  const { user } = useAuth();
   const { data: camps, isLoading } = trpc.camps.getAll.useQuery();
-  const { data: registrations } = trpc.campRegistrations.list.useQuery();
+  // استعلام محمي - يعمل فقط للمستخدمين المسجلين لتجنب خطأ UNAUTHORIZED
+  const { data: registrations } = trpc.campRegistrations.list.useQuery(undefined, { enabled: !!user });
 
   // Separate active and expired camps based on endDate
   const now = new Date();
