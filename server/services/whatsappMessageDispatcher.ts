@@ -159,25 +159,31 @@ export async function dispatchWhatsAppMessage(opts: DispatchOptions): Promise<{
       } else if (template.metaStatus !== "APPROVED") {
         console.error(`[WhatsApp Dispatcher] Template "${template.name}" (ID: ${setting.whatsappTemplateId}) is not APPROVED. Current status: ${template.metaStatus}`);
       } else {
-        // بناء مكونات القالب - استخدام المتغيرات كـ parameters بالترتيب الصحيح
-        // القوالب في Meta تستخدم {{1}}, {{2}} أو {{name}}, {{date}} إلخ
-        const templateVars: string[] = [];
+        // بناء مكونات القالب مع دعم نوعين:
+        // 1. متغيرات رقمية {{1}}, {{2}} → parameters بدون parameter_name
+        // 2. متغيرات مسماة {{name}}, {{camp_name}} → parameters مع parameter_name (Named Parameters API)
+        const bodyParams: { type: "text"; text: string; parameter_name?: string }[] = [];
         try {
           const parsedVars = JSON.parse(template.variables || '[]') as string[];
-          // ترتيب المتغيرات: إذا كانت رقمية (1,2,3) نستخدم ترتيب Object.values
-          // إذا كانت نصية (name, date) نستخدم الترتيب المحدد في القالب
           const isNumeric = parsedVars.every(v => /^\d+$/.test(v));
           if (isNumeric) {
-            templateVars.push(...Object.values(variables));
+            // متغيرات رقمية: نُرسل القيم بالترتيب بدون parameter_name
+            const vals = Object.values(variables);
+            for (const v of vals) {
+              bodyParams.push({ type: "text", text: String(v) });
+            }
           } else {
+            // متغيرات مسماة: يجب إرسال parameter_name مع كل قيمة (Meta Named Parameters)
             for (const varName of parsedVars) {
-              templateVars.push(variables[varName] ?? '');
+              bodyParams.push({ type: "text", text: String(variables[varName] ?? ''), parameter_name: varName });
             }
           }
         } catch {
-          templateVars.push(...Object.values(variables));
+          const vals = Object.values(variables);
+          for (const v of vals) {
+            bodyParams.push({ type: "text", text: String(v) });
+          }
         }
-        const bodyParams = templateVars.map((v) => ({ type: "text" as const, text: String(v) }));
 
         const templateNameToSend = template.metaName || template.name;
         console.log(`[WhatsApp Dispatcher] Sending template "${templateNameToSend}" (metaName: ${template.metaName}) to ${phone}`);
