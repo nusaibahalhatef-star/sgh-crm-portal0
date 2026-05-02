@@ -173,7 +173,7 @@ export const campRegistrationsRouter = router({
         gclid: input.gclid,
         status: campInitialStatus,
         ...campStatusTimestamps,
-        preferredDate: assignedDate,
+        preferredDate: assignedDate ? assignedDate.toISOString().split('T')[0] : undefined,
         preferredTimeSlot: assignedTimeSlot,
       } as any);
 
