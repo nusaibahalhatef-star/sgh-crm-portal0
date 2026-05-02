@@ -4,6 +4,8 @@ import { TRPCError } from "@trpc/server";
 import { getDb } from "../db";
 import { appointments, offerLeads, campRegistrations } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
+import { dispatchWhatsAppMessage } from "../services/whatsappMessageDispatcher";
+import { serverCache, CacheKeys } from "../cache";
 
 /**
  * WhatsApp Webhook Router
@@ -187,15 +189,53 @@ export const webhooksRouter = router({
                 console.log(`[Webhook] Offer lead ${bookingId} updated to ${newStatus}`);
               } else if (type === "CAMP") {
                 const newStatus = action === "CONFIRM" ? "confirmed" : "cancelled";
+                const now = new Date();
+                const campUpdateData: any = { status: newStatus, updatedAt: now };
+                if (newStatus === "confirmed") campUpdateData.confirmedAt = now;
+                else if (newStatus === "cancelled") campUpdateData.cancelledAt = now;
+
                 await db
                   .update(campRegistrations)
-                  .set({ status: newStatus, updatedAt: new Date() })
+                  .set(campUpdateData)
                   .where(eq(campRegistrations.id, bookingId));
 
                 console.log(`[Webhook] Camp registration ${bookingId} updated to ${newStatus}`);
+
+                // إرسال رسالة WhatsApp تلقائية بناءً على الحالة الجديدة
+                const [reg] = await db.select().from(campRegistrations).where(eq(campRegistrations.id, bookingId)).limit(1);
+                if (reg?.phone) {
+                  const { camps } = await import("../../drizzle/schema");
+                  const [camp] = await db.select().from(camps).where(eq(camps.id, reg.campId)).limit(1);
+                  const triggerEvent = newStatus === "confirmed" ? "on_confirmed" : "on_cancelled";
+                  dispatchWhatsAppMessage({
+                    entityType: "camp_registration",
+                    triggerEvent,
+                    phone: reg.phone,
+                    recipientName: reg.fullName || undefined,
+                    variables: {
+                      name: reg.fullName || "المسجل",
+                      camp_name: camp?.name || "المخيم",
+                      date: (reg as any).preferredDate
+                        ? new Date((reg as any).preferredDate).toLocaleDateString("ar-YE")
+                        : (camp?.startDate ? new Date(camp.startDate).toLocaleDateString("ar-YE") : "غير محدد"),
+                      time: (reg as any).preferredTimeSlot === "morning"
+                        ? `صباحاً ${(camp as any)?.morningTime || ""}`
+                        : (reg as any).preferredTimeSlot === "evening"
+                        ? `مساءً ${(camp as any)?.eveningTime || ""}`
+                        : "غير محدد",
+                      location: "صنعاء - الستين الشمالي - قبل جولة الجمنه",
+                    },
+                    entityId: bookingId,
+                  }).catch(err => console.error(`[Webhook] Failed to send ${triggerEvent} for camp reg ${bookingId}:`, err));
+                }
+
+                // إبطال الـ cache
+                serverCache.invalidateByPrefix("paginated:campRegistrations:");
+                serverCache.invalidate("list:campRegistrations");
+                serverCache.invalidate(CacheKeys.campRegistrationStats());
               }
 
-              // TODO: إرسال رسالة تأكيد للمستخدم بعد تحديث الحالة
+              // معالجة APPOINTMENT و OFFER: إرسال رسائل تلقائية أيضاً
             } else if (message.type === "text" && message.text) {
               // معالجة الرسائل النصية الواردة
               console.log(`[Webhook] Text message from ${userPhone}: ${message.text.body}`);

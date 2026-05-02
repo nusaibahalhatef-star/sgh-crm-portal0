@@ -195,8 +195,9 @@ export const campRegistrationsRouter = router({
       }
 
       // Send automated camp registration confirmation message (Patient Journey) via dispatcher
-      // Run in background - don't block the response
+      // After successful send → auto-update status to "contacted"
       if (camp) {
+        const regId = Number(registration.insertId);
         dispatchWhatsAppMessage({
           entityType: "camp_registration",
           triggerEvent: "on_create",
@@ -215,7 +216,22 @@ export const campRegistrationsRouter = router({
               : "غير محدد",
             location: "صنعاء - الستين الشمالي - قبل جولة الجمنه",
           },
-          entityId: Number(registration.insertId),
+          entityId: regId,
+        }).then(async (result) => {
+          if (result?.success) {
+            // تحديث الحالة إلى "تم التواصل" بعد إرسال رسالة التسجيل بنجاح
+            const dbInner = await getDb();
+            if (dbInner) {
+              await dbInner
+                .update(campRegistrations)
+                .set({ status: "contacted", contactedAt: new Date(), updatedAt: new Date() })
+                .where(eq(campRegistrations.id, regId));
+              serverCache.invalidateByPrefix("paginated:campRegistrations:");
+              serverCache.invalidate("list:campRegistrations");
+              serverCache.invalidate(CacheKeys.campRegistrationStats());
+              console.log(`[CampReg] Auto-updated registration ${regId} to contacted after on_create send`);
+            }
+          }
         }).catch(error => {
           console.error("[WhatsApp Dispatcher] Failed to send camp registration on_create:", error);
         });
