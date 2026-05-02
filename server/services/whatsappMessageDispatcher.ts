@@ -188,15 +188,59 @@ export async function dispatchWhatsAppMessage(opts: DispatchOptions): Promise<{
         const templateNameToSend = template.metaName || template.name;
         console.log(`[WhatsApp Dispatcher] Sending template "${templateNameToSend}" (metaName: ${template.metaName}) to ${phone}`);
 
+        // بناء مكونات الأزرار (quick_reply) مع الـ payload الصحيح
+        // Format: CONFIRM_{TYPE}_{ID} أو CANCEL_{TYPE}_{ID}
+        const buttonComponents: Array<{
+          type: "button";
+          sub_type: "quick_reply";
+          index: number;
+          parameters: Array<{ type: "payload"; payload: string }>;
+        }> = [];
+        if (triggerEvent === "on_create" && entityId) {
+          const typeMap: Record<EntityType, string> = {
+            appointment: "APPOINTMENT",
+            camp_registration: "CAMP",
+            offer_lead: "OFFER",
+          };
+          const bookingType = typeMap[entityType];
+          try {
+            const parsedButtons = JSON.parse(template.buttons || '[]') as Array<{ type: string; text: string }>;
+            // تحديد index الأزرار بناءً على نص الزر
+            parsedButtons.forEach((btn, idx) => {
+              const text = btn.text || '';
+              const isConfirm = text.includes('تأكيد') || text.toLowerCase().includes('confirm');
+              const isCancel = text.includes('إلغاء') || text.includes('الغاء') || text.toLowerCase().includes('cancel');
+              if (isConfirm) {
+                buttonComponents.push({
+                  type: "button",
+                  sub_type: "quick_reply",
+                  index: idx,
+                  parameters: [{ type: "payload", payload: `CONFIRM_${bookingType}_${entityId}` }],
+                });
+              } else if (isCancel) {
+                buttonComponents.push({
+                  type: "button",
+                  sub_type: "quick_reply",
+                  index: idx,
+                  parameters: [{ type: "payload", payload: `CANCEL_${bookingType}_${entityId}` }],
+                });
+              }
+            });
+          } catch (e) {
+            console.warn(`[WhatsApp Dispatcher] Failed to parse buttons for template ${template.name}:`, e);
+          }
+        }
+
+        const allComponents: any[] = [];
+        if (bodyParams.length > 0) {
+          allComponents.push({ type: "body", parameters: bodyParams });
+        }
+        allComponents.push(...buttonComponents);
+
         result = await sendWhatsAppTemplateMessage(phone, {
           templateName: templateNameToSend,
           languageCode: (template.languageCode ?? "ar"),
-          components: bodyParams.length > 0 ? [
-            {
-              type: "body",
-              parameters: bodyParams,
-            },
-          ] : [],
+          components: allComponents,
         });
 
         if (result.success) {
