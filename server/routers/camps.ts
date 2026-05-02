@@ -44,7 +44,7 @@ export const campsRouter = router({
   getAll: publicProcedure.query(async () => {
     return serverCache.getOrCompute(
       "camps:active",
-      CacheTTL.LIST,
+      CacheTTL.LONG,
       async () => {
         const db = await getDb();
         if (!db) return [];
@@ -67,7 +67,7 @@ export const campsRouter = router({
   getAllAdmin: publicProcedure.query(async () => {
     return serverCache.getOrCompute(
       CacheKeys.campsList(),
-      CacheTTL.LIST,
+      CacheTTL.LONG,
       async () => {
         const db = await getDb();
         if (!db) return [];

@@ -351,3 +351,28 @@
 - [ ] تحديث الرسائل التلقائية لاستخدام التاريخ/الوقت المختار
 - [ ] تحديث العنوان في الرسائل التلقائية إلى "صنعاء - الستين الشمالي - قبل جولة الجمنه"
 - [ ] معالجة button_reply (تأكيد/إلغاء) لتحديث حالة التسجيل تلقائياً
+
+
+---
+
+## ✅ التحديثات التلقائية للحالات عبر أزرار WhatsApp وتحسين الأداء (مايو 2026)
+
+### تحديث webhook لـ APPOINTMENT و OFFER
+- [x] إرسال رسالة on_confirmed تلقائياً عند ضغط تأكيد لـ APPOINTMENT
+- [x] إرسال رسالة on_cancelled تلقائياً عند ضغط إلغاء لـ APPOINTMENT
+- [x] إرسال رسالة on_confirmed تلقائياً عند ضغط تأكيد لـ OFFER
+- [x] إرسال رسالة on_cancelled تلقائياً عند ضغط إلغاء لـ OFFER
+- [x] حفظ confirmedAt/cancelledAt عند تحديث الحالة في webhook
+- [x] إبطال cache بعد تحديث الحالة في webhook
+
+### تحديث contacted تلقائياً بعد on_create
+- [x] تحديث حالة APPOINTMENT إلى contacted بعد إرسال on_create بنجاح
+- [x] تحديث حالة OFFER LEAD إلى contacted بعد إرسال on_create بنجاح
+- [x] (CAMP: تم في جلسة سابقة)
+
+### تحسين الأداء
+- [x] رفع CacheTTL.STATS من 30 إلى 60 ثانية
+- [x] رفع CacheTTL.LIST من 60 إلى 120 ثانية
+- [x] رفع CacheTTL.PAGINATED من 15 إلى 30 ثانية
+- [x] إضافة CacheTTL.LONG = 300 ثانية للبيانات الثابتة
+- [x] تطبيق LONG TTL على doctors، camps، offers (بيانات نادراً ما تتغير)

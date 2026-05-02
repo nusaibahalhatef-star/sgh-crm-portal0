@@ -2,7 +2,7 @@ import { z } from "zod";
 import { publicProcedure, router } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { getDb } from "../db";
-import { appointments, offerLeads, campRegistrations } from "../../drizzle/schema";
+import { appointments, offerLeads, campRegistrations, doctors, offers, camps } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { dispatchWhatsAppMessage } from "../services/whatsappMessageDispatcher";
 import { serverCache, CacheKeys } from "../cache";
@@ -173,20 +173,79 @@ export const webhooksRouter = router({
               // تحديث الحالة حسب نوع الحجز
               if (type === "APPOINTMENT") {
                 const newStatus = action === "CONFIRM" ? "confirmed" : "cancelled";
-                await db
-                  .update(appointments)
-                  .set({ status: newStatus, updatedAt: new Date() })
-                  .where(eq(appointments.id, bookingId));
+                const now = new Date();
+                const apptUpdateData: any = { status: newStatus, updatedAt: now };
+                if (newStatus === "confirmed") apptUpdateData.confirmedAt = now;
+                else if (newStatus === "cancelled") apptUpdateData.cancelledAt = now;
 
+                await db.update(appointments).set(apptUpdateData).where(eq(appointments.id, bookingId));
                 console.log(`[Webhook] Appointment ${bookingId} updated to ${newStatus}`);
+
+                // إرسال رسالة WhatsApp تلقائية
+                const [appt] = await db
+                  .select({ phone: appointments.phone, fullName: appointments.fullName, preferredDate: appointments.preferredDate, preferredTime: appointments.preferredTime, procedure: appointments.procedure, doctorId: appointments.doctorId })
+                  .from(appointments).where(eq(appointments.id, bookingId)).limit(1);
+                if (appt?.phone) {
+                  const [doc] = appt.doctorId
+                    ? await db.select({ name: doctors.name }).from(doctors).where(eq(doctors.id, appt.doctorId)).limit(1)
+                    : [undefined];
+                  const triggerEvent = newStatus === "confirmed" ? "on_confirmed" : "on_cancelled";
+                  dispatchWhatsAppMessage({
+                    entityType: "appointment",
+                    triggerEvent,
+                    phone: appt.phone,
+                    recipientName: appt.fullName || undefined,
+                    variables: {
+                      name: appt.fullName || "المريض",
+                      doctor: doc?.name || "غير محدد",
+                      date: appt.preferredDate || "غير محدد",
+                      time: appt.preferredTime || "غير محدد",
+                      service: appt.procedure || "فحص عام",
+                    },
+                    entityId: bookingId,
+                  }).catch(err => console.error(`[Webhook] Failed to send ${triggerEvent} for appt ${bookingId}:`, err));
+                }
+
+                serverCache.invalidateByPrefix("paginated:appointments:");
+                serverCache.invalidate("list:appointments");
+                serverCache.invalidate(CacheKeys.appointmentStats());
+
               } else if (type === "OFFER") {
                 const newStatus = action === "CONFIRM" ? "confirmed" : "cancelled";
-                await db
-                  .update(offerLeads)
-                  .set({ status: newStatus, updatedAt: new Date() })
-                  .where(eq(offerLeads.id, bookingId));
+                const now = new Date();
+                const offerUpdateData: any = { status: newStatus, updatedAt: now };
+                if (newStatus === "confirmed") offerUpdateData.confirmedAt = now;
+                else if (newStatus === "cancelled") offerUpdateData.cancelledAt = now;
 
+                await db.update(offerLeads).set(offerUpdateData).where(eq(offerLeads.id, bookingId));
                 console.log(`[Webhook] Offer lead ${bookingId} updated to ${newStatus}`);
+
+                // إرسال رسالة WhatsApp تلقائية
+                const [lead] = await db
+                  .select({ phone: offerLeads.phone, fullName: offerLeads.fullName, offerId: offerLeads.offerId })
+                  .from(offerLeads).where(eq(offerLeads.id, bookingId)).limit(1);
+                if (lead?.phone) {
+                  const [offer] = lead.offerId
+                    ? await db.select({ title: offers.title }).from(offers).where(eq(offers.id, lead.offerId)).limit(1)
+                    : [undefined];
+                  const triggerEvent = newStatus === "confirmed" ? "on_confirmed" : "on_cancelled";
+                  dispatchWhatsAppMessage({
+                    entityType: "offer_lead",
+                    triggerEvent,
+                    phone: lead.phone,
+                    recipientName: lead.fullName || undefined,
+                    variables: {
+                      name: lead.fullName || "العميل",
+                      service: offer?.title || "العرض",
+                    },
+                    entityId: bookingId,
+                  }).catch(err => console.error(`[Webhook] Failed to send ${triggerEvent} for offer ${bookingId}:`, err));
+                }
+
+                serverCache.invalidateByPrefix("paginated:offerLeads:");
+                serverCache.invalidate("list:offerLeads");
+                serverCache.invalidate(CacheKeys.offerLeadStats());
+
               } else if (type === "CAMP") {
                 const newStatus = action === "CONFIRM" ? "confirmed" : "cancelled";
                 const now = new Date();

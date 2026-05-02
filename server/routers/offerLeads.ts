@@ -117,8 +117,9 @@ export const offerLeadsRouter = router({
       }
 
       // Send automated offer booking confirmation message (Patient Journey) via dispatcher
-      // Run in background - don't block the response
+      // After successful send → auto-update status to "contacted"
       if (offer) {
+        const leadId = Number(lead.insertId);
         dispatchWhatsAppMessage({
           entityType: "offer_lead",
           triggerEvent: "on_create",
@@ -129,7 +130,21 @@ export const offerLeadsRouter = router({
             service: offer.title,
             date: offer.startDate ? new Date(offer.startDate).toLocaleDateString("ar-YE") : "غير محدد",
           },
-          entityId: Number(lead.insertId),
+          entityId: leadId,
+        }).then(async (res) => {
+          if (res?.success) {
+            const dbInner = await getDb();
+            if (dbInner) {
+              await dbInner
+                .update(offerLeads)
+                .set({ status: "contacted", contactedAt: new Date(), updatedAt: new Date() })
+                .where(eq(offerLeads.id, leadId));
+              serverCache.invalidateByPrefix("paginated:offerLeads:");
+              serverCache.invalidate("list:offerLeads");
+              serverCache.invalidate(CacheKeys.offerLeadStats());
+              console.log(`[OfferLead] Auto-updated ${leadId} to contacted after on_create send`);
+            }
+          }
         }).catch(error => {
           console.error("[WhatsApp Dispatcher] Failed to send offer lead on_create:", error);
         });

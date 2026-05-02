@@ -161,8 +161,9 @@ export const CacheKeys = {
 // ─── Cache TTL Constants (in seconds) ───────────────────────────────────────
 
 export const CacheTTL = {
-  STATS: 30,           // Stats refresh every 30 seconds
-  LIST: 60,            // Reference lists refresh every 60 seconds
-  PAGINATED: 15,       // Paginated queries refresh every 15 seconds
-  SHORT: 10,           // Short-lived cache for rapidly changing data
+  STATS: 60,           // Stats refresh every 60 seconds
+  LIST: 120,           // Reference lists refresh every 2 minutes
+  PAGINATED: 30,       // Paginated queries refresh every 30 seconds
+  SHORT: 15,           // Short-lived cache for rapidly changing data
+  LONG: 300,           // Long-lived cache for rarely changing data (doctors, camps, offers)
 };

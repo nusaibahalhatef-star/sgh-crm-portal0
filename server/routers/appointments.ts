@@ -185,7 +185,9 @@ export const appointmentsRouter = router({
       });
 
       // Send automated booking confirmation message (Patient Journey) via dispatcher
+      // After successful send → auto-update status to "contacted"
       if (result) {
+        const apptId = result.insertId;
         dispatchWhatsAppMessage({
           entityType: "appointment",
           triggerEvent: "on_create",
@@ -198,7 +200,21 @@ export const appointmentsRouter = router({
             time: input.preferredTime || "غير محدد",
             service: input.procedure || "فحص عام",
           },
-          entityId: result.insertId,
+          entityId: apptId,
+        }).then(async (res) => {
+          if (res?.success) {
+            const dbInner = await getDb();
+            if (dbInner) {
+              await dbInner
+                .update(appointments)
+                .set({ status: "contacted", contactedAt: new Date(), updatedAt: new Date() })
+                .where(eq(appointments.id, apptId));
+              serverCache.invalidateByPrefix("paginated:appointments:");
+              serverCache.invalidate("list:appointments");
+              serverCache.invalidate(CacheKeys.appointmentStats());
+              console.log(`[Appointment] Auto-updated ${apptId} to contacted after on_create send`);
+            }
+          }
         }).catch(error => {
           console.error("[WhatsApp Dispatcher] Failed to send appointment on_create:", error);
         });
