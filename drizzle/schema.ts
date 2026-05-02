@@ -263,6 +263,11 @@ export const camps = mysqlTable("camps", {
   discountedOffers: text("discountedOffers"), // Discounted offers (one per line)
   availableProcedures: text("availableProcedures"), // JSON array of available procedures
   galleryImages: text("galleryImages"), // JSON array of image URLs
+  // Time slots for attendance
+  morningTime: varchar("morningTime", { length: 20 }), // e.g. "08:00" - وقت الجلسة الصباحية
+  eveningTime: varchar("eveningTime", { length: 20 }), // e.g. "14:00" - وقت الجلسة المسائية
+  // Daily capacity per time slot (null = unlimited)
+  dailyCapacity: int("dailyCapacity"), // الطاقة الاستيعابية اليومية لكل وقت
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -336,6 +341,9 @@ export const campRegistrations = mysqlTable("campRegistrations", {
   status: mysqlEnum("status", ["pending", "contacted", "no_answer", "confirmed", "attended", "completed", "cancelled"]).default("pending").notNull(),
   statusNotes: text("statusNotes"),
   attendanceDate: timestamp("attendanceDate"),
+  // Preferred attendance date and time slot chosen by patient during registration
+  preferredDate: varchar("preferredDate", { length: 20 }), // YYYY-MM-DD format
+  preferredTimeSlot: mysqlEnum("preferredTimeSlot", ["morning", "evening"]), // الوقت المفضل
   contactedAt: timestamp("contactedAt"),
   confirmedAt: timestamp("confirmedAt"),
   attendedAt: timestamp("attendedAt"),

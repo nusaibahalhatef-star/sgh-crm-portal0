@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { eq, desc, and, gte } from "drizzle-orm";
+import { eq, desc, and, gte, sql } from "drizzle-orm";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { getDb } from "../db";
 import { campRegistrations } from "../../drizzle/schema";
@@ -41,6 +41,8 @@ export const campRegistrationsRouter = router({
         referrer: z.string().optional(),
         fbclid: z.string().optional(),
         gclid: z.string().optional(),
+        preferredDate: z.string().optional(), // YYYY-MM-DD تاريخ الحضور المفضل
+        preferredTimeSlot: z.enum(["morning", "evening"]).optional(), // الوقت المفضل
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -79,6 +81,75 @@ export const campRegistrationsRouter = router({
       else if (campInitialStatus === 'completed') campStatusTimestamps.completedAt = nowCamp;
       else if (campInitialStatus === 'cancelled') campStatusTimestamps.cancelledAt = nowCamp;
 
+      // Auto-assign date/time if not provided by the user
+      let assignedDate: Date | undefined = input.preferredDate ? new Date(input.preferredDate) : undefined;
+      let assignedTimeSlot: "morning" | "evening" | undefined = input.preferredTimeSlot;
+
+      if (!assignedDate) {
+        // Get camp to check dates and capacity
+        const { camps: campsTable } = await import("../../drizzle/schema");
+        const [campForDate] = await db.select().from(campsTable).where(eq(campsTable.id, input.campId)).limit(1);
+        if (campForDate && campForDate.startDate && campForDate.endDate) {
+          const morningTime = (campForDate as any).morningTime as string | null;
+          const eveningTime = (campForDate as any).eveningTime as string | null;
+          const dailyCapacity = (campForDate as any).dailyCapacity as number | null;
+          const start = new Date(campForDate.startDate);
+          const end = new Date(campForDate.endDate);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const allDays: string[] = [];
+          const d = new Date(start);
+          while (d <= end) {
+            if (d >= today) allDays.push(d.toISOString().split('T')[0]);
+            d.setDate(d.getDate() + 1);
+          }
+          if (allDays.length > 0) {
+            if (dailyCapacity && (morningTime || eveningTime)) {
+              // Count confirmed per day/slot
+              const confirmedRegs = await db
+                .select({
+                  preferredDate: (campRegistrations as any).preferredDate,
+                  preferredTimeSlot: (campRegistrations as any).preferredTimeSlot,
+                  count: sql<number>`count(*)`,
+                })
+                .from(campRegistrations)
+                .where(and(
+                  eq(campRegistrations.campId, input.campId),
+                  sql`status IN ('confirmed', 'attended', 'completed')`,
+                  sql`preferredDate IS NOT NULL`
+                ))
+                .groupBy((campRegistrations as any).preferredDate, (campRegistrations as any).preferredTimeSlot);
+              const countMap: Record<string, { morning: number; evening: number }> = {};
+              for (const row of confirmedRegs) {
+                const dk = row.preferredDate ? new Date(row.preferredDate).toISOString().split('T')[0] : null;
+                if (!dk) continue;
+                if (!countMap[dk]) countMap[dk] = { morning: 0, evening: 0 };
+                if (row.preferredTimeSlot === 'morning') countMap[dk].morning += Number(row.count);
+                else if (row.preferredTimeSlot === 'evening') countMap[dk].evening += Number(row.count);
+              }
+              // Find first available day/slot
+              for (const day of allDays) {
+                const counts = countMap[day] || { morning: 0, evening: 0 };
+                if (morningTime && counts.morning < dailyCapacity) {
+                  assignedDate = new Date(day);
+                  assignedTimeSlot = 'morning';
+                  break;
+                }
+                if (eveningTime && counts.evening < dailyCapacity) {
+                  assignedDate = new Date(day);
+                  assignedTimeSlot = 'evening';
+                  break;
+                }
+              }
+            } else {
+              // No capacity limit - assign first day
+              assignedDate = new Date(allDays[0]);
+              assignedTimeSlot = morningTime ? 'morning' : (eveningTime ? 'evening' : undefined);
+            }
+          }
+        }
+      }
+
       const [registration] = await db.insert(campRegistrations).values({
         campId: input.campId,
         fullName: input.fullName,
@@ -102,7 +173,9 @@ export const campRegistrationsRouter = router({
         gclid: input.gclid,
         status: campInitialStatus,
         ...campStatusTimestamps,
-      });
+        preferredDate: assignedDate,
+        preferredTimeSlot: assignedTimeSlot,
+      } as any);
 
       // Get camp details for notification
       const { camps } = await import("../../drizzle/schema");
@@ -132,8 +205,15 @@ export const campRegistrationsRouter = router({
           variables: {
             name: input.fullName,
             camp_name: camp.name,
-            date: camp.startDate ? new Date(camp.startDate).toLocaleDateString("ar-YE") : "غير محدد",
-            location: "المستشفى السعودي الألماني - صنعاء",
+            date: assignedDate
+              ? assignedDate.toLocaleDateString("ar-YE")
+              : (camp.startDate ? new Date(camp.startDate).toLocaleDateString("ar-YE") : "غير محدد"),
+            time: assignedTimeSlot === 'morning'
+              ? `صباحاً ${(camp as any).morningTime || ''}`
+              : assignedTimeSlot === 'evening'
+              ? `مساءً ${(camp as any).eveningTime || ''}`
+              : "غير محدد",
+            location: "صنعاء - الستين الشمالي - قبل جولة الجمنه",
           },
           entityId: Number(registration.insertId),
         }).catch(error => {
@@ -356,8 +436,15 @@ export const campRegistrationsRouter = router({
               variables: {
                 name: reg.fullName || "المسجل",
                 camp_name: camp?.name || "المخيم",
-                date: camp?.startDate ? new Date(camp.startDate).toLocaleDateString("ar-YE") : "غير محدد",
-                location: "المستشفى السعودي الألماني - صنعاء",
+                date: (reg as any).preferredDate
+                  ? new Date((reg as any).preferredDate).toLocaleDateString("ar-YE")
+                  : (camp?.startDate ? new Date(camp.startDate).toLocaleDateString("ar-YE") : "غير محدد"),
+                time: (reg as any).preferredTimeSlot === 'morning'
+                  ? `صباحاً ${(camp as any)?.morningTime || ''}`
+                  : (reg as any).preferredTimeSlot === 'evening'
+                  ? `مساءً ${(camp as any)?.eveningTime || ''}`
+                  : "غير محدد",
+                location: "صنعاء - الستين الشمالي - قبل جولة الجمنه",
               },
               entityId: input.id,
               sentBy: ctx.user?.id,

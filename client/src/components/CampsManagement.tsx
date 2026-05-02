@@ -61,6 +61,9 @@ export default function CampsManagement() {
     discountedOffers: "",
     availableProcedures: "",
     galleryImages: "",
+    morningTime: "",
+    eveningTime: "",
+    dailyCapacity: "",
   });
 
   // Slug auto-generation hook
@@ -130,6 +133,9 @@ export default function CampsManagement() {
       discountedOffers: "",
       availableProcedures: "",
       galleryImages: "",
+      morningTime: "",
+      eveningTime: "",
+      dailyCapacity: "",
     });
     setEditingCamp(null);
     resetManualEdit();
@@ -150,6 +156,9 @@ export default function CampsManagement() {
       discountedOffers: camp.discountedOffers || "",
       availableProcedures: camp.availableProcedures || "",
       galleryImages: camp.galleryImages || "",
+      morningTime: (camp as any).morningTime || "",
+      eveningTime: (camp as any).eveningTime || "",
+      dailyCapacity: (camp as any).dailyCapacity ? String((camp as any).dailyCapacity) : "",
     });
     setShowAddDialog(true);
   };
@@ -161,13 +170,15 @@ export default function CampsManagement() {
         ...formData,
         startDate: formData.startDate ? new Date(formData.startDate) : undefined,
         endDate: formData.endDate ? new Date(formData.endDate) : undefined,
-      });
+        dailyCapacity: formData.dailyCapacity ? parseInt(formData.dailyCapacity) : undefined,
+      } as any);
     } else {
       createMutation.mutate({
         ...formData,
         startDate: formData.startDate ? new Date(formData.startDate) : undefined,
         endDate: formData.endDate ? new Date(formData.endDate) : undefined,
-      });
+        dailyCapacity: formData.dailyCapacity ? parseInt(formData.dailyCapacity) : undefined,
+      } as any);
     }
   };
 
@@ -185,6 +196,9 @@ export default function CampsManagement() {
       discountedOffers: camp.discountedOffers || "",
       availableProcedures: camp.availableProcedures || "",
       galleryImages: camp.galleryImages || "",
+      morningTime: (camp as any).morningTime || "",
+      eveningTime: (camp as any).eveningTime || "",
+      dailyCapacity: (camp as any).dailyCapacity ? String((camp as any).dailyCapacity) : "",
     });
     setShowAddDialog(true);
   };
@@ -602,6 +616,45 @@ export default function CampsManagement() {
                   type="date"
                   value={formData.endDate}
                   onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {/* أوقات الحضور والطاقة الاستيعابية */}
+            <div className="space-y-1 mb-4 mt-6">
+              <h4 className="text-sm font-semibold text-foreground">أوقات الحضور والطاقة الاستيعابية</h4>
+              <div className="h-px bg-muted" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-right block text-xs font-medium text-muted-foreground" htmlFor="morningTime">وقت الجلسة الصباحية</Label>
+                <Input
+                  id="morningTime"
+                  type="time"
+                  value={formData.morningTime}
+                  onChange={(e) => setFormData({ ...formData, morningTime: e.target.value })}
+                  dir="ltr"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-right block text-xs font-medium text-muted-foreground" htmlFor="eveningTime">وقت الجلسة المسائية</Label>
+                <Input
+                  id="eveningTime"
+                  type="time"
+                  value={formData.eveningTime}
+                  onChange={(e) => setFormData({ ...formData, eveningTime: e.target.value })}
+                  dir="ltr"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-right block text-xs font-medium text-muted-foreground" htmlFor="dailyCapacity">الطاقة الاستيعابية اليومية (لكل وقت)</Label>
+                <Input
+                  id="dailyCapacity"
+                  type="number"
+                  min="1"
+                  value={formData.dailyCapacity}
+                  onChange={(e) => setFormData({ ...formData, dailyCapacity: e.target.value })}
+                  placeholder="مثال: 20 (اتركه فارغاً لعدم التحديد)"
                 />
               </div>
             </div>

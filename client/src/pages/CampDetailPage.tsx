@@ -22,6 +22,7 @@ import { usePhoneFormat } from "@/hooks/usePhoneFormat";
 import { usePatientStorage } from "@/hooks/usePatientStorage";
 import { useAbandonedFormTracking } from "@/hooks/useAbandonedFormTracking";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function CampDetailPage() {
   const params = useParams();
@@ -43,6 +44,10 @@ function CampDetailContent({ slug }: { slug: string }) {
   const [phoneError, setPhoneError] = useState<string>("");
 
   const { user } = useAuth();
+  const { data: availableDates } = trpc.camps.getAvailableDates.useQuery(
+    { slug },
+    { enabled: !!slug && slug !== ":slug" }
+  );
   const { data: camp, isLoading } = trpc.camps.getBySlug.useQuery(
     { slug },
     { enabled: !!slug && slug !== ":slug" }
@@ -62,6 +67,8 @@ function CampDetailContent({ slug }: { slug: string }) {
     gender: (savedInfo?.gender || "") as "male" | "female" | "",
     procedures: [] as string[],
     patientMessage: "",
+    preferredDate: "",
+    preferredTimeSlot: "" as "morning" | "evening" | "",
   });
   const [showAllFreeOffers, setShowAllFreeOffers] = useState(false);
   const [showAllDiscountedOffers, setShowAllDiscountedOffers] = useState(false);
@@ -169,6 +176,8 @@ function CampDetailContent({ slug }: { slug: string }) {
         gender: formData.gender as "male" | "female" | undefined || undefined,
         procedures: formData.procedures.length > 0 ? JSON.stringify(formData.procedures) : undefined,
         patientMessage: formData.patientMessage || undefined,
+        preferredDate: formData.preferredDate || undefined,
+        preferredTimeSlot: (formData.preferredTimeSlot as "morning" | "evening") || undefined,
         source: trackingData.source,
         utmSource: trackingData.utmSource,
         utmMedium: trackingData.utmMedium,
@@ -720,6 +729,77 @@ function CampDetailContent({ slug }: { slug: string }) {
                     </div>
                   )}
 
+                  {/* حقل اختيار التاريخ والوقت */}
+                  {availableDates && availableDates.dates.length > 0 && (availableDates.morningTime || availableDates.eveningTime) && (
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium text-foreground">
+                        <Calendar className="inline h-4 w-4 ml-1" />
+                        التاريخ والوقت المناسب لك (اختياري)
+                      </Label>
+                      <p className="text-xs text-muted-foreground">إذا لم تختر، سيتم تحديد وقت مناسب تلقائياً</p>
+                      {/* اختيار التاريخ */}
+                      <div>
+                        <Label className="text-xs text-muted-foreground mb-1 block">التاريخ</Label>
+                        <Select
+                          value={formData.preferredDate}
+                          onValueChange={(val) => setFormData({ ...formData, preferredDate: val, preferredTimeSlot: "" })}
+                        >
+                          <SelectTrigger className="h-11">
+                            <SelectValue placeholder="اختر التاريخ المناسب" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableDates.dates.map((d) => (
+                              <SelectItem key={d.date} value={d.date}>
+                                {new Date(d.date).toLocaleDateString("ar-YE", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {/* اختيار الوقت */}
+                      {formData.preferredDate && (() => {
+                        const selectedDay = availableDates.dates.find(d => d.date === formData.preferredDate);
+                        const hasMorning = selectedDay?.morningAvailable && availableDates.morningTime;
+                        const hasEvening = selectedDay?.eveningAvailable && availableDates.eveningTime;
+                        if (!hasMorning && !hasEvening) return null;
+                        return (
+                          <div>
+                            <Label className="text-xs text-muted-foreground mb-1 block">الوقت</Label>
+                            <div className="grid grid-cols-2 gap-3">
+                              {hasMorning && (
+                                <button
+                                  type="button"
+                                  onClick={() => setFormData({ ...formData, preferredTimeSlot: "morning" })}
+                                  className={`h-11 rounded-lg border-2 text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
+                                    formData.preferredTimeSlot === "morning"
+                                      ? "border-green-600 bg-green-50 text-green-700"
+                                      : "border-border bg-background text-foreground hover:border-green-400"
+                                  }`}
+                                >
+                                  <Clock className="h-4 w-4" />
+                                  صباحاً {availableDates.morningTime}
+                                </button>
+                              )}
+                              {hasEvening && (
+                                <button
+                                  type="button"
+                                  onClick={() => setFormData({ ...formData, preferredTimeSlot: "evening" })}
+                                  className={`h-11 rounded-lg border-2 text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
+                                    formData.preferredTimeSlot === "evening"
+                                      ? "border-green-600 bg-green-50 text-green-700"
+                                      : "border-border bg-background text-foreground hover:border-green-400"
+                                  }`}
+                                >
+                                  <Clock className="h-4 w-4" />
+                                  مساءً {availableDates.eveningTime}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
                   {/* حقل الرسالة الاختياري */}
                   <div>
                     <Label htmlFor="patientMessage" className="text-sm font-medium text-foreground">

@@ -9,8 +9,8 @@
 import { z } from 'zod';
 import { publicProcedure, protectedProcedure, router } from '../_core/trpc';
 import { getDb } from '../db';
-import { camps } from '../../drizzle/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { camps, campRegistrations } from '../../drizzle/schema';
+import { eq, and, desc, gte, lte, sql } from 'drizzle-orm';
 import { generateSlug, isValidSlug } from '../../shared/_core/utils/slug';
 import { serverCache, CacheKeys, CacheTTL } from '../cache';
 
@@ -31,6 +31,9 @@ const campInputSchema = z.object({
   discountedOffers: z.string().optional(), // Discounted offers (one per line)
   availableProcedures: z.string().optional(), // JSON string
   galleryImages: z.string().optional(), // JSON string
+  morningTime: z.string().optional(), // وقت الجلسة الصباحية HH:MM
+  eveningTime: z.string().optional(), // وقت الجلسة المسائية HH:MM
+  dailyCapacity: z.number().int().positive().optional(), // الطاقة الاستيعابية اليومية لكل وقت
 });
 
 export const campsRouter = router({
@@ -121,6 +124,103 @@ export const campsRouter = router({
     }),
 
   /**
+   * Get available dates for a camp with remaining capacity per day/slot
+   * الحصول على الأيام المتاحة مع الطاقة المتبقية لكل يوم/وقت
+   */
+  getAvailableDates: publicProcedure
+    .input(z.object({ slug: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { dates: [], morningTime: null, eveningTime: null, dailyCapacity: null };
+
+      // Get camp info
+      const [camp] = await db.select().from(camps).where(and(eq(camps.slug, input.slug), eq(camps.isActive, true))).limit(1);
+      if (!camp || !camp.startDate || !camp.endDate) {
+        return { dates: [], morningTime: null, eveningTime: null, dailyCapacity: null };
+      }
+
+      const morningTime = (camp as any).morningTime as string | null;
+      const eveningTime = (camp as any).eveningTime as string | null;
+      const dailyCapacity = (camp as any).dailyCapacity as number | null;
+
+      // Build list of all days in camp period
+      const start = new Date(camp.startDate);
+      const end = new Date(camp.endDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const allDays: string[] = [];
+      const d = new Date(start);
+      while (d <= end) {
+        if (d >= today) {
+          allDays.push(d.toISOString().split('T')[0]);
+        }
+        d.setDate(d.getDate() + 1);
+      }
+
+      if (!dailyCapacity || allDays.length === 0) {
+        // No capacity limit - all days available
+        return {
+          dates: allDays.map(date => ({
+            date,
+            morningAvailable: !!morningTime,
+            eveningAvailable: !!eveningTime,
+            morningRemaining: null,
+            eveningRemaining: null,
+          })),
+          morningTime,
+          eveningTime,
+          dailyCapacity,
+        };
+      }
+
+      // Count confirmed registrations per date and time slot
+      const confirmedRegs = await db
+        .select({
+          preferredDate: (campRegistrations as any).preferredDate,
+          preferredTimeSlot: (campRegistrations as any).preferredTimeSlot,
+          count: sql<number>`count(*)`,
+        })
+        .from(campRegistrations)
+        .where(
+          and(
+            eq(campRegistrations.campId, camp.id),
+            sql`status IN ('confirmed', 'attended', 'completed')`,
+            sql`preferredDate IS NOT NULL`
+          )
+        )
+        .groupBy(
+          (campRegistrations as any).preferredDate,
+          (campRegistrations as any).preferredTimeSlot
+        );
+
+      // Build a map: date -> { morning: count, evening: count }
+      const countMap: Record<string, { morning: number; evening: number }> = {};
+      for (const row of confirmedRegs) {
+        const dateKey = row.preferredDate ? new Date(row.preferredDate).toISOString().split('T')[0] : null;
+        if (!dateKey) continue;
+        if (!countMap[dateKey]) countMap[dateKey] = { morning: 0, evening: 0 };
+        if (row.preferredTimeSlot === 'morning') countMap[dateKey].morning += Number(row.count);
+        else if (row.preferredTimeSlot === 'evening') countMap[dateKey].evening += Number(row.count);
+      }
+
+      const dates = allDays.map(date => {
+        const counts = countMap[date] || { morning: 0, evening: 0 };
+        const morningRemaining = morningTime ? Math.max(0, dailyCapacity - counts.morning) : null;
+        const eveningRemaining = eveningTime ? Math.max(0, dailyCapacity - counts.evening) : null;
+        return {
+          date,
+          morningAvailable: morningTime ? morningRemaining! > 0 : false,
+          eveningAvailable: eveningTime ? eveningRemaining! > 0 : false,
+          morningRemaining,
+          eveningRemaining,
+        };
+      }).filter(d => d.morningAvailable || d.eveningAvailable || (!morningTime && !eveningTime));
+
+      return { dates, morningTime, eveningTime, dailyCapacity };
+    }),
+
+  /**
    * Create new camp (admin only)
    * إنشاء مخيم جديد (للإدارة فقط)
    */
@@ -167,7 +267,10 @@ export const campsRouter = router({
         discountedOffers: input.discountedOffers,
         availableProcedures: input.availableProcedures,
         galleryImages: input.galleryImages,
-      });
+        morningTime: input.morningTime,
+        eveningTime: input.eveningTime,
+        dailyCapacity: input.dailyCapacity,
+      } as any);
       
       // Invalidate camps cache
       serverCache.invalidate(CacheKeys.campsList());
@@ -240,7 +343,10 @@ export const campsRouter = router({
           discountedOffers: data.discountedOffers,
           availableProcedures: data.availableProcedures,
           galleryImages: data.galleryImages,
-        })
+          morningTime: data.morningTime,
+          eveningTime: data.eveningTime,
+          dailyCapacity: data.dailyCapacity,
+        } as any)
         .where(eq(camps.id, id));
       
       // Invalidate camps cache
