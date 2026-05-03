@@ -190,6 +190,8 @@ export const webhooksRouter = router({
                     ? await db.select({ name: doctors.name }).from(doctors).where(eq(doctors.id, appt.doctorId)).limit(1)
                     : [undefined];
                   const triggerEvent = newStatus === "confirmed" ? "on_confirmed" : "on_cancelled";
+                  // appointment_confirmation (60005) يقبل 4 متغيرات: name, date, doctor, service
+                  // ندمج date و time في متغير واحد
                   dispatchWhatsAppMessage({
                     entityType: "appointment",
                     triggerEvent,
@@ -197,9 +199,10 @@ export const webhooksRouter = router({
                     recipientName: appt.fullName || undefined,
                     variables: {
                       name: appt.fullName || "المريض",
+                      date: appt.preferredDate
+                        ? `${appt.preferredDate}${appt.preferredTime ? ' الساعة ' + appt.preferredTime : ''}`.trim()
+                        : "غير محدد",
                       doctor: doc?.name || "غير محدد",
-                      date: appt.preferredDate || "غير محدد",
-                      time: appt.preferredTime || "غير محدد",
                       service: appt.procedure || "فحص عام",
                     },
                     entityId: bookingId,
@@ -266,6 +269,17 @@ export const webhooksRouter = router({
                   const { camps } = await import("../../drizzle/schema");
                   const [camp] = await db.select().from(camps).where(eq(camps.id, reg.campId)).limit(1);
                   const triggerEvent = newStatus === "confirmed" ? "on_confirmed" : "on_cancelled";
+                  // camp_reg_confirmed (150004) يقبل 4 متغيرات: name, camp_name, date, location
+                  // camp_reg_cancelled (150003) يقبل 2 متغيرات: name, camp_name
+                  const wh_dateStr = (reg as any).preferredDate
+                    ? new Date((reg as any).preferredDate).toLocaleDateString("ar-YE")
+                    : (camp?.startDate ? new Date(camp.startDate).toLocaleDateString("ar-YE") : "غير محدد");
+                  const wh_timeStr = (reg as any).preferredTimeSlot === "morning"
+                    ? `صباحاً ${(camp as any)?.morningTime || ""}`.trim()
+                    : (reg as any).preferredTimeSlot === "evening"
+                    ? `مساءً ${(camp as any)?.eveningTime || ""}`.trim()
+                    : "";
+                  const wh_dateTimeStr = wh_timeStr ? `${wh_dateStr} - ${wh_timeStr}` : wh_dateStr;
                   dispatchWhatsAppMessage({
                     entityType: "camp_registration",
                     triggerEvent,
@@ -274,14 +288,8 @@ export const webhooksRouter = router({
                     variables: {
                       name: reg.fullName || "المسجل",
                       camp_name: camp?.name || "المخيم",
-                      date: (reg as any).preferredDate
-                        ? new Date((reg as any).preferredDate).toLocaleDateString("ar-YE")
-                        : (camp?.startDate ? new Date(camp.startDate).toLocaleDateString("ar-YE") : "غير محدد"),
-                      time: (reg as any).preferredTimeSlot === "morning"
-                        ? `صباحاً ${(camp as any)?.morningTime || ""}`
-                        : (reg as any).preferredTimeSlot === "evening"
-                        ? `مساءً ${(camp as any)?.eveningTime || ""}`
-                        : "غير محدد",
+                      // للتأكيد: قالب on_confirmed يحتاج date و location، قالب on_cancelled يحتاج name و camp_name فقط
+                      date: wh_dateTimeStr,
                       location: "صنعاء - الستين الشمالي - قبل جولة الجمنه",
                     },
                     entityId: bookingId,

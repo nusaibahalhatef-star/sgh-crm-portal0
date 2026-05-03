@@ -195,9 +195,11 @@ export const appointmentsRouter = router({
           recipientName: input.fullName,
           variables: {
             name: input.fullName,
+            // دمج date و time في متغير واحد ليتوافق مع القالب المعتمد (4 متغيرات فقط)
+            date: input.preferredDate
+              ? `${input.preferredDate}${input.preferredTime ? ' الساعة ' + input.preferredTime : ''}`.trim()
+              : "غير محدد",
             doctor: doctor?.name || "غير محدد",
-            date: input.preferredDate || "غير محدد",
-            time: input.preferredTime || "غير محدد",
             service: input.procedure || "فحص عام",
           },
           entityId: apptId,

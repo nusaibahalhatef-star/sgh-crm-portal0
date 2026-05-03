@@ -194,47 +194,91 @@ export const campRegistrationsRouter = router({
         });
       }
 
-      // Send automated camp registration confirmation message (Patient Journey) via dispatcher
-      // After successful send → auto-update status to "contacted"
+      // إرسال الرسائل التلقائية بناءً على نوع التسجيل والحالة المختارة
       if (camp) {
         const regId = Number(registration.insertId);
-        dispatchWhatsAppMessage({
-          entityType: "camp_registration",
-          triggerEvent: "on_create",
-          phone: input.phone,
-          recipientName: input.fullName,
-          variables: {
-            name: input.fullName,
-            camp_name: camp.name,
-            date: assignedDate
-              ? assignedDate.toLocaleDateString("ar-YE")
-              : (camp.startDate ? new Date(camp.startDate).toLocaleDateString("ar-YE") : "غير محدد"),
-            time: assignedTimeSlot === 'morning'
-              ? `صباحاً ${(camp as any).morningTime || ''}`
-              : assignedTimeSlot === 'evening'
-              ? `مساءً ${(camp as any).eveningTime || ''}`
-              : "غير محدد",
-            location: "صنعاء - الستين الشمالي - قبل جولة الجمنه",
-          },
-          entityId: regId,
-        }).then(async (result) => {
-          if (result?.success) {
-            // تحديث الحالة إلى "تم التواصل" بعد إرسال رسالة التسجيل بنجاح
-            const dbInner = await getDb();
-            if (dbInner) {
-              await dbInner
-                .update(campRegistrations)
-                .set({ status: "contacted", contactedAt: new Date(), updatedAt: new Date() })
-                .where(eq(campRegistrations.id, regId));
-              serverCache.invalidateByPrefix("paginated:campRegistrations:");
-              serverCache.invalidate("list:campRegistrations");
-              serverCache.invalidate(CacheKeys.campRegistrationStats());
-              console.log(`[CampReg] Auto-updated registration ${regId} to contacted after on_create send`);
+        // التسجيل اليدوي: source=admin أو حالة مختارة غير pending
+        const isManualRegistration = input.source === 'admin' || (input.status && input.status !== 'pending');
+
+        if (!isManualRegistration || campInitialStatus === 'pending') {
+          // ── تسجيل من الواجهة العامة أو تسجيل يدوي بحالة pending ──
+          // أرسل رسالة on_create وحدّث الحالة إلى contacted بعد الإرسال
+          // camp_reg_verification (150005) يقبل 5 متغيرات: name, camp_name, date, time, location
+          dispatchWhatsAppMessage({
+            entityType: "camp_registration",
+            triggerEvent: "on_create",
+            phone: input.phone,
+            recipientName: input.fullName,
+            variables: {
+              name: input.fullName,
+              camp_name: camp.name,
+              date: assignedDate
+                ? assignedDate.toLocaleDateString("ar-YE")
+                : (camp.startDate ? new Date(camp.startDate).toLocaleDateString("ar-YE") : "غير محدد"),
+              time: assignedTimeSlot === 'morning'
+                ? `صباحاً ${(camp as any).morningTime || ''}`.trim()
+                : assignedTimeSlot === 'evening'
+                ? `مساءً ${(camp as any).eveningTime || ''}`.trim()
+                : "غير محدد",
+              location: "صنعاء - الستين الشمالي - قبل جولة الجمنه",
+            },
+            entityId: regId,
+          }).then(async (result) => {
+            if (result?.success) {
+              // تحديث الحالة إلى "تم التواصل" بعد إرسال رسالة التسجيل بنجاح
+              const dbInner = await getDb();
+              if (dbInner) {
+                await dbInner
+                  .update(campRegistrations)
+                  .set({ status: "contacted", contactedAt: new Date(), updatedAt: new Date() })
+                  .where(eq(campRegistrations.id, regId));
+                serverCache.invalidateByPrefix("paginated:campRegistrations:");
+                serverCache.invalidate("list:campRegistrations");
+                serverCache.invalidate(CacheKeys.campRegistrationStats());
+                console.log(`[CampReg] Auto-updated registration ${regId} to contacted after on_create send`);
+              }
             }
+          }).catch(error => {
+            console.error("[WhatsApp Dispatcher] Failed to send camp registration on_create:", error);
+          });
+        } else {
+          // ── تسجيل يدوي بحالة محددة (غير pending) ──
+          // أرسل الرسالة المناسبة للحالة المختارة فقط، بدون تحديث الحالة تلقائياً
+          const manualTriggerMap: Record<string, string> = {
+            "confirmed": "on_confirmed",
+            "attended": "on_arrived",
+            "completed": "on_completed",
+            "cancelled": "on_cancelled",
+          };
+          const manualTrigger = manualTriggerMap[campInitialStatus];
+          if (manualTrigger) {
+            dispatchWhatsAppMessage({
+              entityType: "camp_registration",
+              triggerEvent: manualTrigger as any,
+              phone: input.phone,
+              recipientName: input.fullName,
+              variables: {
+                name: input.fullName,
+                camp_name: camp.name,
+                date: assignedDate
+                  ? assignedDate.toLocaleDateString("ar-YE")
+                  : (camp.startDate ? new Date(camp.startDate).toLocaleDateString("ar-YE") : "غير محدد"),
+                time: assignedTimeSlot === 'morning'
+                  ? `صباحاً ${(camp as any).morningTime || ''}`
+                  : assignedTimeSlot === 'evening'
+                  ? `مساءً ${(camp as any).eveningTime || ''}`
+                  : "غير محدد",
+                location: "صنعاء - الستين الشمالي - قبل جولة الجمنه",
+              },
+              entityId: regId,
+            }).catch(error => {
+              console.error(`[WhatsApp Dispatcher] Failed to send camp registration ${manualTrigger}:`, error);
+            });
+          } else {
+            // حالات contacted / no_answer / no_show لا ترسل رسالة تلقائية
+            console.log(`[CampReg] Manual registration ${regId} with status "${campInitialStatus}" - no auto message sent`);
           }
-        }).catch(error => {
-          console.error("[WhatsApp Dispatcher] Failed to send camp registration on_create:", error);
-        });
+        }
       }
 
       // Send Facebook Conversions API event (fire-and-forget)
