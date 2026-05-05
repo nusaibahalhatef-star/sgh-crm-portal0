@@ -9,6 +9,8 @@ import { serverCache, CacheKeys, CacheTTL } from "../cache";
 import { createAuditLog } from "./auditLogs";
 import { sendOfferLeadEvent, sendStatusChangeEvent } from "../facebookCAPI";
 import { normalizePhoneNumber } from "../db";
+// sendOfferLeadConfirmation moved to dispatchWhatsAppMessage flow
+import { dispatchWhatsAppMessage } from "../services/whatsappMessageDispatcher";
 
 export const offerLeadsRouter = router({
   // Submit a new offer lead (public)
@@ -44,26 +46,26 @@ export const offerLeadsRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      // التحقق من عدم تكرار الطلب بنفس الرقم ونفس العرض خلال 3 أيام
-      const threeDaysAgo = new Date();
-      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-      const allLeads = await db
-        .select({ id: offerLeads.id, phone: offerLeads.phone })
-        .from(offerLeads)
-        .where(
-          and(
-            eq(offerLeads.offerId, input.offerId),
-            gte(offerLeads.createdAt, threeDaysAgo)
-          )
-        )
-        .limit(100);
-      const existingLead = allLeads.filter(l => normalizePhoneNumber(l.phone) === normalizedPhone);
-      if (existingLead.length > 0) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "لقد تم تسجيل طلب بنفس رقم الهاتف لهذا العرض خلال الأيام الثلاثة الماضية",
-        });
-      }
+      // التحقق من عدم تكرار الطلب بنفس الرقم ونفس العرض خلال 3 أيام - معطل
+      // const threeDaysAgo = new Date();
+      // threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      // const allLeads = await db
+      //   .select({ id: offerLeads.id, phone: offerLeads.phone })
+      //   .from(offerLeads)
+      //   .where(
+      //     and(
+      //       eq(offerLeads.offerId, input.offerId),
+      //       gte(offerLeads.createdAt, threeDaysAgo)
+      //     )
+      //   )
+      //   .limit(100);
+      // const existingLead = allLeads.filter(l => normalizePhoneNumber(l.phone) === normalizedPhone);
+      // if (existingLead.length > 0) {
+      //   throw new TRPCError({
+      //     code: "CONFLICT",
+      //     message: "لقد تم تسجيل طلب بنفس رقم الهاتف لهذا العرض خلال الأيام الثلاثة الماضية",
+      //   });
+      // }
 
       // Build timestamp fields based on initial status
       const nowOffer = new Date();
@@ -114,19 +116,37 @@ export const offerLeadsRouter = router({
         });
       }
 
-      // Send automated offer booking confirmation message (Patient Journey)
-      // Run in background - don't block the response
+      // Send automated offer booking confirmation message (Patient Journey) via dispatcher
+      // After successful send → auto-update status to "contacted"
       if (offer) {
-        const { sendOfferBookingConfirmationInteractive, formatDateForMessage, formatTimeForMessage } = await import("../messaging");
-        sendOfferBookingConfirmationInteractive({
+        const leadId = Number(lead.insertId);
+        dispatchWhatsAppMessage({
+          entityType: "offer_lead",
+          triggerEvent: "on_create",
           phone: input.phone,
-          name: input.fullName,
-          service: offer.title,
-          date: offer.startDate ? formatDateForMessage(new Date(offer.startDate)) : "غير محدد",
-          time: offer.startDate ? formatTimeForMessage(new Date(offer.startDate)) : "غير محدد",
-          bookingId: Number(lead.insertId),
+          recipientName: input.fullName,
+          variables: {
+            name: input.fullName,
+            service: offer.title,
+            date: offer.startDate ? new Date(offer.startDate).toLocaleDateString("ar-YE") : "غير محدد",
+          },
+          entityId: leadId,
+        }).then(async (res) => {
+          if (res?.success) {
+            const dbInner = await getDb();
+            if (dbInner) {
+              await dbInner
+                .update(offerLeads)
+                .set({ status: "contacted", contactedAt: new Date(), updatedAt: new Date() })
+                .where(eq(offerLeads.id, leadId));
+              serverCache.invalidateByPrefix("paginated:offerLeads:");
+              serverCache.invalidate("list:offerLeads");
+              serverCache.invalidate(CacheKeys.offerLeadStats());
+              console.log(`[OfferLead] Auto-updated ${leadId} to contacted after on_create send`);
+            }
+          }
         }).catch(error => {
-          console.error("[WhatsApp] Failed to send offer booking confirmation:", error);
+          console.error("[WhatsApp Dispatcher] Failed to send offer lead on_create:", error);
         });
       }
 
@@ -315,18 +335,34 @@ export const offerLeadsRouter = router({
         }
       }
 
-      // Send welcome message when status changes to "confirmed" (Patient Journey)
-      if (input.status === "confirmed") {
+      // ── WhatsApp Dispatcher: إرسال رسالة تلقائية بناءً على الحالة ──
+      {
         const [lead] = await db.select().from(offerLeads).where(eq(offerLeads.id, input.id)).limit(1);
-        if (lead && lead.phone) {
-          const { sendOfferPatientArrivalWelcome } = await import("../messaging");
+        if (lead?.phone) {
           const { offers } = await import("../../drizzle/schema");
           const [offer] = await db.select().from(offers).where(eq(offers.id, lead.offerId)).limit(1);
-          await sendOfferPatientArrivalWelcome({
-            phone: lead.phone,
-            name: lead.fullName || "المريض",
-            service: offer?.title || "العرض",
-          });
+          const triggerMap: Record<string, string> = {
+            "confirmed": "on_confirmed",
+            "attended": "on_arrived",
+            "completed": "on_completed",
+            "cancelled": "on_cancelled",
+          };
+          const triggerEvent = triggerMap[input.status];
+          if (triggerEvent) {
+            dispatchWhatsAppMessage({
+              entityType: "offer_lead",
+              triggerEvent: triggerEvent as any,
+              phone: lead.phone,
+              recipientName: lead.fullName || undefined,
+              variables: {
+                name: lead.fullName || "العميل",
+                service: offer?.title || "العرض",
+              },
+              entityId: input.id,
+              sentBy: ctx.user?.id,
+            }).catch(err => console.error("[WhatsApp Dispatcher] Offer status trigger error:", err));
+          }
+          // ملاحظة: تم إزالة sendOfferPatientArrivalWelcome القديمة - dispatchWhatsAppMessage يتولى الإرسال عبر إعدادات الرسائل
         }
       }
 

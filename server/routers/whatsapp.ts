@@ -1,4 +1,4 @@
-import { protectedProcedure, router } from "../_core/trpc";
+import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import * as db from "../db";
 import { meta } from "../MetaApiService";
 import { z } from "zod";
@@ -7,6 +7,42 @@ import {
   getWhatsAppAPIStatus,
   formatPhoneNumber 
 } from "../whatsappCloudAPI";
+import {
+  sendTextMessage,
+  sendWelcomeMessage,
+  sendBookingConfirmation,
+  verifyWhatsAppHealth,
+} from "../services/whatsappService";
+import { normalizePhoneNumber } from "../db";
+// whatsappBot removed — using sendWhatsAppTextMessage (Cloud API) directly
+
+// Simple in-memory rate limiter for manual messages
+const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute window
+const RATE_LIMIT_MAX_REQUESTS = 10; // Max 10 messages per minute per user
+
+function checkRateLimit(userId: number): { allowed: boolean; remaining: number; resetTime: number } {
+  const now = Date.now();
+  const key = `user:${userId}`;
+  const entry = rateLimitStore.get(key);
+
+  if (!entry || now > entry.resetTime) {
+    // Create new entry or reset expired one
+    rateLimitStore.set(key, {
+      count: 1,
+      resetTime: now + RATE_LIMIT_WINDOW,
+    });
+    return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - 1, resetTime: now + RATE_LIMIT_WINDOW };
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return { allowed: false, remaining: 0, resetTime: entry.resetTime };
+  }
+
+  entry.count++;
+  return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - entry.count, resetTime: entry.resetTime };
+}
 
 export const whatsappRouter = router({
   // WhatsApp Cloud API Status
@@ -87,8 +123,12 @@ export const whatsappRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        const { id, ...data } = input;
-        return await db.updateWhatsAppConversation(id, data);
+        const { id, important, archived, ...rest } = input;
+        const updateData: Record<string, any> = { ...rest };
+        // تحويل important/archived إلى أسماء الحقول الصحيحة في DB
+        if (important !== undefined) updateData.isImportant = important ? 1 : 0;
+        if (archived !== undefined) updateData.isArchived = archived ? 1 : 0;
+        return await db.updateWhatsAppConversation(id, updateData);
       }),
 
     markAsRead: protectedProcedure
@@ -97,6 +137,142 @@ export const whatsappRouter = router({
         return await db.updateWhatsAppConversation(input.id, {
           unreadCount: 0,
         });
+      }),
+
+    assignToUser: protectedProcedure
+      .input(z.object({ id: z.number(), userId: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.updateWhatsAppConversation(input.id, {
+          assignedToUserId: input.userId,
+        });
+      }),
+
+    updateNotes: protectedProcedure
+      .input(z.object({ id: z.number(), notes: z.string() }))
+      .mutation(async ({ input }) => {
+        return await db.updateWhatsAppConversation(input.id, {
+          notes: input.notes,
+        });
+      }),
+
+    updateName: protectedProcedure
+      .input(z.object({ id: z.number(), customerName: z.string() }))
+      .mutation(async ({ input }) => {
+        return await db.updateWhatsAppConversation(input.id, {
+          customerName: input.customerName,
+        });
+      }),
+
+    bulkArchive: protectedProcedure
+      .input(z.object({ ids: z.array(z.number()) }))
+      .mutation(async ({ input }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+        
+        const { whatsappConversations } = await import("../../drizzle/schema");
+        const { eq, inArray } = await import("drizzle-orm");
+        
+        await dbConn
+          .update(whatsappConversations)
+          .set({ isArchived: 1, updatedAt: new Date() })
+          .where(inArray(whatsappConversations.id, input.ids));
+        
+        return { success: true, count: input.ids.length };
+      }),
+
+    bulkMarkImportant: protectedProcedure
+      .input(z.object({ ids: z.array(z.number()), important: z.number() }))
+      .mutation(async ({ input }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+        
+        const { whatsappConversations } = await import("../../drizzle/schema");
+        const { inArray } = await import("drizzle-orm");
+        
+        await dbConn
+          .update(whatsappConversations)
+          .set({ isImportant: input.important, updatedAt: new Date() })
+          .where(inArray(whatsappConversations.id, input.ids));
+        
+        return { success: true, count: input.ids.length };
+      }),
+
+    getStats: protectedProcedure
+      .input(z.object({ conversationId: z.number() }))
+      .query(async ({ input }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+
+        const { whatsappMessages } = await import("../../drizzle/schema");
+        const { eq, count, sql } = await import("drizzle-orm");
+
+        const messages = await dbConn
+          .select()
+          .from(whatsappMessages)
+          .where(eq(whatsappMessages.conversationId, input.conversationId));
+        
+        const totalMessages = messages.length;
+        const inboundMessages = messages.filter(m => m.direction === "inbound").length;
+        const outboundMessages = messages.filter(m => m.direction === "outbound").length;
+        const templateMessages = messages.filter(m => m.messageType === "template").length;
+        
+        const firstMessage = messages[0];
+        const lastMessage = messages[messages.length - 1];
+        
+        // Calculate average response time (simplified)
+        let avgResponseTime = 0;
+        let responseCount = 0;
+        for (let i = 1; i < messages.length; i++) {
+          if (messages[i].direction === "outbound" && messages[i-1].direction === "inbound") {
+            const prevTime = new Date(messages[i-1].createdAt).getTime();
+            const currTime = new Date(messages[i].createdAt).getTime();
+            avgResponseTime += (currTime - prevTime);
+            responseCount++;
+          }
+        }
+        avgResponseTime = responseCount > 0 ? avgResponseTime / responseCount : 0;
+
+        return {
+          totalMessages,
+          inboundMessages,
+          outboundMessages,
+          templateMessages,
+          firstMessageAt: firstMessage?.createdAt,
+          lastMessageAt: lastMessage?.createdAt,
+          avgResponseTimeMs: avgResponseTime,
+          avgResponseTimeMinutes: Math.round(avgResponseTime / (1000 * 60)),
+        };
+      }),
+
+    exportConversation: protectedProcedure
+      .input(z.object({ conversationId: z.number() }))
+      .query(async ({ input }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+
+        const { whatsappMessages, whatsappConversations } = await import("../../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+
+        const conversation = await dbConn
+          .select()
+          .from(whatsappConversations)
+          .where(eq(whatsappConversations.id, input.conversationId))
+          .limit(1);
+
+        if (!conversation || conversation.length === 0) {
+          throw new Error("Conversation not found");
+        }
+
+        const messages = await dbConn
+          .select()
+          .from(whatsappMessages)
+          .where(eq(whatsappMessages.conversationId, input.conversationId))
+          .orderBy(whatsappMessages.createdAt);
+
+        return {
+          conversation: conversation[0],
+          messages,
+        };
       }),
   }),
 
@@ -113,12 +289,35 @@ export const whatsappRouter = router({
         z.object({
           conversationId: z.number(),
           message: z.string(),
+          replyToMessageId: z.number().optional(),
+          mediaUrl: z.string().optional(),
+          messageType: z.enum(["text", "image", "document", "audio", "video", "location", "template", "interactive", "contacts", "unknown"]).optional(),
         })
       )
       .mutation(async ({ input, ctx }) => {
         try {
+          // Rate limiting check
+          const rateLimit = checkRateLimit(ctx.user.id);
+          if (!rateLimit.allowed) {
+            const resetInSeconds = Math.ceil((rateLimit.resetTime - Date.now()) / 1000);
+            throw new Error(`Rate limit exceeded. Please wait ${resetInSeconds} seconds before sending more messages.`);
+          }
+
           const conv = await db.getWhatsAppConversationById(input.conversationId);
           if (!conv) throw new Error("Conversation not found");
+
+          // Server-side 24-hour window validation
+          const lastMessageTime = conv.lastMessageAt ? new Date(conv.lastMessageAt) : null;
+          const now = new Date();
+          const hoursSinceLastMessage = lastMessageTime
+            ? (now.getTime() - lastMessageTime.getTime()) / (1000 * 60 * 60)
+            : Infinity;
+
+          if (hoursSinceLastMessage > 24) {
+            console.warn(`[WhatsApp] 24-hour window exceeded for conversation ${input.conversationId}. Last message was ${hoursSinceLastMessage.toFixed(1)} hours ago.`);
+            // Note: We still allow sending but log a warning. For strict enforcement, uncomment below:
+            // throw new Error("Cannot send free-form text message: 24-hour messaging window exceeded. Use a template message instead.");
+          }
 
           const result = await sendWhatsAppTextMessage(
             conv.phoneNumber,
@@ -130,10 +329,12 @@ export const whatsappRouter = router({
               conversationId: input.conversationId,
               direction: "outbound",
               content: input.message,
-              messageType: "text",
+              messageType: input.messageType || "text",
               status: "sent",
               sentBy: ctx.user.id,
               whatsappMessageId: result.messageId,
+              replyToMessageId: input.replyToMessageId,
+              mediaUrl: input.mediaUrl,
             });
 
             await db.updateWhatsAppConversation(input.conversationId, {
@@ -142,11 +343,79 @@ export const whatsappRouter = router({
             });
           }
 
-          return result;
+          return { ...result, rateLimit };
         } catch (error: any) {
           console.error("[WhatsApp] Failed to send message:", error);
           throw new Error(error.message || "Failed to send message");
         }
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ messageId: z.number() }))
+      .mutation(async ({ input }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+        
+        const { whatsappMessages } = await import("../../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await dbConn.delete(whatsappMessages).where(eq(whatsappMessages.id, input.messageId));
+        
+        return { success: true };
+      }),
+
+    forward: protectedProcedure
+      .input(z.object({
+        messageId: z.number(),
+        targetConversationId: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+        
+        const { whatsappMessages, whatsappConversations } = await import("../../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        
+        // Get original message
+        const originalMessages = await dbConn
+          .select()
+          .from(whatsappMessages)
+          .where(eq(whatsappMessages.id, input.messageId))
+          .limit(1);
+        
+        if (!originalMessages.length) throw new Error("Original message not found");
+        const original = originalMessages[0];
+        
+        // Get target conversation
+        const targetConvs = await dbConn
+          .select()
+          .from(whatsappConversations)
+          .where(eq(whatsappConversations.id, input.targetConversationId))
+          .limit(1);
+        
+        if (!targetConvs.length) throw new Error("Target conversation not found");
+        const targetConv = targetConvs[0];
+        
+        // Send the message to target conversation
+        const result = await sendWhatsAppTextMessage(targetConv.phoneNumber, original.content);
+        
+        if (result.success) {
+          await db.createWhatsAppMessage({
+            conversationId: input.targetConversationId,
+            direction: "outbound",
+            content: original.content,
+            messageType: original.messageType,
+            status: "sent",
+            sentBy: ctx.user.id,
+            whatsappMessageId: result.messageId,
+          });
+          
+          await db.updateWhatsAppConversation(input.targetConversationId, {
+            lastMessage: original.content,
+            lastMessageAt: new Date(),
+          });
+        }
+        
+        return result;
       }),
   }),
 
@@ -160,6 +429,1218 @@ export const whatsappRouter = router({
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         return await db.getWhatsAppTemplateById(input.id);
+      }),
+
+    syncFromMeta: protectedProcedure.mutation(async () => {
+      const wabaId = process.env.WHATSAPP_BUSINESS_ACCOUNT_ID;
+      const hasToken = !!process.env.META_ACCESS_TOKEN;
+      const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+      console.log(`[syncFromMeta] WABA_ID=${wabaId}, PHONE_ID=${phoneId}, HAS_TOKEN=${hasToken}`);
+
+      if (!wabaId) {
+        return {
+          success: false,
+          error: "WHATSAPP_BUSINESS_ACCOUNT_ID غير مُعيَّن في متغيرات البيئة",
+          synced: 0,
+          updated: 0,
+        };
+      }
+      if (!hasToken) {
+        return {
+          success: false,
+          error: "META_ACCESS_TOKEN غير مُعيَّن في متغيرات البيئة",
+          synced: 0,
+          updated: 0,
+        };
+      }
+
+      const { syncTemplatesFromMeta } = await import("../services/whatsappTemplates");
+      const result = await syncTemplatesFromMeta();
+      console.log(`[syncFromMeta] Result:`, JSON.stringify(result));
+      return result;
+    }),
+
+    syncStatus: protectedProcedure.mutation(async () => {
+      const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+      const hasToken = !!process.env.META_ACCESS_TOKEN;
+
+      if (!phoneId) {
+        return {
+          success: false,
+          error: "WHATSAPP_PHONE_NUMBER_ID غير مُعيَّن في متغيرات البيئة",
+        };
+      }
+      if (!hasToken) {
+        return {
+          success: false,
+          error: "META_ACCESS_TOKEN غير مُعيَّن في متغيرات البيئة",
+        };
+      }
+
+      const { syncAllTemplates } = await import("../services/templateSyncService");
+      const result = await syncAllTemplates(phoneId);
+      console.log(`[syncStatus] Result:`, JSON.stringify(result));
+      return result;
+    }),
+
+    create: protectedProcedure
+      .input(
+        z.object({
+          name: z.string().min(1),
+          content: z.string().min(1),
+          category: z.string(),
+          language: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { createTemplate } = await import("../services/whatsappTemplates");
+        return createTemplate(input);
+      }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          name: z.string().optional(),
+          content: z.string().optional(),
+          category: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { updateTemplate } = await import("../services/whatsappTemplates");
+        return updateTemplate(input.id, input);
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const { deleteTemplate } = await import("../services/whatsappTemplates");
+        return deleteTemplate(input.id);
+      }),
+  }),
+
+  // Phase 2 Procedures
+  sendSimpleText: protectedProcedure
+    .input(
+      z.object({
+        phone: z.string().min(9).max(15),
+        message: z.string().min(1).max(4096),
+        priority: z.enum(["high", "normal", "low"]).optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      return sendTextMessage(input.phone, input.message, {
+        priority: input.priority,
+      });
+    }),
+
+  sendWelcomeMsg: protectedProcedure
+    .input(
+      z.object({
+        phone: z.string().min(9).max(15),
+        fullName: z.string().min(1),
+        campaignName: z.string().min(1),
+      })
+    )
+    .mutation(async ({ input }) => {
+      return sendWelcomeMessage({
+        phone: input.phone,
+        fullName: input.fullName,
+        campaignName: input.campaignName,
+      });
+    }),
+
+  health: publicProcedure.query(async () => {
+    return verifyWhatsAppHealth();
+  }),
+
+  testConnection: protectedProcedure
+    .input(z.object({ phone: z.string().min(9).max(15) }))
+    .mutation(async ({ input }) => {
+      try {
+        const normalizedPhone = normalizePhoneNumber(input.phone);
+        const testMessage = `اختبار الاتصال بـ WhatsApp ✅\nالوقت: ${new Date().toLocaleString("ar-YE")}`;
+
+        const result = await sendWhatsAppTextMessage(normalizedPhone, testMessage);
+
+        return {
+          success: result.success,
+          message: result.success ? "تم إرسال رسالة الاختبار بنجاح" : undefined,
+          error: result.error,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error",
+        };
+      }
+    }),
+
+  normalizePhone: publicProcedure
+    .input(z.object({ phone: z.string() }))
+    .query(({ input }) => {
+      const normalized = normalizePhoneNumber(input.phone);
+      return {
+        original: input.phone,
+        normalized,
+        isValid: normalized.length >= 9 && normalized.length <= 15,
+      };
+    }),
+
+  // Phase 3 Procedures
+  sendTemplate: protectedProcedure
+    .input(
+      z.object({
+        phone: z.string().min(9).max(15),
+        templateName: z.string().min(1),
+        language: z.string().optional(),
+        conversationId: z.number().optional(), // لحفظ الرسالة في المحادثة
+        templateContent: z.string().optional(), // محتوى القالب للحفظ
+        templateButtons: z.string().optional(), // أزرار القالب (JSON string)
+        headerText: z.string().optional(), // نص الـ header
+        footerText: z.string().optional(), // نص الـ footer
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { sendTemplateMessage } = await import("../services/whatsappTemplates");
+      const result = await sendTemplateMessage({
+        phone: input.phone,
+        templateName: input.templateName,
+        language: input.language,
+      });
+
+      // حفظ الرسالة في المحادثة إذا نجح الإرسال
+      if (result.success && input.conversationId) {
+        try {
+          const { createWhatsAppMessage, updateWhatsAppConversation } = await import("../db");
+          const content = input.templateContent || `[قالب: ${input.templateName}]`;
+          // حفظ بيانات القالب الكاملة في metadata
+          const metadata = JSON.stringify({
+            templateName: input.templateName,
+            buttons: input.templateButtons ? JSON.parse(input.templateButtons) : [],
+            headerText: input.headerText || null,
+            footerText: input.footerText || null,
+          });
+          await createWhatsAppMessage({
+            conversationId: input.conversationId,
+            direction: "outbound",
+            content,
+            messageType: "template",
+            status: "sent",
+            whatsappMessageId: result.messageId || null,
+            sentAt: new Date(),
+            metadata,
+          });
+          await updateWhatsAppConversation(input.conversationId, {
+            lastMessage: content.substring(0, 200),
+            lastMessageAt: new Date(),
+          });
+        } catch (err) {
+          console.error("[WhatsApp] Failed to save template message to conversation:", err);
+        }
+      }
+
+      return result;
+    }),
+
+  getTemplates: protectedProcedure.query(async () => {
+    // جلب القوالب من قاعدة البيانات المحلية (بعد المزامنة مع Meta)
+    const { whatsappTemplates } = await import("../../drizzle/schema");
+    const dbConn = await import("../db").then(m => m.getDb());
+    if (!dbConn) return { success: true, templates: [] };
+    const templates = await dbConn.select().from(whatsappTemplates).orderBy(whatsappTemplates.name);
+    return { success: true, templates };
+  }),
+
+  getTemplateStatus: protectedProcedure
+    .input(z.object({ templateName: z.string() }))
+    .query(async ({ input }) => {
+      const { getTemplateStatus } = await import("../services/whatsappTemplates");
+      return getTemplateStatus(input.templateName);
+    }),
+
+  sendMedia: protectedProcedure
+    .input(
+      z.object({
+        phone: z.string().min(9).max(15),
+        mediaType: z.enum(["image", "video", "document", "audio"]),
+        mediaUrl: z.string().url(),
+        caption: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { sendMediaMessage } = await import("../services/whatsappTemplates");
+      return sendMediaMessage({
+        phone: input.phone,
+        mediaType: input.mediaType,
+        mediaUrl: input.mediaUrl,
+        caption: input.caption,
+      });
+    }),
+
+  sendBroadcast: protectedProcedure
+    .input(
+      z.object({
+        message: z.string().min(1).max(4096),
+        recipients: z.array(z.string().min(9).max(15)),
+        priority: z.enum(["high", "normal", "low"]).optional(),
+        delay: z.number().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { sendBroadcast } = await import("../services/whatsappBroadcast");
+      return sendBroadcast({
+        message: input.message,
+        recipients: input.recipients,
+        priority: input.priority,
+        delay: input.delay,
+      });
+    }),
+
+  getBroadcastStatus: protectedProcedure
+    .input(z.object({ jobId: z.string() }))
+    .query(async ({ input }) => {
+      const { getBroadcastStatus } = await import("../services/whatsappBroadcast");
+      return getBroadcastStatus(parseInt(input.jobId));
+    }),
+
+  getBroadcastStats: protectedProcedure.query(async () => {
+    const { getBroadcastStats } = await import("../services/whatsappBroadcast");
+    return getBroadcastStats();
+  }),
+
+  getMessageStats: protectedProcedure.query(async () => {
+    try {
+      const dbConn = await db.getDb();
+      if (!dbConn) throw new Error("Database not available");
+
+      const { whatsappMessages } = await import("../../drizzle/schema");
+      const { gte, lte, and, sql } = await import("drizzle-orm");
+
+      // Get messages from last 7 days
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const messages = await dbConn
+        .select()
+        .from(whatsappMessages)
+        .where(gte(whatsappMessages.createdAt, sevenDaysAgo));
+
+      // Group by day (last 7 days)
+      const days = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
+      const dailyStats = days.map((day, index) => {
+        const targetDate = new Date();
+        targetDate.setDate(targetDate.getDate() - (6 - index));
+        targetDate.setHours(0, 0, 0, 0);
+        const nextDate = new Date(targetDate);
+        nextDate.setDate(nextDate.getDate() + 1);
+
+        const dayMessages = messages.filter((m: any) => {
+          const msgDate = new Date(m.sentAt);
+          return msgDate >= targetDate && msgDate < nextDate;
+        });
+
+        return {
+          name: day,
+          sent: dayMessages.filter((m: any) => m.direction === "outbound").length,
+          delivered: dayMessages.filter((m: any) => m.status === "delivered").length,
+          failed: dayMessages.filter((m: any) => m.status === "failed").length,
+        };
+      });
+
+      // Group by message type
+      const typeStats = [
+        { name: "نصية", value: messages.filter((m: any) => m.messageType === "text").length },
+        { name: "قوالب", value: messages.filter((m: any) => m.messageType === "template").length },
+        { name: "وسائط", value: messages.filter((m: any) => ["image", "video", "document", "audio"].includes(m.messageType)).length },
+        { name: "تفاعلية", value: messages.filter((m: any) => m.messageType === "interactive").length },
+      ];
+
+      // Calculate percentages for pie chart
+      const totalMessages = messages.length || 1;
+      const typeStatsWithPercentage = typeStats.map((stat) => ({
+        ...stat,
+        value: Math.round((stat.value / totalMessages) * 100),
+      }));
+
+      return {
+        success: true,
+        dailyStats,
+        typeStats: typeStatsWithPercentage,
+      };
+    } catch (error) {
+      console.error("[WhatsApp] Failed to get message stats:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+        dailyStats: [],
+        typeStats: [],
+      };
+    }
+  }),
+
+  scheduleBroadcast: protectedProcedure
+    .input(
+      z.object({
+        message: z.string().min(1).max(4096),
+        recipients: z.array(z.string().min(9).max(15)),
+        scheduledAt: z.date(),
+        priority: z.enum(["high", "normal", "low"]).optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { scheduleBroadcast } = await import("../services/whatsappBroadcast");
+      return scheduleBroadcast({
+        message: input.message,
+        recipients: input.recipients,
+        scheduledAt: input.scheduledAt,
+        priority: input.priority,
+      });
+    }),
+
+  addAutoReplyRule: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().min(1),
+        triggerType: z.enum(["keyword", "outside_hours", "first_message", "faq"]),
+        triggerValue: z.string().optional(),
+        replyMessage: z.string().min(1),
+        priority: z.number().optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { addAutoReplyRule } = await import("../services/whatsappAutoReply");
+      return addAutoReplyRule({
+        name: input.name,
+        triggerType: input.triggerType,
+        triggerValue: input.triggerValue,
+        replyMessage: input.replyMessage,
+        priority: input.priority,
+        createdBy: ctx.user.id,
+      });
+    }),
+
+  deleteAutoReplyRule: protectedProcedure
+    .input(z.object({ ruleId: z.number() }))
+    .mutation(async ({ input }) => {
+      const { deleteAutoReplyRule } = await import("../services/whatsappAutoReply");
+      return deleteAutoReplyRule(input.ruleId);
+    }),
+
+  getAutoReplyRules: protectedProcedure.query(async () => {
+    const { getAutoReplyRules } = await import("../services/whatsappAutoReply");
+    return getAutoReplyRules();
+  }),
+
+  toggleAutoReplyRule: protectedProcedure
+    .input(
+      z.object({
+        ruleId: z.number(),
+        enabled: z.boolean(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { toggleAutoReplyRule } = await import("../services/whatsappAutoReply");
+      return toggleAutoReplyRule(input.ruleId, input.enabled);
+    }),
+
+  // Phase 4 Procedures
+  sendAppointmentConfirmation: protectedProcedure
+    .input(
+      z.object({
+        appointmentId: z.number(),
+        phone: z.string().min(9).max(15),
+        patientName: z.string(),
+        doctorName: z.string(),
+        appointmentTime: z.date(),
+        department: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { dispatchWhatsAppMessage } = await import(
+        "../services/whatsappMessageDispatcher"
+      );
+      // استخدام dispatchWhatsAppMessage مع triggerEvent on_create
+      return dispatchWhatsAppMessage({
+        phone: input.phone,
+        entityType: "appointment",
+        entityId: input.appointmentId,
+        triggerEvent: "on_create",
+        recipientName: input.patientName,
+        variables: {
+          name: input.patientName,
+          doctor: input.doctorName,
+          date: input.appointmentTime.toLocaleDateString("ar-SA"),
+          time: input.appointmentTime.toLocaleTimeString("ar-SA"),
+          service: input.department,
+        },
+      });
+    }),
+
+  sendAppointmentReminder: protectedProcedure
+    .input(
+      z.object({
+        appointmentId: z.number(),
+        phone: z.string().min(9).max(15),
+        patientName: z.string(),
+        doctorName: z.string(),
+        appointmentTime: z.date(),
+        hoursUntil: z.number(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { sendAppointmentReminder } = await import(
+        "../services/whatsappAppointments"
+      );
+      return sendAppointmentReminder(input);
+    }),
+
+  sendAppointmentFollowup: protectedProcedure
+    .input(
+      z.object({
+        appointmentId: z.number(),
+        phone: z.string().min(9).max(15),
+        patientName: z.string(),
+        doctorName: z.string(),
+        department: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { sendAppointmentFollowup } = await import(
+        "../services/whatsappAppointments"
+      );
+      return sendAppointmentFollowup(input);
+    }),
+
+  checkAndSendReminders: protectedProcedure.mutation(async () => {
+    const { checkAndSendReminders } = await import("../services/whatsappAppointments");
+    return checkAndSendReminders();
+  }),
+
+  getAuditLogs: protectedProcedure
+    .input(
+      z.object({
+        phone: z.string().optional(),
+        type: z.string().optional(),
+        limit: z.number().optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      const { getAuditLogs } = await import("../services/whatsappAuditLog");
+      return getAuditLogs(input);
+    }),
+
+  getAuditStats: protectedProcedure.query(async () => {
+    const { getAuditStats } = await import("../services/whatsappAuditLog");
+    return getAuditStats();
+  }),
+
+  exportAuditLogs: protectedProcedure
+    .input(
+      z.object({
+        phone: z.string().optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      const { exportAuditLogs } = await import("../services/whatsappAuditLog");
+      return exportAuditLogs(input);
+    }),
+
+  blockPhone: protectedProcedure
+    .input(
+      z.object({
+        phone: z.string().min(9).max(15),
+        reason: z.enum(["opt_out", "spam", "manual", "invalid"]),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { blockPhone } = await import("../services/whatsappSecurity");
+      return blockPhone(input);
+    }),
+
+  unblockPhone: protectedProcedure
+    .input(z.object({ phone: z.string().min(9).max(15) }))
+    .mutation(async ({ input }) => {
+      const { unblockPhone } = await import("../services/whatsappSecurity");
+      return unblockPhone(input.phone);
+    }),
+
+  getBlockedPhones: protectedProcedure.query(async () => {
+    const { getBlockedPhones } = await import("../services/whatsappSecurity");
+    return getBlockedPhones();
+  }),
+
+  handleOptOutRequest: protectedProcedure
+    .input(
+      z.object({
+        phone: z.string().min(9).max(15),
+        reason: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { handleOptOutRequest } = await import("../services/whatsappSecurity");
+      return handleOptOutRequest(input);
+    }),
+
+  getOptOutRequests: protectedProcedure.query(async () => {
+    const { getBlockedPhones } = await import("../services/whatsappSecurity");
+    return getBlockedPhones();
+  }),
+
+  validateMetaCompliance: protectedProcedure
+    .input(z.object({ message: z.string() }))
+    .query(async ({ input }) => {
+      const { validateMetaCompliance } = await import("../services/whatsappSecurity");
+      return validateMetaCompliance(input.message);
+    }),
+
+  getSecurityStats: protectedProcedure.query(async () => {
+    const { getSecurityStats } = await import("../services/whatsappSecurity");
+    return getSecurityStats();
+  }),
+
+  // Phase 5 Procedures
+  initializeScheduler: protectedProcedure.mutation(async () => {
+    const { initializeScheduler } = await import("../services/whatsappScheduler");
+    return initializeScheduler();
+  }),
+
+  getScheduledTasks: protectedProcedure.query(async () => {
+    const { getScheduledTasks } = await import("../services/whatsappScheduler");
+    return getScheduledTasks();
+  }),
+
+  stopTask: protectedProcedure
+    .input(z.object({ taskId: z.string() }))
+    .mutation(async ({ input }) => {
+      const { stopTask } = await import("../services/whatsappScheduler");
+      return stopTask(input.taskId);
+    }),
+
+  resumeTask: protectedProcedure
+    .input(z.object({ taskId: z.string() }))
+    .mutation(async ({ input }) => {
+      const { resumeTask } = await import("../services/whatsappScheduler");
+      return resumeTask(input.taskId);
+    }),
+
+  shutdownScheduler: protectedProcedure.mutation(async () => {
+    const { shutdownScheduler } = await import("../services/whatsappScheduler");
+    return shutdownScheduler();
+  }),
+
+  // جلب سجلات إشعارات WhatsApp من قاعدة البيانات
+  getNotificationLogs: protectedProcedure
+    .input(z.object({
+      entityType: z.enum(["appointment", "camp_registration", "offer_lead"]).optional(),
+      status: z.enum(["pending", "sent", "delivered", "read", "failed"]).optional(),
+      limit: z.number().min(1).max(100).default(50),
+      offset: z.number().min(0).default(0),
+    }))
+    .query(async ({ input }) => {
+      const { getNotificationLogs } = await import("../services/whatsappAppointments");
+      return getNotificationLogs(input);
+    }),
+
+  getNotificationStats: protectedProcedure.query(async () => {
+    const { getNotificationStats } = await import("../services/whatsappAppointments");
+    return getNotificationStats();
+  }),
+
+  // إعادة إرسال إشعار WhatsApp لكيان محدد
+  resendNotification: protectedProcedure
+    .input(z.object({
+      entityType: z.enum(["appointment", "camp_registration", "offer_lead"]),
+      entityId: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      const { dispatchWhatsAppMessage } = await import(
+        "../services/whatsappMessageDispatcher"
+      );
+      const dbConn = await db.getDb();
+      if (!dbConn) return { success: false, error: "لا يمكن الاتصال بقاعدة البيانات" };
+
+      if (input.entityType === "appointment") {
+        const { appointments } = await import("../../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const rows = await dbConn.select().from(appointments).where(eq(appointments.id, input.entityId)).limit(1);
+        if (!rows.length) return { success: false, error: "الموعد غير موجود" };
+        const appt = rows[0];
+        return dispatchWhatsAppMessage({
+          phone: appt.phone,
+          entityType: "appointment",
+          entityId: appt.id,
+          triggerEvent: "on_create",
+          recipientName: appt.fullName,
+          variables: {
+            name: appt.fullName,
+            date: appt.appointmentDate instanceof Date ? appt.appointmentDate.toLocaleDateString("ar-SA") : new Date(appt.appointmentDate || appt.createdAt).toLocaleDateString("ar-SA"),
+            time: appt.appointmentDate instanceof Date ? appt.appointmentDate.toLocaleTimeString("ar-SA") : new Date(appt.appointmentDate || appt.createdAt).toLocaleTimeString("ar-SA"),
+            service: appt.procedure || "",
+          },
+        });
+      }
+
+      if (input.entityType === "camp_registration") {
+        const { campRegistrations, camps } = await import("../../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const rows = await dbConn.select().from(campRegistrations).where(eq(campRegistrations.id, input.entityId)).limit(1);
+        if (!rows.length) return { success: false, error: "التسجيل غير موجود" };
+        const reg = rows[0];
+        let campName = "";
+        if (reg.campId) {
+          const campRows = await dbConn.select().from(camps).where(eq(camps.id, reg.campId)).limit(1);
+          campName = campRows[0]?.name || "";
+        }
+        return dispatchWhatsAppMessage({
+          phone: reg.phone,
+          entityType: "camp_registration",
+          entityId: reg.id,
+          triggerEvent: "on_create",
+          recipientName: reg.fullName,
+          variables: {
+            name: reg.fullName,
+            camp_name: campName,
+            date: reg.createdAt instanceof Date ? reg.createdAt.toLocaleDateString("ar-SA") : new Date(reg.createdAt).toLocaleDateString("ar-SA"),
+          },
+        });
+      }
+
+      if (input.entityType === "offer_lead") {
+        const { offerLeads, offers } = await import("../../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const rows = await dbConn.select().from(offerLeads).where(eq(offerLeads.id, input.entityId)).limit(1);
+        if (!rows.length) return { success: false, error: "حجز العرض غير موجود" };
+        const lead = rows[0];
+        let offerName = "";
+        if (lead.offerId) {
+          const offerRows = await dbConn.select().from(offers).where(eq(offers.id, lead.offerId)).limit(1);
+          offerName = offerRows[0]?.title || "";
+        }
+        return dispatchWhatsAppMessage({
+          phone: lead.phone,
+          entityType: "offer_lead",
+          entityId: lead.id,
+          triggerEvent: "on_create",
+          recipientName: lead.fullName,
+          variables: {
+            name: lead.fullName,
+            offer_name: offerName,
+          },
+        });
+      }
+
+      return { success: false, error: "نوع غير معروف" };
+    }),
+
+  // جلب حالة إشعار WhatsApp لكيان محدد
+  getEntityWhatsAppStatus: protectedProcedure
+    .input(z.object({
+      entityType: z.enum(["appointment", "camp_registration", "offer_lead"]),
+      entityId: z.number(),
+    }))
+    .query(async ({ input }) => {
+      const { getEntityNotifications } = await import("../services/whatsappAppointments");
+      const result = await getEntityNotifications({ entityType: input.entityType, entityId: input.entityId });
+      const notifications = result.notifications || [];
+      const latest = notifications[notifications.length - 1] || null;
+      return {
+        hasSent: notifications.length > 0,
+        status: latest?.status || null,
+        sentAt: latest?.sentAt || null,
+        messageId: latest?.messageId || null,
+        count: notifications.length,
+      };
+    }),
+
+  // ── تشغيل مهام التذكير يدوياً (للاختبار أو التشغيل الفوري) ─────────────────
+  runReminderJobs: protectedProcedure
+    .mutation(async () => {
+      const { runAppointmentReminderJobs } = await import("../cron/appointmentReminders");
+      const result = await runAppointmentReminderJobs();
+      return result;
+    }),
+
+  // Quick Replies
+  quickReplies: router({
+    list: protectedProcedure.query(async () => {
+      const dbConn = await db.getDb();
+      if (!dbConn) return [];
+      const { quickReplies } = await import("../../drizzle/schema");
+      return await dbConn.select().from(quickReplies).orderBy(quickReplies.name);
+    }),
+
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        content: z.string().min(1),
+        category: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+        const { quickReplies } = await import("../../drizzle/schema");
+        const insertId = await dbConn.insert(quickReplies).values({
+          name: input.name,
+          content: input.content,
+          category: input.category,
+          createdBy: ctx.user.id,
+        }).$returningId();
+        return { id: insertId, ...input };
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        content: z.string().optional(),
+        category: z.string().optional(),
+        isActive: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+        const { quickReplies } = await import("../../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const { id, ...updateData } = input;
+        await dbConn
+          .update(quickReplies)
+          .set(updateData)
+          .where(eq(quickReplies.id, id));
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+        const { quickReplies } = await import("../../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await dbConn.delete(quickReplies).where(eq(quickReplies.id, input.id));
+        return { success: true };
+      }),
+  }),
+
+  // Saved Searches
+  savedSearches: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const dbConn = await db.getDb();
+      if (!dbConn) return [];
+      const { savedSearches } = await import("../../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      return await dbConn.select().from(savedSearches).where(eq(savedSearches.userId, ctx.user.id));
+    }),
+
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        searchQuery: z.string().optional(),
+        filterType: z.string().optional(),
+        dateRange: z.string().optional(),
+        messageType: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+        const { savedSearches } = await import("../../drizzle/schema");
+        const insertId = await dbConn.insert(savedSearches).values({
+          userId: ctx.user.id,
+          name: input.name,
+          searchQuery: input.searchQuery,
+          filterType: input.filterType,
+          dateRange: input.dateRange,
+          messageType: input.messageType,
+        }).$returningId();
+        return { id: insertId, ...input };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+        const { savedSearches } = await import("../../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await dbConn.delete(savedSearches).where(eq(savedSearches.id, input.id));
+        return { success: true };
+      }),
+  }),
+
+  // ─── Webhook Events & Account Health ─────────────────────────────────────────
+
+  accountHealth: router({
+    // Account Alerts
+    getAlerts: protectedProcedure
+      .input(z.object({
+        severity: z.enum(["low", "medium", "high", "critical"]).optional(),
+        resolved: z.boolean().optional(),
+        limit: z.number().default(50),
+      }).optional())
+      .query(async ({ input }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+        const { whatsappAccountAlerts } = await import("../../drizzle/schema");
+        const { eq, and, desc } = await import("drizzle-orm");
+
+        const conditions = [];
+        if (input?.severity) {
+          conditions.push(eq(whatsappAccountAlerts.severity, input.severity));
+        }
+        if (input?.resolved !== undefined) {
+          conditions.push(eq(whatsappAccountAlerts.resolved, input.resolved));
+        }
+
+        const query = conditions.length > 0
+          ? dbConn.select().from(whatsappAccountAlerts).where(and(...conditions))
+          : dbConn.select().from(whatsappAccountAlerts);
+
+        return await query.orderBy(desc(whatsappAccountAlerts.createdAt)).limit(input?.limit || 50);
+      }),
+
+    resolveAlert: protectedProcedure
+      .input(z.object({ id: z.number(), resolvedBy: z.number() }))
+      .mutation(async ({ input }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+        const { whatsappAccountAlerts } = await import("../../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+
+        await dbConn
+          .update(whatsappAccountAlerts)
+          .set({
+            resolved: true,
+            resolvedAt: new Date(),
+            resolvedBy: input.resolvedBy,
+          })
+          .where(eq(whatsappAccountAlerts.id, input.id));
+
+        return { success: true };
+      }),
+
+    // Security Events
+    getSecurityEvents: protectedProcedure
+      .input(z.object({
+        severity: z.enum(["low", "medium", "high", "critical"]).optional(),
+        limit: z.number().default(50),
+      }).optional())
+      .query(async ({ input }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+        const { whatsappSecurityEvents } = await import("../../drizzle/schema");
+        const { eq, desc } = await import("drizzle-orm");
+
+        const query = input?.severity
+          ? dbConn.select().from(whatsappSecurityEvents).where(eq(whatsappSecurityEvents.severity, input.severity))
+          : dbConn.select().from(whatsappSecurityEvents);
+
+        return await query.orderBy(desc(whatsappSecurityEvents.createdAt)).limit(input?.limit || 50);
+      }),
+  }),
+
+  phoneQuality: router({
+    getHistory: protectedProcedure
+      .input(z.object({
+        phoneNumber: z.string().optional(),
+        limit: z.number().default(100),
+      }).optional())
+      .query(async ({ input }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+        const { whatsappPhoneQuality } = await import("../../drizzle/schema");
+        const { eq, desc } = await import("drizzle-orm");
+
+        const query = input?.phoneNumber
+          ? dbConn.select().from(whatsappPhoneQuality).where(eq(whatsappPhoneQuality.phoneNumber, input.phoneNumber))
+          : dbConn.select().from(whatsappPhoneQuality);
+
+        return await query.orderBy(desc(whatsappPhoneQuality.createdAt)).limit(input?.limit || 100);
+      }),
+
+    getCurrent: protectedProcedure.query(async () => {
+      const dbConn = await db.getDb();
+      if (!dbConn) throw new Error("Database not available");
+      const { whatsappPhoneQuality } = await import("../../drizzle/schema");
+      const { desc } = await import("drizzle-orm");
+
+      const results = await dbConn
+        .select()
+        .from(whatsappPhoneQuality)
+        .orderBy(desc(whatsappPhoneQuality.createdAt))
+        .limit(1);
+
+      return results[0] || null;
+    }),
+  }),
+
+  conversationQuality: router({
+    getHistory: protectedProcedure
+      .input(z.object({
+        phoneNumber: z.string().optional(),
+        limit: z.number().default(100),
+      }).optional())
+      .query(async ({ input }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+        const { whatsappConversationQuality } = await import("../../drizzle/schema");
+        const { eq, desc } = await import("drizzle-orm");
+
+        const query = input?.phoneNumber
+          ? dbConn.select().from(whatsappConversationQuality).where(eq(whatsappConversationQuality.phoneNumber, input.phoneNumber))
+          : dbConn.select().from(whatsappConversationQuality);
+
+        return await query.orderBy(desc(whatsappConversationQuality.createdAt)).limit(input?.limit || 100);
+      }),
+  }),
+
+  userSubscriptions: router({
+    getAll: protectedProcedure
+      .input(z.object({
+        status: z.enum(["opted_in", "opted_out"]).optional(),
+        optInType: z.enum(["general", "marketing"]).optional(),
+        limit: z.number().default(100),
+      }).optional())
+      .query(async ({ input }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+        const { whatsappUserOptIns } = await import("../../drizzle/schema");
+        const { eq, and, desc } = await import("drizzle-orm");
+
+        const conditions = [];
+        if (input?.status) {
+          conditions.push(eq(whatsappUserOptIns.status, input.status));
+        }
+        if (input?.optInType) {
+          conditions.push(eq(whatsappUserOptIns.optInType, input.optInType));
+        }
+
+        const query = conditions.length > 0
+          ? dbConn.select().from(whatsappUserOptIns).where(and(...conditions))
+          : dbConn.select().from(whatsappUserOptIns);
+
+        return await query.orderBy(desc(whatsappUserOptIns.createdAt)).limit(input?.limit || 100);
+      }),
+
+    updateStatus: protectedProcedure
+      .input(z.object({
+        phoneNumber: z.string(),
+        status: z.enum(["opted_in", "opted_out"]),
+        optInType: z.enum(["general", "marketing"]),
+        source: z.string().default("manual"),
+      }))
+      .mutation(async ({ input }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+        const { whatsappUserOptIns } = await import("../../drizzle/schema");
+        const { eq, and } = await import("drizzle-orm");
+
+        // Check if record exists
+        const existing = await dbConn
+          .select()
+          .from(whatsappUserOptIns)
+          .where(and(
+            eq(whatsappUserOptIns.phoneNumber, input.phoneNumber),
+            eq(whatsappUserOptIns.optInType, input.optInType)
+          ))
+          .limit(1);
+
+        if (existing.length > 0) {
+          // Update existing
+          await dbConn
+            .update(whatsappUserOptIns)
+            .set({
+              status: input.status,
+              source: input.source,
+              updatedAt: new Date(),
+            })
+            .where(and(
+              eq(whatsappUserOptIns.phoneNumber, input.phoneNumber),
+              eq(whatsappUserOptIns.optInType, input.optInType)
+            ));
+        } else {
+          // Create new
+          await dbConn.insert(whatsappUserOptIns).values({
+            phoneNumber: input.phoneNumber,
+            optInType: input.optInType,
+            status: input.status,
+            source: input.source,
+            details: JSON.stringify({ manualUpdate: true }),
+          });
+        }
+
+        return { success: true };
+      }),
+
+    getStats: protectedProcedure.query(async () => {
+      const dbConn = await db.getDb();
+      if (!dbConn) throw new Error("Database not available");
+      const { whatsappUserOptIns } = await import("../../drizzle/schema");
+      const { eq, sql } = await import("drizzle-orm");
+
+      const allSubs = await dbConn.select().from(whatsappUserOptIns);
+
+      return {
+        general: {
+          optedIn: allSubs.filter(s => s.optInType === "general" && s.status === "opted_in").length,
+          optedOut: allSubs.filter(s => s.optInType === "general" && s.status === "opted_out").length,
+        },
+        marketing: {
+          optedIn: allSubs.filter(s => s.optInType === "marketing" && s.status === "opted_in").length,
+          optedOut: allSubs.filter(s => s.optInType === "marketing" && s.status === "opted_out").length,
+        },
+      };
+    }),
+  }),
+
+  templateQuality: router({
+    getHistory: protectedProcedure
+      .input(z.object({
+        templateId: z.string().optional(),
+        limit: z.number().default(100),
+      }).optional())
+      .query(async ({ input }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+        const { whatsappTemplateQuality } = await import("../../drizzle/schema");
+        const { eq, desc } = await import("drizzle-orm");
+
+        const query = input?.templateId
+          ? dbConn.select().from(whatsappTemplateQuality).where(eq(whatsappTemplateQuality.templateId, input.templateId))
+          : dbConn.select().from(whatsappTemplateQuality);
+
+        return await query.orderBy(desc(whatsappTemplateQuality.createdAt)).limit(input?.limit || 100);
+      }),
+  }),
+
+  // ─── Webhook Events Inspector ──────────────────────────────────────────────────
+
+  webhookEvents: router({
+    getAll: protectedProcedure
+      .input(z.object({
+        eventType: z.string().optional(),
+        processed: z.boolean().optional(),
+        handlerExists: z.boolean().optional(),
+        limit: z.number().default(100),
+      }).optional())
+      .query(async ({ input }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+        const { whatsappWebhookEvents } = await import("../../drizzle/schema");
+        const { eq, and, desc } = await import("drizzle-orm");
+
+        const conditions = [];
+        if (input?.eventType) {
+          conditions.push(eq(whatsappWebhookEvents.eventType, input.eventType));
+        }
+        if (input?.processed !== undefined) {
+          conditions.push(eq(whatsappWebhookEvents.processed, input.processed));
+        }
+        if (input?.handlerExists !== undefined) {
+          conditions.push(eq(whatsappWebhookEvents.handlerExists, input.handlerExists));
+        }
+
+        const query = conditions.length > 0
+          ? dbConn.select().from(whatsappWebhookEvents).where(and(...conditions))
+          : dbConn.select().from(whatsappWebhookEvents);
+
+        return await query
+          .orderBy(desc(whatsappWebhookEvents.createdAt))
+          .limit(input?.limit || 100);
+      }),
+
+    getUnhandledCount: protectedProcedure.query(async () => {
+      return await db.getUnhandledWebhookEventsCount();
+    }),
+
+    getEventTypes: protectedProcedure.query(async () => {
+      return await db.getUniqueEventTypes();
+    }),
+
+    markAsProcessed: protectedProcedure
+      .input(z.object({ id: z.number(), handlerExists: z.boolean().default(true) }))
+      .mutation(async ({ input }) => {
+        await db.markWebhookEventAsProcessed(input.id, input.handlerExists);
+        return { success: true };
+      }),
+
+    // إحصائيات الأحداث حسب النوع
+    getStatsByType: protectedProcedure.query(async () => {
+      const dbConn = await db.getDb();
+      if (!dbConn) throw new Error("Database not available");
+      const { whatsappWebhookEvents } = await import("../../drizzle/schema");
+      const { sql } = await import("drizzle-orm");
+
+      const stats = await dbConn
+        .select({
+          eventType: whatsappWebhookEvents.eventType,
+          count: sql<number>`count(*)`.as('count'),
+        })
+        .from(whatsappWebhookEvents)
+        .groupBy(whatsappWebhookEvents.eventType);
+
+      return stats;
+    }),
+
+    // الأحداث حسب الفئة (messages, templates, account, etc.)
+    getEventsByCategory: protectedProcedure
+      .input(z.object({
+        category: z.enum(['messages', 'templates', 'account', 'security', 'quality', 'subscriptions']),
+        limit: z.number().default(50),
+      }))
+      .query(async ({ input }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+        const { whatsappWebhookEvents } = await import("../../drizzle/schema");
+        const { like, desc } = await import("drizzle-orm");
+
+        const categoryPatterns = {
+          messages: 'message%',
+          templates: 'message_template%',
+          account: 'account%',
+          security: 'security',
+          quality: 'quality%',
+          subscriptions: 'opt%',
+        };
+
+        return await dbConn
+          .select()
+          .from(whatsappWebhookEvents)
+          .where(like(whatsappWebhookEvents.eventType, categoryPatterns[input.category]))
+          .orderBy(desc(whatsappWebhookEvents.createdAt))
+          .limit(input.limit);
+      }),
+
+    // أحداث القوالب المفصلة
+    getTemplateEvents: protectedProcedure
+      .input(z.object({
+        templateId: z.string().optional(),
+        limit: z.number().default(100),
+      }))
+      .query(async ({ input }) => {
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database not available");
+        const { whatsappWebhookEvents } = await import("../../drizzle/schema");
+        const { like, desc, eq } = await import("drizzle-orm");
+
+        let query = dbConn
+          .select()
+          .from(whatsappWebhookEvents)
+          .where(like(whatsappWebhookEvents.eventType, 'message_template%'));
+
+        if (input.templateId) {
+          // تصفية حسب templateId من الـ rawPayload
+          const events = await query.orderBy(desc(whatsappWebhookEvents.createdAt)).limit(input.limit);
+          return events.filter(e => {
+            try {
+              const payload = JSON.parse(e.rawPayload);
+              return payload.message_template_id === input.templateId;
+            } catch {
+              return false;
+            }
+          });
+        }
+
+        return await query.orderBy(desc(whatsappWebhookEvents.createdAt)).limit(input.limit);
       }),
   }),
 });

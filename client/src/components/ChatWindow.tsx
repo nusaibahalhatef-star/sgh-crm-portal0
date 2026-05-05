@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
-import { CheckCheck, Clock, XCircle, ChevronDown } from "lucide-react";
+import { CheckCheck, Clock, XCircle, ChevronDown, Image, FileText, Music, Video, MapPin, Users, MessageSquare, User, MoreVertical, Reply, Trash2, Forward, Download, Paperclip, Calendar, Plus, Minus, Moon, Sun, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -8,14 +8,28 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import useSSE from "@/hooks/useSSE";
 import { toast } from "sonner";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 interface ChatWindowProps {
   conversationId: number | null;
   lastMessageAt?: string | Date | null;
   onConversationUpdate?: () => void;
+  phone?: string | null; // رقم هاتف العميل لإرسال القوالب
 }
 
 /** Returns true if the last message was more than 24 hours ago (or never) */
@@ -47,14 +61,70 @@ function mergeMessages(dbMsgs: any[], localMsgs: any[]): any[] {
   );
 }
 
-export default function ChatWindow({ conversationId, lastMessageAt, onConversationUpdate }: ChatWindowProps) {
+export default function ChatWindow({ conversationId, lastMessageAt, onConversationUpdate, phone }: ChatWindowProps) {
+  const { user } = useAuth();
+  const userId = user?.id;
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [messageText, setMessageText] = useState("");
   const [localMessages, setLocalMessages] = useState<any[]>([]);
   // Track the last conversationId to reset state on change
   const prevConvIdRef = useRef<number | null>(null);
+  // تتحدث بعد إرسال قالب بنجاح لفتح نافذة الكتابة
+  const [localLastMessageAt, setLocalLastMessageAt] = useState<Date | null>(null);
+  // Track the message being replied to
+  const [replyToMessage, setReplyToMessage] = useState<any | null>(null);
 
-  const outsideWindow = isOutsideWindow(lastMessageAt);
+  // Track attached file
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Track scheduled message dialog
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [scheduledMessage, setScheduledMessage] = useState("");
+  const [scheduledDate, setScheduledDate] = useState("");
+
+  // Track message font size
+  const [messageFontSize, setMessageFontSize] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('whatsapp-message-font-size');
+      return saved ? parseInt(saved, 10) : 14;
+    }
+    return 14;
+  });
+
+  const handleFontSizeChange = useCallback((delta: number) => {
+    setMessageFontSize(prev => {
+      const newSize = Math.max(12, Math.min(20, prev + delta));
+      localStorage.setItem('whatsapp-message-font-size', newSize.toString());
+      return newSize;
+    });
+  }, []);
+
+  const handleRemoveFile = useCallback(() => {
+    setAttachedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, []);
+
+  // Track night mode
+  const [isNightMode, setIsNightMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('whatsapp-night-mode');
+      return saved === 'true';
+    }
+    return false;
+  });
+
+  const handleToggleNightMode = useCallback(() => {
+    setIsNightMode(prev => {
+      const newValue = !prev;
+      localStorage.setItem('whatsapp-night-mode', newValue.toString());
+      return newValue;
+    });
+  }, []);
+
+  const outsideWindow = isOutsideWindow(localLastMessageAt ?? lastMessageAt);
 
   const { data: messagesData, refetch: refetchMessages } = trpc.whatsapp.messages.listByConversation.useQuery(
     { conversationId: conversationId! },
@@ -62,12 +132,23 @@ export default function ChatWindow({ conversationId, lastMessageAt, onConversati
   );
 
   const { data: templates } = trpc.whatsapp.templates.list.useQuery(undefined, {
-    enabled: outsideWindow && !!conversationId,
+    enabled: !!conversationId,
   });
+
+  const { data: activeUsers } = trpc.users.getActiveUsers.useQuery();
+
+  const { data: quickReplies } = trpc.whatsapp.quickReplies.list.useQuery();
+
+  const handleExportConversation = useCallback(() => {
+    if (!conversationId) return;
+    // For now, just show a toast - export functionality would need proper backend endpoint
+    toast.info("ميزة تصدير المحادثة قيد التطوير");
+  }, [conversationId]);
 
   const sendMessageMutation = trpc.whatsapp.messages.send.useMutation({
     onSuccess: () => {
       setMessageText("");
+      setReplyToMessage(null);
       refetchMessages();
       onConversationUpdate?.();
     },
@@ -76,14 +157,37 @@ export default function ChatWindow({ conversationId, lastMessageAt, onConversati
     },
   });
 
-  const sendTemplateMutation = trpc.whatsapp.messages.sendTemplateByConversation.useMutation({
+  const deleteMessageMutation = trpc.whatsapp.messages.delete.useMutation({
     onSuccess: () => {
+      toast.success("تم حذف الرسالة");
       refetchMessages();
-      onConversationUpdate?.();
-      toast.success("تم إرسال القالب بنجاح");
     },
     onError: (err) => {
-      toast.error(`فشل إرسال القالب: ${err.message}`);
+      toast.error(`فشل حذف الرسالة: ${err.message}`);
+    },
+  });
+
+  const forwardMessageMutation = trpc.whatsapp.messages.forward.useMutation({
+    onSuccess: () => {
+      toast.success("تم إعادة توجيه الرسالة");
+      refetchMessages();
+      onConversationUpdate?.();
+    },
+    onError: (err) => {
+      toast.error(`فشل إعادة التوجيه: ${err.message}`);
+    },
+  });
+
+  const sendTemplateMutation = trpc.whatsapp.sendTemplate.useMutation({
+    onSuccess: () => {
+      // فتح نافذة الكتابة فوراً بتحديث وقت آخر رسالة محلياً
+      setLocalLastMessageAt(new Date());
+      refetchMessages();
+      onConversationUpdate?.();
+      toast.success("تم إرسال القالب بنجاح — يمكنك الآن إرسال رسائل عادية");
+    },
+    onError: (err: any) => {
+      toast.error(`فشل إرسال القالب: ${err?.message || 'خطأ غير معروف'}`);
     },
   });
 
@@ -215,44 +319,158 @@ export default function ChatWindow({ conversationId, lastMessageAt, onConversati
     }
   };
 
-  const handleSend = () => {
-    if (!messageText.trim() || !conversationId) return;
-    const tempId = `temp-${Date.now()}`;
+  const getMessageTypeIcon = (messageType: string) => {
+    switch (messageType) {
+      case "image":
+        return <Image className="h-4 w-4" />;
+      case "document":
+        return <FileText className="h-4 w-4" />;
+      case "audio":
+        return <Music className="h-4 w-4" />;
+      case "video":
+        return <Video className="h-4 w-4" />;
+      case "location":
+        return <MapPin className="h-4 w-4" />;
+      case "contacts":
+        return <Users className="h-4 w-4" />;
+      case "template":
+        return <MessageSquare className="h-4 w-4" />;
+      case "interactive":
+        return <MessageSquare className="h-4 w-4" />;
+      default:
+        return null;
+    }
+  };
+
+  const handleSend = useCallback(async () => {
+    if (!messageText.trim() && !attachedFile) return;
+    if (!conversationId) return;
+
+    let mediaUrl = null;
+    let messageType: "text" | "image" | "document" = "text";
+
+    // Convert file to base64 if attached
+    if (attachedFile) {
+      try {
+        const reader = new FileReader();
+        mediaUrl = await new Promise<string>((resolve) => {
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsDataURL(attachedFile);
+        });
+
+        // Determine message type based on file
+        if (attachedFile.type.startsWith("image/")) {
+          messageType = "image";
+        } else if (attachedFile.type === "application/pdf") {
+          messageType = "document";
+        } else {
+          messageType = "document";
+        }
+      } catch (error) {
+        toast.error("فشل تحميل الملف");
+        return;
+      }
+    }
+
     const optimistic = {
-      id: tempId,
+      id: `temp-${Date.now()}`,
       conversationId,
-      direction: "outbound",
-      content: messageText.trim(),
-      messageType: "text",
-      status: "pending",
+      direction: "outbound" as const,
+      content: messageText || attachedFile?.name || "",
+      messageType,
+      status: "sent" as const,
       sentAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      sentBy: userId,
+      replyToMessageId: replyToMessage?.id,
+      mediaUrl,
     };
     setLocalMessages((prev) => [...prev, optimistic]);
     scrollToBottom();
     sendMessageMutation.mutate({
       conversationId,
-      content: messageText.trim(),
-      messageType: "text",
+      message: messageText.trim(),
+      replyToMessageId: replyToMessage?.id || undefined,
+      mediaUrl: mediaUrl || undefined,
+      messageType,
     });
     setMessageText("");
+    setReplyToMessage(null);
+    handleRemoveFile();
+  }, [conversationId, messageText, replyToMessage, sendMessageMutation, userId, attachedFile, handleRemoveFile]);
+
+  const handleReply = (msg: any) => {
+    setReplyToMessage(msg);
+    // Focus on textarea
+    document.querySelector('textarea')?.focus();
   };
 
-  const handleSendTemplate = (template: { id: number; name: string; content: string; metaName?: string | null; languageCode?: string | null }) => {
+  const handleDelete = (msg: any) => {
+    if (!msg.id) return;
+    if (confirm("هل أنت متأكد من حذف هذه الرسالة؟")) {
+      deleteMessageMutation.mutate({ messageId: msg.id });
+    }
+  };
+
+  const handleForward = (msg: any) => {
+    // For now, just show a toast - full implementation would need a conversation selector
+    toast.info("ميزة إعادة التوجيه قيد التطوير");
+  };
+
+  const handleInsertQuickReply = (content: string) => {
+    setMessageText(prev => prev + (prev ? " " : "") + content);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("حجم الملف كبير جداً. الحد الأقصى 10MB");
+        return;
+      }
+      setAttachedFile(file);
+    }
+  };
+
+  const handleScheduleMessage = () => {
+    if (!scheduledMessage.trim() || !scheduledDate) {
+      toast.error("يرجى إدخال الرسالة وتاريخ الجدولة");
+      return;
+    }
     if (!conversationId) return;
+
+    // For now, just show a toast - full implementation would need backend endpoint
+    toast.info("ميزة جدولة الرسائل قيد التطوير");
+    setScheduleDialogOpen(false);
+    setScheduledMessage("");
+    setScheduledDate("");
+  };
+
+  const handleSendTemplate = (template: { id: number; name: string; content: string; metaName?: string | null; languageCode?: string | null; buttons?: string | null; headerText?: string | null; footerText?: string | null }) => {
+    if (!conversationId) return;
+    if (!phone) {
+      toast.error("لا يوجد رقم هاتف لهذه المحادثة");
+      return;
+    }
     // استخدام metaName (الاسم المعتمد من Meta) إذا كان متاحاً، وإلا name
     const templateName = template.metaName || template.name;
     const languageCode = template.languageCode || "ar";
     sendTemplateMutation.mutate({
-      conversationId,
+      phone,
       templateName,
-      languageCode,
-      components: [],
+      language: languageCode,
+      conversationId,
+      templateContent: template.content,
+      templateButtons: template.buttons || undefined,
+      headerText: template.headerText || undefined,
+      footerText: template.footerText || undefined,
     });
   };
 
   return (
     <div className="flex flex-col h-full" dir="rtl">
-      <div className="flex-1 overflow-y-auto p-4 bg-[#e5ddd5] dark:bg-gray-900/50">
+      <div className={`flex-1 overflow-y-auto p-4 ${isNightMode ? 'bg-gray-900' : 'bg-[#e5ddd5] dark:bg-gray-900/50'}`}>
         {(!localMessages || localMessages.length === 0) ? (
           <div className="text-center text-muted-foreground py-12">
             <div className="bg-green-100 p-6 rounded-full w-24 h-24 mx-auto mb-4 flex items-center justify-center">
@@ -266,20 +484,136 @@ export default function ChatWindow({ conversationId, lastMessageAt, onConversati
               // inbound = رسالة من العميل → تظهر على اليمين (في RTL)
               // outbound = رسالة من الموظف → تظهر على اليسار (في RTL)
               const isOutbound = msg.direction === "outbound";
+              const typeIcon = getMessageTypeIcon(msg.messageType);
+              // Get sender name for outbound messages
+              const senderName = isOutbound && msg.sentBy 
+                ? activeUsers?.find((u: any) => u.id === msg.sentBy)?.name || "موظف"
+                : null;
+              
               return (
                 <div
                   key={msg.id || `${idx}`}
-                  className={`flex ${isOutbound ? "justify-start" : "justify-end"}`}
+                  className={`flex ${isOutbound ? "justify-start" : "justify-end"} group`}
                 >
                   <div className={`${
                     isOutbound
                       ? "bg-white dark:bg-gray-800 text-foreground rounded-bl-none"
                       : "bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-br-none"
-                  } max-w-[85%] sm:max-w-[70%] rounded-lg p-2.5 sm:p-3 shadow-sm`}>
-                    <div className="whitespace-pre-wrap break-words text-sm sm:text-base leading-relaxed">{msg.content}</div>
-                    <div className={`flex items-center gap-1 mt-1 text-[10px] sm:text-xs ${isOutbound ? "text-muted-foreground" : "text-white/80"}`}>
+                  } max-w-[85%] sm:max-w-[70%] rounded-lg p-2.5 sm:p-3 shadow-sm relative`}>
+                    {/* Sender name for outbound messages */}
+                    {senderName && (
+                      <div className={`text-[10px] font-medium mb-1 ${isOutbound ? "text-blue-600" : "text-white/80"}`}>
+                        <User className="h-2.5 w-2.5 inline ml-1" />
+                        {senderName}
+                      </div>
+                    )}
+                    
+                    {/* Quoted message */}
+                    {msg.replyToMessageId && (
+                      <div className={`text-[10px] mb-1 p-1.5 rounded ${isOutbound ? "bg-gray-100 dark:bg-gray-700" : "bg-white/20"}`}>
+                        <Reply className="h-2.5 w-2.5 inline ml-1" />
+                        <span className="opacity-70">رد على رسالة سابقة</span>
+                      </div>
+                    )}
+                    
+                    {typeIcon && msg.messageType !== 'template' && msg.messageType !== 'button_reply' && msg.messageType !== 'list_reply' && (
+                      <div className={`flex items-center gap-1.5 mb-1 ${isOutbound ? "text-muted-foreground" : "text-white/80"}`}>
+                        {typeIcon}
+                        <span className="text-[10px] uppercase font-medium">{msg.messageType}</span>
+                      </div>
+                    )}
+
+                    {/* عرض رسائل القالب مع الأزرار */}
+                    {msg.messageType === 'template' ? (() => {
+                      let meta: any = null;
+                      try { meta = msg.metadata ? JSON.parse(msg.metadata) : null; } catch {}
+                      const buttons: Array<{type: string; text: string}> = meta?.buttons || [];
+                      const headerText = meta?.headerText;
+                      const footerText = meta?.footerText;
+                      return (
+                        <div>
+                          {/* Header */}
+                          {headerText && (
+                            <div className={`text-[11px] font-bold mb-1 pb-1 border-b ${isOutbound ? 'border-gray-200 dark:border-gray-600' : 'border-white/30'}`}>
+                              {headerText}
+                            </div>
+                          )}
+                          {/* TEMPLATE badge */}
+                          <div className={`flex items-center gap-1 mb-1 ${isOutbound ? 'text-muted-foreground' : 'text-white/70'}`}>
+                            <MessageSquare className="h-3 w-3" />
+                            <span className="text-[10px] font-medium">TEMPLATE</span>
+                          </div>
+                          {/* Body */}
+                          <div className="whitespace-pre-wrap break-words leading-relaxed" style={{ fontSize: `${messageFontSize}px` }}>{msg.content}</div>
+                          {/* Footer */}
+                          {footerText && (
+                            <div className={`text-[10px] mt-1 ${isOutbound ? 'text-muted-foreground' : 'text-white/60'}`}>{footerText}</div>
+                          )}
+                          {/* Buttons */}
+                          {buttons.length > 0 && (
+                            <div className="mt-2 flex flex-col gap-1">
+                              {buttons.map((btn: any, i: number) => (
+                                <div
+                                  key={i}
+                                  className={`text-center text-[12px] font-medium py-1.5 px-3 rounded border cursor-default select-none ${
+                                    isOutbound
+                                      ? 'border-blue-300 text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-700 dark:text-blue-300'
+                                      : 'border-white/40 text-white bg-white/10'
+                                  }`}
+                                >
+                                  {btn.text || btn.title || btn}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })() : msg.messageType === 'button_reply' || msg.messageType === 'list_reply' ? (
+                      /* عرض رد زر العميل */
+                      <div>
+                        <div className={`flex items-center gap-1 mb-1 ${isOutbound ? 'text-muted-foreground' : 'text-white/70'}`}>
+                          <MessageSquare className="h-3 w-3" />
+                          <span className="text-[10px] font-medium">{msg.messageType === 'button_reply' ? 'رد زر' : 'اختيار قائمة'}</span>
+                        </div>
+                        <div className={`inline-block text-[12px] font-medium py-1 px-3 rounded-full border ${
+                          isOutbound
+                            ? 'border-gray-300 text-gray-700 bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200'
+                            : 'border-white/40 text-white bg-white/20'
+                        }`}>
+                          {msg.content.replace(/^🔘\s*/, '').replace(/^📋\s*/, '').replace(/\s*\(ID:.*\)$/, '')}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="whitespace-pre-wrap break-words leading-relaxed" style={{ fontSize: `${messageFontSize}px` }}>{msg.content}</div>
+                    )}
+                    <div className={`flex items-center justify-between mt-1 text-[10px] sm:text-xs ${isOutbound ? "text-muted-foreground" : "text-white/80"}`}>
                       <span>{new Date(msg.sentAt || msg.createdAt).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })}</span>
-                      {isOutbound && <span className="ml-1">{getStatusIcon(msg.status || "pending")}</span>}
+                      <div className="flex items-center gap-1">
+                        {isOutbound && <span className="ml-1">{getStatusIcon(msg.status || "pending")}</span>}
+                        {/* Message actions menu */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <MoreVertical className="h-3 w-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-32">
+                            <DropdownMenuItem onClick={() => handleReply(msg)}>
+                              <Reply className="h-3.5 w-3.5 ml-2" />
+                              رد
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleForward(msg)}>
+                              <Forward className="h-3.5 w-3.5 ml-2" />
+                              إعادة توجيه
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleDelete(msg)} className="text-red-600">
+                              <Trash2 className="h-3.5 w-3.5 ml-2" />
+                              حذف
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -299,6 +633,34 @@ export default function ChatWindow({ conversationId, lastMessageAt, onConversati
       )}
 
       <div className="border-t dark:border-gray-700 p-3 bg-white dark:bg-gray-900">
+        {/* Reply indicator */}
+        {replyToMessage && (
+          <div className="mb-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm">
+              <Reply className="h-4 w-4 text-blue-600" />
+              <span className="text-blue-700 dark:text-blue-300">رد على: {replyToMessage.content.substring(0, 30)}...</span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setReplyToMessage(null)} className="h-6 w-6 p-0">
+              <XCircle className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
+        {/* Attached file indicator */}
+        {attachedFile && (
+          <div className="mb-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm">
+              <FileText className="h-4 w-4 text-green-600" />
+              <span className="text-green-700 dark:text-green-300">{attachedFile.name}</span>
+              <span className="text-xs text-muted-foreground">({(attachedFile.size / 1024).toFixed(1)} KB)</span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={handleRemoveFile} className="h-6 w-6 p-0">
+              <XCircle className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
+        
         {outsideWindow ? (
           <div className="flex gap-2 items-center">
             <DropdownMenu>
@@ -352,6 +714,169 @@ export default function ChatWindow({ conversationId, lastMessageAt, onConversati
               rows={1}
               className="flex-1 resize-none min-h-[40px] max-h-[120px] text-sm sm:text-base"
             />
+            {/* Attach file button */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,application/pdf,.doc,.docx"
+              className="hidden"
+              onChange={handleFileSelect}
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-10 w-10"
+              title="إرفاق ملف"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
+            {/* Schedule message button */}
+            <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10"
+                  title="جدولة رسالة"
+                >
+                  <Calendar className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>جدولة رسالة</DialogTitle>
+                  <DialogDescription>
+                    حدد تاريخ ووقت إرسال الرسالة
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="scheduled-message">الرسالة</Label>
+                    <Textarea
+                      id="scheduled-message"
+                      placeholder="اكتب الرسالة المراد جدولتها..."
+                      value={scheduledMessage}
+                      onChange={(e) => setScheduledMessage(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="scheduled-date">التاريخ والوقت</Label>
+                    <Input
+                      id="scheduled-date"
+                      type="datetime-local"
+                      value={scheduledDate}
+                      onChange={(e) => setScheduledDate(e.target.value)}
+                      min={new Date().toISOString().slice(0, 16)}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setScheduleDialogOpen(false)}>
+                    إلغاء
+                  </Button>
+                  <Button onClick={handleScheduleMessage}>
+                    جدولة
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            {/* Export button */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-10 w-10"
+              title="تصدير المحادثة"
+              onClick={handleExportConversation}
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+            {/* Font size buttons */}
+            <div className="flex gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-10 w-10"
+                title="تصغير الخط"
+                onClick={() => handleFontSizeChange(-1)}
+                disabled={messageFontSize <= 12}
+              >
+                <Minus className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-10 w-10"
+                title="تكبير الخط"
+                onClick={() => handleFontSizeChange(1)}
+                disabled={messageFontSize >= 20}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            {/* Night mode button */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-10 w-10"
+              title={isNightMode ? "الوضع الفاتح" : "الوضع الليلي"}
+              onClick={handleToggleNightMode}
+            >
+              {isNightMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+            {/* Quick Replies button */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="h-10 w-10" title="الردود السريعة">
+                  <MessageCircle className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-72">
+                {!quickReplies || quickReplies.length === 0 ? (
+                  <DropdownMenuItem disabled>لا توجد ردود سريعة</DropdownMenuItem>
+                ) : (
+                  (quickReplies as any[])
+                    .filter((r) => r.isActive)
+                    .map((r) => (
+                      <DropdownMenuItem
+                        key={r.id}
+                        onClick={() => handleInsertQuickReply(r.content)}
+                        className="flex flex-col items-start gap-1 py-2"
+                      >
+                        <span className="font-medium text-sm">{r.name}</span>
+                        <span className="text-xs text-muted-foreground line-clamp-2">{r.content}</span>
+                      </DropdownMenuItem>
+                    ))
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {/* Template button - always available */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="h-10 w-10" disabled={sendTemplateMutation.isPending}>
+                  <MessageSquare className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-72">
+                {!templates || templates.length === 0 ? (
+                  <DropdownMenuItem disabled>لا توجد قوالب متاحة</DropdownMenuItem>
+                ) : (
+                  (templates as any[])
+                    .filter((t) => t.isActive)
+                    .map((t) => (
+                      <DropdownMenuItem
+                        key={t.id}
+                        onClick={() => handleSendTemplate(t)}
+                        className="flex flex-col items-start gap-1 py-2"
+                      >
+                        <span className="font-medium text-sm">{t.name}</span>
+                        <span className="text-xs text-muted-foreground line-clamp-2">{t.content}</span>
+                      </DropdownMenuItem>
+                    ))
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button onClick={handleSend} disabled={!messageText.trim() || sendMessageMutation.isPending} size="icon" className="h-10 w-10 bg-gradient-to-br from-green-500 to-emerald-600 text-white">
               {sendMessageMutation.isPending ? (
                 <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeDasharray="31.4 31.4" fill="none" /></svg>

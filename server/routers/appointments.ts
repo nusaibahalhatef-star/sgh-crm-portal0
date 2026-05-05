@@ -21,6 +21,8 @@ import { sendNewAppointmentTelegram } from "../telegram";
 import { serverCache, CacheKeys, CacheTTL } from "../cache";
 import { createAuditLog } from "./auditLogs";
 import { sendAppointmentLeadEvent, sendStatusChangeEvent } from "../facebookCAPI";
+// sendAppointmentConfirmation moved to dispatchWhatsAppMessage flow
+import { dispatchWhatsAppMessage } from "../services/whatsappMessageDispatcher";
 
 export const appointmentsRouter = router({
   submit: publicProcedure
@@ -53,30 +55,33 @@ export const appointmentsRouter = router({
       gclid: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      // التحقق من عدم تكرار الحجز بنفس الرقم ونفس الطبيب خلال 3 أيام
+      // التحقق من عدم تكرار الحجز بنفس الرقم ونفس الطبيب خلال 3 أيام - معطل
+      // const normalizedPhone = normalizePhoneNumber(input.phone);
+      // const db = await getDb();
+      // if (db) {
+      //   const threeDaysAgo = new Date();
+      //   threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      //   const allAppointments = await db
+      //     .select({ id: appointments.id, phone: appointments.phone })
+      //     .from(appointments)
+      //     .where(
+      //       and(
+      //         gte(appointments.createdAt, threeDaysAgo),
+      //         eq(appointments.doctorId, input.doctorId)
+      //       )
+      //     )
+      //     .limit(100);
+      //   const existing = allAppointments.filter(a => normalizePhoneNumber(a.phone) === normalizedPhone);
+      //   if (existing.length > 0) {
+      //     throw new TRPCError({
+      //       code: "CONFLICT",
+      //       message: "لقد تم تسجيل حجز بنفس رقم الهاتف مع هذا الطبيب خلال الأيام الثلاثة الماضية",
+      //     });
+      //   }
+      // }
+
       const normalizedPhone = normalizePhoneNumber(input.phone);
       const db = await getDb();
-      if (db) {
-        const threeDaysAgo = new Date();
-        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-        const allAppointments = await db
-          .select({ id: appointments.id, phone: appointments.phone })
-          .from(appointments)
-          .where(
-            and(
-              gte(appointments.createdAt, threeDaysAgo),
-              eq(appointments.doctorId, input.doctorId)
-            )
-          )
-          .limit(100);
-        const existing = allAppointments.filter(a => normalizePhoneNumber(a.phone) === normalizedPhone);
-        if (existing.length > 0) {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message: "لقد تم تسجيل حجز بنفس رقم الهاتف مع هذا الطبيب خلال الأيام الثلاثة الماضية",
-          });
-        }
-      }
 
       // Get or create campaign by slug
       let campaign = await getCampaignBySlug(input.campaignSlug);
@@ -179,20 +184,41 @@ export const appointmentsRouter = router({
         patientMessage: input.patientMessage,
       });
 
-      // Send automated booking confirmation message (Patient Journey)
+      // Send automated booking confirmation message (Patient Journey) via dispatcher
+      // After successful send → auto-update status to "contacted"
       if (result) {
-        const { sendBookingConfirmationInteractive } = await import("../messaging");
-        sendBookingConfirmationInteractive({
+        const apptId = result.insertId;
+        dispatchWhatsAppMessage({
+          entityType: "appointment",
+          triggerEvent: "on_create",
           phone: input.phone,
-          name: input.fullName,
-          date: input.preferredDate || "غير محدد",
-          time: input.preferredTime || "غير محدد",
-          doctor: doctor?.name || "غير محدد",
-          service: input.procedure || "فحص عام",
-          bookingId: result.insertId,
-          bookingType: "appointment",
+          recipientName: input.fullName,
+          variables: {
+            name: input.fullName,
+            // دمج date و time في متغير واحد ليتوافق مع القالب المعتمد (4 متغيرات فقط)
+            date: input.preferredDate
+              ? `${input.preferredDate}${input.preferredTime ? ' الساعة ' + input.preferredTime : ''}`.trim()
+              : "غير محدد",
+            doctor: doctor?.name || "غير محدد",
+            service: input.procedure || "فحص عام",
+          },
+          entityId: apptId,
+        }).then(async (res) => {
+          if (res?.success) {
+            const dbInner = await getDb();
+            if (dbInner) {
+              await dbInner
+                .update(appointments)
+                .set({ status: "contacted", contactedAt: new Date(), updatedAt: new Date() })
+                .where(eq(appointments.id, apptId));
+              serverCache.invalidateByPrefix("paginated:appointments:");
+              serverCache.invalidate("list:appointments");
+              serverCache.invalidate(CacheKeys.appointmentStats());
+              console.log(`[Appointment] Auto-updated ${apptId} to contacted after on_create send`);
+            }
+          }
         }).catch(error => {
-          console.error("[WhatsApp] Failed to send booking confirmation:", error);
+          console.error("[WhatsApp Dispatcher] Failed to send appointment on_create:", error);
         });
       }
 
@@ -318,20 +344,42 @@ export const appointmentsRouter = router({
         }
       }
 
-      // Send welcome message when status changes to "attended" (Patient Journey)
-      if (input.status === "حضر" || input.status === "attended") {
+      // ── WhatsApp Dispatcher: إرسال رسالة تلقائية بناءً على الحالة الجديدة ──
+      {
         const db = await getDb();
         if (db) {
-          const [appointment] = await db.select().from(appointments).where(eq(appointments.id, input.id)).limit(1);
-          if (appointment && appointment.phone) {
-            const { sendPatientArrivalWelcome } = await import("../messaging");
-            const doctor = await getDoctorById(appointment.doctorId || 0);
-            await sendPatientArrivalWelcome({
-              phone: appointment.phone,
-              name: appointment.fullName || "المريض",
-              doctor: doctor?.name || "غير محدد",
-              time: appointment.preferredTime || "غير محدد",
-            });
+          const [appt] = await db.select().from(appointments).where(eq(appointments.id, input.id)).limit(1);
+          if (appt?.phone) {
+            const doctor = await getDoctorById(appt.doctorId || 0);
+            const triggerMap: Record<string, string> = {
+              "confirmed": "on_confirmed",
+              "مؤكد": "on_confirmed",
+              "attended": "on_arrived",
+              "حضر": "on_arrived",
+              "completed": "on_completed",
+              "مكتمل": "on_completed",
+              "cancelled": "on_cancelled",
+              "ملغي": "on_cancelled",
+            };
+            const triggerEvent = triggerMap[input.status];
+            if (triggerEvent) {
+              dispatchWhatsAppMessage({
+                entityType: "appointment",
+                triggerEvent: triggerEvent as any,
+                phone: appt.phone,
+                recipientName: appt.fullName || undefined,
+                variables: {
+                  name: appt.fullName || "المريض",
+                  doctor: doctor?.name || "غير محدد",
+                  date: appt.preferredDate || "غير محدد",
+                  time: appt.preferredTime || "غير محدد",
+                  service: appt.procedure || "فحص عام",
+                },
+                entityId: input.id,
+                sentBy: ctx.user?.id,
+              }).catch(err => console.error("[WhatsApp Dispatcher] Appointment status trigger error:", err));
+            }
+            // ملاحظة: تم إزالة sendPatientArrivalWelcome القديمة - dispatchWhatsAppMessage يتولى الإرسال عبر إعدادات الرسائل
           }
         }
       }

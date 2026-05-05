@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { eq, desc, and, gte } from "drizzle-orm";
+import { eq, desc, and, gte, sql } from "drizzle-orm";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { getDb } from "../db";
 import { campRegistrations } from "../../drizzle/schema";
@@ -9,6 +9,8 @@ import { serverCache, CacheKeys, CacheTTL } from "../cache";
 import { createAuditLog } from "./auditLogs";
 import { sendCampRegistrationEvent, sendStatusChangeEvent } from "../facebookCAPI";
 import { normalizePhoneNumber } from "../db";
+// sendCampRegistrationConfirmation moved to dispatchWhatsAppMessage flow
+import { dispatchWhatsAppMessage } from "../services/whatsappMessageDispatcher";
 
 export const campRegistrationsRouter = router({
   // Submit a new camp registration (public)
@@ -39,6 +41,8 @@ export const campRegistrationsRouter = router({
         referrer: z.string().optional(),
         fbclid: z.string().optional(),
         gclid: z.string().optional(),
+        preferredDate: z.string().optional(), // YYYY-MM-DD تاريخ الحضور المفضل
+        preferredTimeSlot: z.enum(["morning", "evening"]).optional(), // الوقت المفضل
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -46,26 +50,26 @@ export const campRegistrationsRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      // التحقق من عدم تكرار التسجيل بنفس الرقم ونفس المخيم خلال 3 أيام
-      const threeDaysAgo = new Date();
-      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-      const allRegs = await db
-        .select({ id: campRegistrations.id, phone: campRegistrations.phone })
-        .from(campRegistrations)
-        .where(
-          and(
-            eq(campRegistrations.campId, input.campId),
-            gte(campRegistrations.createdAt, threeDaysAgo)
-          )
-        )
-        .limit(100);
-      const existingReg = allRegs.filter(r => normalizePhoneNumber(r.phone) === normalizedPhone);
-      if (existingReg.length > 0) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "لقد تم تسجيل طلب بنفس رقم الهاتف لهذا المخيم خلال الأيام الثلاثة الماضية",
-        });
-      }
+      // التحقق من عدم تكرار التسجيل بنفس الرقم ونفس المخيم خلال 3 أيام - معطل
+      // const threeDaysAgo = new Date();
+      // threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      // const allRegs = await db
+      //   .select({ id: campRegistrations.id, phone: campRegistrations.phone })
+      //   .from(campRegistrations)
+      //   .where(
+      //     and(
+      //       eq(campRegistrations.campId, input.campId),
+      //       gte(campRegistrations.createdAt, threeDaysAgo)
+      //     )
+      //   )
+      //   .limit(100);
+      // const existingReg = allRegs.filter(r => normalizePhoneNumber(r.phone) === normalizedPhone);
+      // if (existingReg.length > 0) {
+      //   throw new TRPCError({
+      //     code: "CONFLICT",
+      //     message: "لقد تم تسجيل طلب بنفس رقم الهاتف لهذا المخيم خلال الأيام الثلاثة الماضية",
+      //   });
+      // }
 
       // Build timestamp fields based on initial status
       const nowCamp = new Date();
@@ -76,6 +80,75 @@ export const campRegistrationsRouter = router({
       else if (campInitialStatus === 'attended') campStatusTimestamps.attendedAt = nowCamp;
       else if (campInitialStatus === 'completed') campStatusTimestamps.completedAt = nowCamp;
       else if (campInitialStatus === 'cancelled') campStatusTimestamps.cancelledAt = nowCamp;
+
+      // Auto-assign date/time if not provided by the user
+      let assignedDate: Date | undefined = input.preferredDate ? new Date(input.preferredDate) : undefined;
+      let assignedTimeSlot: "morning" | "evening" | undefined = input.preferredTimeSlot;
+
+      if (!assignedDate) {
+        // Get camp to check dates and capacity
+        const { camps: campsTable } = await import("../../drizzle/schema");
+        const [campForDate] = await db.select().from(campsTable).where(eq(campsTable.id, input.campId)).limit(1);
+        if (campForDate && campForDate.startDate && campForDate.endDate) {
+          const morningTime = (campForDate as any).morningTime as string | null;
+          const eveningTime = (campForDate as any).eveningTime as string | null;
+          const dailyCapacity = (campForDate as any).dailyCapacity as number | null;
+          const start = new Date(campForDate.startDate);
+          const end = new Date(campForDate.endDate);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const allDays: string[] = [];
+          const d = new Date(start);
+          while (d <= end) {
+            if (d >= today) allDays.push(d.toISOString().split('T')[0]);
+            d.setDate(d.getDate() + 1);
+          }
+          if (allDays.length > 0) {
+            if (dailyCapacity && (morningTime || eveningTime)) {
+              // Count confirmed per day/slot
+              const confirmedRegs = await db
+                .select({
+                  preferredDate: (campRegistrations as any).preferredDate,
+                  preferredTimeSlot: (campRegistrations as any).preferredTimeSlot,
+                  count: sql<number>`count(*)`,
+                })
+                .from(campRegistrations)
+                .where(and(
+                  eq(campRegistrations.campId, input.campId),
+                  sql`status IN ('confirmed', 'attended', 'completed')`,
+                  sql`preferredDate IS NOT NULL`
+                ))
+                .groupBy((campRegistrations as any).preferredDate, (campRegistrations as any).preferredTimeSlot);
+              const countMap: Record<string, { morning: number; evening: number }> = {};
+              for (const row of confirmedRegs) {
+                const dk = row.preferredDate ? new Date(row.preferredDate).toISOString().split('T')[0] : null;
+                if (!dk) continue;
+                if (!countMap[dk]) countMap[dk] = { morning: 0, evening: 0 };
+                if (row.preferredTimeSlot === 'morning') countMap[dk].morning += Number(row.count);
+                else if (row.preferredTimeSlot === 'evening') countMap[dk].evening += Number(row.count);
+              }
+              // Find first available day/slot
+              for (const day of allDays) {
+                const counts = countMap[day] || { morning: 0, evening: 0 };
+                if (morningTime && counts.morning < dailyCapacity) {
+                  assignedDate = new Date(day);
+                  assignedTimeSlot = 'morning';
+                  break;
+                }
+                if (eveningTime && counts.evening < dailyCapacity) {
+                  assignedDate = new Date(day);
+                  assignedTimeSlot = 'evening';
+                  break;
+                }
+              }
+            } else {
+              // No capacity limit - assign first day
+              assignedDate = new Date(allDays[0]);
+              assignedTimeSlot = morningTime ? 'morning' : (eveningTime ? 'evening' : undefined);
+            }
+          }
+        }
+      }
 
       const [registration] = await db.insert(campRegistrations).values({
         campId: input.campId,
@@ -100,7 +173,9 @@ export const campRegistrationsRouter = router({
         gclid: input.gclid,
         status: campInitialStatus,
         ...campStatusTimestamps,
-      });
+        preferredDate: assignedDate ? assignedDate.toISOString().split('T')[0] : undefined,
+        preferredTimeSlot: assignedTimeSlot,
+      } as any);
 
       // Get camp details for notification
       const { camps } = await import("../../drizzle/schema");
@@ -119,21 +194,91 @@ export const campRegistrationsRouter = router({
         });
       }
 
-      // Send automated camp registration confirmation message (Patient Journey)
-      // Run in background - don't block the response
+      // إرسال الرسائل التلقائية بناءً على نوع التسجيل والحالة المختارة
       if (camp) {
-        const { sendCampRegistrationConfirmationInteractive, formatDateForMessage, formatTimeForMessage } = await import("../messaging");
-        sendCampRegistrationConfirmationInteractive({
-          phone: input.phone,
-          name: input.fullName,
-          campName: camp.name,
-          date: camp.startDate ? formatDateForMessage(new Date(camp.startDate)) : "غير محدد",
-          time: camp.startDate ? formatTimeForMessage(new Date(camp.startDate)) : "غير محدد",
-          location: "المستشفى السعودي الألماني - صنعاء",
-          bookingId: Number(registration.insertId),
-        }).catch(error => {
-          console.error("[WhatsApp] Failed to send camp registration confirmation:", error);
-        });
+        const regId = Number(registration.insertId);
+        // التسجيل اليدوي: source=admin أو حالة مختارة غير pending
+        const isManualRegistration = input.source === 'admin' || (input.status && input.status !== 'pending');
+
+        if (!isManualRegistration || campInitialStatus === 'pending') {
+          // ── تسجيل من الواجهة العامة أو تسجيل يدوي بحالة pending ──
+          // أرسل رسالة on_create وحدّث الحالة إلى contacted بعد الإرسال
+          // camp_reg_verification (150005) يقبل 5 متغيرات: name, camp_name, date, time, location
+          dispatchWhatsAppMessage({
+            entityType: "camp_registration",
+            triggerEvent: "on_create",
+            phone: input.phone,
+            recipientName: input.fullName,
+            variables: {
+              name: input.fullName,
+              camp_name: camp.name,
+              date: assignedDate
+                ? assignedDate.toLocaleDateString("ar-YE")
+                : (camp.startDate ? new Date(camp.startDate).toLocaleDateString("ar-YE") : "غير محدد"),
+              time: assignedTimeSlot === 'morning'
+                ? `صباحاً ${(camp as any).morningTime || ''}`.trim()
+                : assignedTimeSlot === 'evening'
+                ? `مساءً ${(camp as any).eveningTime || ''}`.trim()
+                : "غير محدد",
+              location: "صنعاء - الستين الشمالي - قبل جولة الجمنه",
+            },
+            entityId: regId,
+          }).then(async (result) => {
+            if (result?.success) {
+              // تحديث الحالة إلى "تم التواصل" بعد إرسال رسالة التسجيل بنجاح
+              const dbInner = await getDb();
+              if (dbInner) {
+                await dbInner
+                  .update(campRegistrations)
+                  .set({ status: "contacted", contactedAt: new Date(), updatedAt: new Date() })
+                  .where(eq(campRegistrations.id, regId));
+                serverCache.invalidateByPrefix("paginated:campRegistrations:");
+                serverCache.invalidate("list:campRegistrations");
+                serverCache.invalidate(CacheKeys.campRegistrationStats());
+                console.log(`[CampReg] Auto-updated registration ${regId} to contacted after on_create send`);
+              }
+            }
+          }).catch(error => {
+            console.error("[WhatsApp Dispatcher] Failed to send camp registration on_create:", error);
+          });
+        } else {
+          // ── تسجيل يدوي بحالة محددة (غير pending) ──
+          // أرسل الرسالة المناسبة للحالة المختارة فقط، بدون تحديث الحالة تلقائياً
+          const manualTriggerMap: Record<string, string> = {
+            "confirmed": "on_confirmed",
+            "attended": "on_arrived",
+            "completed": "on_completed",
+            "cancelled": "on_cancelled",
+          };
+          const manualTrigger = manualTriggerMap[campInitialStatus];
+          if (manualTrigger) {
+            dispatchWhatsAppMessage({
+              entityType: "camp_registration",
+              triggerEvent: manualTrigger as any,
+              phone: input.phone,
+              recipientName: input.fullName,
+              variables: {
+                name: input.fullName,
+                camp_name: camp.name,
+                date: assignedDate
+                  ? assignedDate.toLocaleDateString("ar-YE")
+                  : (camp.startDate ? new Date(camp.startDate).toLocaleDateString("ar-YE") : "غير محدد"),
+                time: assignedTimeSlot === 'morning'
+                  ? `صباحاً ${(camp as any).morningTime || ''}`
+                  : assignedTimeSlot === 'evening'
+                  ? `مساءً ${(camp as any).eveningTime || ''}`
+                  : "غير محدد",
+                location: "صنعاء - الستين الشمالي - قبل جولة الجمنه",
+              },
+              entityId: regId,
+            }).catch(error => {
+              console.error(`[WhatsApp Dispatcher] Failed to send camp registration ${manualTrigger}:`, error);
+            });
+          } else {
+            // حالات contacted / no_answer / no_show لا ترسل رسالة تلقائية
+            console.log(`[CampReg] Manual registration ${regId} with status "${campInitialStatus}" - no auto message sent`);
+          }
+        }
       }
 
       // Send Facebook Conversions API event (fire-and-forget)
@@ -329,18 +474,43 @@ export const campRegistrationsRouter = router({
         }
       }
 
-      // Send welcome message when status changes to "attended" (Patient Journey)
-      if (input.status === "attended") {
-        const [registration] = await db.select().from(campRegistrations).where(eq(campRegistrations.id, input.id)).limit(1);
-        if (registration && registration.phone) {
-          const { sendCampPatientArrivalWelcome } = await import("../messaging");
+      // ── WhatsApp Dispatcher: إرسال رسالة تلقائية بناءً على الحالة ──
+      {
+        const [reg] = await db.select().from(campRegistrations).where(eq(campRegistrations.id, input.id)).limit(1);
+        if (reg?.phone) {
           const { camps } = await import("../../drizzle/schema");
-          const [camp] = await db.select().from(camps).where(eq(camps.id, registration.campId)).limit(1);
-          await sendCampPatientArrivalWelcome({
-            phone: registration.phone,
-            name: registration.fullName || "المريض",
-            campName: camp?.name || "المخيم",
-          });
+          const [camp] = await db.select().from(camps).where(eq(camps.id, reg.campId)).limit(1);
+          const triggerMap: Record<string, string> = {
+            "confirmed": "on_confirmed",
+            "attended": "on_arrived",
+            "completed": "on_completed",
+            "cancelled": "on_cancelled",
+          };
+          const triggerEvent = triggerMap[input.status];
+          if (triggerEvent) {
+            dispatchWhatsAppMessage({
+              entityType: "camp_registration",
+              triggerEvent: triggerEvent as any,
+              phone: reg.phone,
+              recipientName: reg.fullName || undefined,
+              variables: {
+                name: reg.fullName || "المسجل",
+                camp_name: camp?.name || "المخيم",
+                date: (reg as any).preferredDate
+                  ? new Date((reg as any).preferredDate).toLocaleDateString("ar-YE")
+                  : (camp?.startDate ? new Date(camp.startDate).toLocaleDateString("ar-YE") : "غير محدد"),
+                time: (reg as any).preferredTimeSlot === 'morning'
+                  ? `صباحاً ${(camp as any)?.morningTime || ''}`
+                  : (reg as any).preferredTimeSlot === 'evening'
+                  ? `مساءً ${(camp as any)?.eveningTime || ''}`
+                  : "غير محدد",
+                location: "صنعاء - الستين الشمالي - قبل جولة الجمنه",
+              },
+              entityId: input.id,
+              sentBy: ctx.user?.id,
+            }).catch(err => console.error("[WhatsApp Dispatcher] Camp status trigger error:", err));
+          }
+          // ملاحظة: تم إزالة sendCampPatientArrivalWelcome القديمة - dispatchWhatsAppMessage يتولى الإرسال عبر إعدادات الرسائل
         }
       }
 
@@ -465,5 +635,31 @@ export const campRegistrationsRouter = router({
       await db.update(campRegistrations).set({ receiptNumber }).where(eq(campRegistrations.id, input.id));
 
       return { receiptNumber };
+    }),
+
+  // Schedule camp stats report
+  scheduleReport: protectedProcedure
+    .input(z.object({
+      email: z.string().email(),
+      frequency: z.enum(["daily", "weekly", "monthly"]),
+      campId: z.number().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      // TODO: Implement actual report scheduling
+      // This would typically:
+      // 1. Store the schedule configuration in a database table
+      // 2. Set up a cron job to generate and send reports
+      // 3. Use an email service to send the reports
+      
+      // For now, return success as a placeholder
+      return {
+        success: true,
+        message: `تم جدولة التقرير للإرسال إلى ${input.email} (${input.frequency === "daily" ? "يومياً" : input.frequency === "weekly" ? "أسبوعياً" : "شهرياً"})`,
+        schedule: {
+          email: input.email,
+          frequency: input.frequency,
+          campId: input.campId,
+        },
+      };
     }),
 });

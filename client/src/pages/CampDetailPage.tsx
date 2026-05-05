@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, Phone, Calendar, MapPin, Loader2, Heart, Users, CheckCircle2, Clock, Star, MessageSquare, Tag, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowRight, Phone, Calendar, MapPin, Loader2, Heart, Users, CheckCircle2, Clock, Star, MessageSquare, Tag, ChevronDown, ChevronUp, TrendingUp } from "lucide-react";
 import { getCompleteTrackingData } from "@/lib/tracking";
 import { trackViewContent, trackMetaCompleteRegistration, updatePixelUserData } from "@/components/MetaPixel";
 import { toast } from "sonner";
@@ -21,6 +21,8 @@ import { toast } from "sonner";
 import { usePhoneFormat } from "@/hooks/usePhoneFormat";
 import { usePatientStorage } from "@/hooks/usePatientStorage";
 import { useAbandonedFormTracking } from "@/hooks/useAbandonedFormTracking";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function CampDetailPage() {
   const params = useParams();
@@ -41,10 +43,17 @@ function CampDetailContent({ slug }: { slug: string }) {
   const [, setLocation] = useLocation();
   const [phoneError, setPhoneError] = useState<string>("");
 
+  const { user } = useAuth();
+  const { data: availableDates } = trpc.camps.getAvailableDates.useQuery(
+    { slug },
+    { enabled: !!slug && slug !== ":slug" }
+  );
   const { data: camp, isLoading } = trpc.camps.getBySlug.useQuery(
     { slug },
     { enabled: !!slug && slug !== ":slug" }
   );
+  // استعلام محمي - يعمل فقط للمستخدمين المسجلين لتجنب خطأ UNAUTHORIZED
+  const { data: registrations } = trpc.campRegistrations.list.useQuery(undefined, { enabled: !!user });
   const submitRegistration = trpc.campRegistrations.submit.useMutation();
   // eventId موحّد لتجنب تكرار الحدث بين Pixel وCAPI (Deduplication)
   const [regEventId] = useState(() => `camp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
@@ -58,6 +67,8 @@ function CampDetailContent({ slug }: { slug: string }) {
     gender: (savedInfo?.gender || "") as "male" | "female" | "",
     procedures: [] as string[],
     patientMessage: "",
+    preferredDate: "",
+    preferredTimeSlot: "" as "morning" | "evening" | "",
   });
   const [showAllFreeOffers, setShowAllFreeOffers] = useState(false);
   const [showAllDiscountedOffers, setShowAllDiscountedOffers] = useState(false);
@@ -84,6 +95,19 @@ function CampDetailContent({ slug }: { slug: string }) {
       return camp.availableProcedures.split('\n').filter((p: string) => p.trim());
     }
   }, [camp]);
+
+  // Calculate camp statistics
+  const campStats = useMemo(() => {
+    if (!camp || !registrations) return null;
+    
+    const campRegistrations = registrations.filter((r: any) => r.campId === camp.id);
+    const total = campRegistrations.length;
+    const confirmed = campRegistrations.filter((r: any) => r.status === "confirmed" || r.status === "attended" || r.status === "completed").length;
+    const attended = campRegistrations.filter((r: any) => r.status === "attended" || r.status === "completed").length;
+    const attendanceRate = confirmed > 0 ? Math.round((attended / confirmed) * 100) : 0;
+    
+    return { total, confirmed, attended, attendanceRate };
+  }, [camp, registrations]);
 
   // إرسال حدث ViewContent عند تحميل صفحة المخيم
   useEffect(() => {
@@ -152,6 +176,8 @@ function CampDetailContent({ slug }: { slug: string }) {
         gender: formData.gender as "male" | "female" | undefined || undefined,
         procedures: formData.procedures.length > 0 ? JSON.stringify(formData.procedures) : undefined,
         patientMessage: formData.patientMessage || undefined,
+        preferredDate: formData.preferredDate || undefined,
+        preferredTimeSlot: (formData.preferredTimeSlot as "morning" | "evening") || undefined,
         source: trackingData.source,
         utmSource: trackingData.utmSource,
         utmMedium: trackingData.utmMedium,
@@ -320,6 +346,16 @@ function CampDetailContent({ slug }: { slug: string }) {
                       <div className="text-white/90 text-xs">
                         {formatDate(camp.startDate)} - {formatDate(camp.endDate)}
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {campStats && campStats.total > 0 && (
+                  <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm p-3 rounded-lg">
+                    <TrendingUp className="h-5 w-5 flex-shrink-0" />
+                    <div className="text-sm">
+                      <div className="font-semibold">معدل الحضور</div>
+                      <div className="text-white/90 text-xs">{campStats.attendanceRate}%</div>
                     </div>
                   </div>
                 )}
@@ -693,6 +729,77 @@ function CampDetailContent({ slug }: { slug: string }) {
                     </div>
                   )}
 
+                  {/* حقل اختيار التاريخ والوقت */}
+                  {availableDates && availableDates.dates.length > 0 && (availableDates.morningTime || availableDates.eveningTime) && (
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium text-foreground">
+                        <Calendar className="inline h-4 w-4 ml-1" />
+                        التاريخ والوقت المناسب لك (اختياري)
+                      </Label>
+                      <p className="text-xs text-muted-foreground">إذا لم تختر، سيتم تحديد وقت مناسب تلقائياً</p>
+                      {/* اختيار التاريخ */}
+                      <div>
+                        <Label className="text-xs text-muted-foreground mb-1 block">التاريخ</Label>
+                        <Select
+                          value={formData.preferredDate}
+                          onValueChange={(val) => setFormData({ ...formData, preferredDate: val, preferredTimeSlot: "" })}
+                        >
+                          <SelectTrigger className="h-11">
+                            <SelectValue placeholder="اختر التاريخ المناسب" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableDates.dates.map((d) => (
+                              <SelectItem key={d.date} value={d.date}>
+                                {new Date(d.date).toLocaleDateString("ar-YE", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {/* اختيار الوقت */}
+                      {formData.preferredDate && (() => {
+                        const selectedDay = availableDates.dates.find(d => d.date === formData.preferredDate);
+                        const hasMorning = selectedDay?.morningAvailable && availableDates.morningTime;
+                        const hasEvening = selectedDay?.eveningAvailable && availableDates.eveningTime;
+                        if (!hasMorning && !hasEvening) return null;
+                        return (
+                          <div>
+                            <Label className="text-xs text-muted-foreground mb-1 block">الوقت</Label>
+                            <div className="grid grid-cols-2 gap-3">
+                              {hasMorning && (
+                                <button
+                                  type="button"
+                                  onClick={() => setFormData({ ...formData, preferredTimeSlot: "morning" })}
+                                  className={`h-11 rounded-lg border-2 text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
+                                    formData.preferredTimeSlot === "morning"
+                                      ? "border-green-600 bg-green-50 text-green-700"
+                                      : "border-border bg-background text-foreground hover:border-green-400"
+                                  }`}
+                                >
+                                  <Clock className="h-4 w-4" />
+                                  صباحاً {availableDates.morningTime}
+                                </button>
+                              )}
+                              {hasEvening && (
+                                <button
+                                  type="button"
+                                  onClick={() => setFormData({ ...formData, preferredTimeSlot: "evening" })}
+                                  className={`h-11 rounded-lg border-2 text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
+                                    formData.preferredTimeSlot === "evening"
+                                      ? "border-green-600 bg-green-50 text-green-700"
+                                      : "border-border bg-background text-foreground hover:border-green-400"
+                                  }`}
+                                >
+                                  <Clock className="h-4 w-4" />
+                                  مساءً {availableDates.eveningTime}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
                   {/* حقل الرسالة الاختياري */}
                   <div>
                     <Label htmlFor="patientMessage" className="text-sm font-medium text-foreground">

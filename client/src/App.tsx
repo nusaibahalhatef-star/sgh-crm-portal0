@@ -6,6 +6,7 @@ const NotFound = lazy(() => import("@/pages/NotFound"));
 import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import DashboardShell from "./components/DashboardShell";
 // Lazy load pages for better performance
 const Home = lazy(() => import("./pages/Home"));
 const HomePage = lazy(() => import("./pages/HomePage"));
@@ -31,6 +32,17 @@ const PublishingPage = lazy(() => import("./pages/PublishingPage"));
 const WhatsAppPage = lazy(() => import("./pages/WhatsAppPage"));
 const WhatsAppTemplatesPage = lazy(() => import("./pages/WhatsAppTemplatesPage"));
 const WhatsAppConnectionPage = lazy(() => import("./pages/WhatsAppConnectionPage"));
+const WhatsAppDashboard = lazy(() => import("./pages/WhatsAppDashboard"));
+const WhatsAppAnalytics = lazy(() => import("./pages/WhatsAppAnalytics"));
+const WhatsAppBroadcast = lazy(() => import("./pages/WhatsAppBroadcast"));
+const WhatsAppAutoReply = lazy(() => import("./pages/WhatsAppAutoReply"));
+const WhatsAppCompliance = lazy(() => import("./pages/WhatsAppCompliance"));
+const WhatsAppAppointments = lazy(() => import("./pages/WhatsAppAppointments"));
+const WhatsAppIntegration = lazy(() => import("./pages/WhatsAppIntegration"));
+const WhatsAppAccountHealthPage = lazy(() => import("./pages/WhatsAppAccountHealthPage"));
+const WhatsAppPhoneQualityPage = lazy(() => import("./pages/WhatsAppPhoneQualityPage"));
+const WhatsAppUserSubscriptionsPage = lazy(() => import("./pages/WhatsAppUserSubscriptionsPage"));
+const WhatsAppWebhookInspectorPage = lazy(() => import("./pages/WhatsAppWebhookInspectorPage"));
 const MessagesPage = lazy(() => import("./pages/MessagesPage"));
 const ReportsPage = lazy(() => import("./pages/ReportsPage"));
 const ReportsPageNew = lazy(() => import("./pages/admin/ReportsPage"));
@@ -58,7 +70,6 @@ const DigitalMarketingTasksPage = lazy(() => import("./pages/admin/DigitalMarket
 const PatientPortalLogin = lazy(() => import("./pages/PatientPortalLogin"));
 const PatientDashboard = lazy(() => import("./pages/PatientDashboard"));
 const MessageSettingsPage = lazy(() => import("./pages/MessageSettingsPage"));
-const QueueDashboard = lazy(() => import("./pages/QueueDashboard"));
 const PWAStatsPage = lazy(() => import("./pages/PWAStatsPage"));
 const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
 const BIPage = lazy(() => import("./pages/BIPage"));
@@ -94,47 +105,77 @@ function Router() {
       <Route path={"/privacy-policy"} component={PrivacyPolicyPage} />
       <Route path={"/unauthorized"} component={Unauthorized} />
       <Route path={"/access-request"} component={AccessRequest} />
-      <Route path={"/dashboard"} component={AdminDashboard} />
-      <Route path={"/dashboard/profile"} component={ProfilePage} />
-      <Route path={"/dashboard/management"} component={ManagementPage} />
-      <Route path={"/dashboard/content"} component={ContentManagementPage} />
-      <Route path={"/dashboard/users"} component={UsersManagementPage} />
-      <Route path={"/dashboard/publishing"} component={PublishingPage} />
-      <Route path={"/dashboard/whatsapp"} component={WhatsAppPage} />
-      <Route path={"/dashboard/whatsapp/templates"} component={WhatsAppTemplatesPage} />
-      <Route path={"/dashboard/whatsapp/connection"} component={WhatsAppConnectionPage} />
-      <Route path={"/dashboard/messages"} component={MessagesPage} />
-      <Route path={"/dashboard/message-settings"} component={MessageSettingsPage} />
-      <Route path={"/dashboard/queue"} component={QueueDashboard} />
-      <Route path={"/dashboard/reports"} component={ReportsPageNew} />
-      <Route path={"/dashboard/campaigns"} component={CampaignsPage} />
-      <Route path={"/dashboard/analytics"} component={AnalyticsPage} />
-      <Route path={"/dashboard/bi"} component={BIPage} />
-      <Route path={"/dashboard/tracking-settings"} component={TrackingSettingsPage} />
-       <Route path={"/dashboard/camp-stats"} component={CampStatsPage} />
-      <Route path={"/dashboard/bookings"} component={BookingsManagementPage} />
-      <Route path={"/dashboard/bookings/leads"} component={LeadsManagementPage} />
-      <Route path={"/dashboard/bookings/appointments"} component={AppointmentsManagementPage} />
-      <Route path={"/dashboard/bookings/offer-leads"} component={OfferLeadsPage} />
-      <Route path={"/dashboard/bookings/camp-registrations"} component={CampRegistrationsPage} />
-      <Route path={"/dashboard/bookings/customers"} component={CustomersPage} />
-      <Route path={"/dashboard/bookings/tasks"} component={TasksPage} />
-      <Route path={"/dashboard/teams/digital-marketing"} component={DigitalMarketingTasksPage} />
-      <Route path={"/dashboard/teams/media"} component={MediaTeamPage} />
-      <Route path={"/dashboard/teams/field-marketing"} component={FieldMarketingTeamPage} />
-      <Route path={"/dashboard/teams/customer-service"} component={CustomerServiceTeamPage} />
-      <Route path={"/dashboard/projects"} component={CampaignsPage} />
-      <Route path={"/dashboard/review-approval"} component={ReviewApprovalPage} />
-      <Route path={"/dashboard/pwa-stats"} component={PWAStatsPage} />
-      <Route path={"/admin"} component={AdminDashboard} />
-      <Route path={"/admin/"} component={AdminDashboard} />
-      <Route path={"/admin/offline"} component={OfflinePage} />
+
+      {/* Dashboard routes with persistent sidebar */}
+      <Route path="/dashboard">
+        <DashboardShell>
+          <AdminDashboard />
+        </DashboardShell>
+      </Route>
+      <Route path="/dashboard/*">
+        <DashboardShell>
+          <Switch>
+            <Route path={"/dashboard/profile"} component={ProfilePage} />
+            <Route path={"/dashboard/management"} component={ManagementPage} />
+            <Route path={"/dashboard/content"} component={ContentManagementPage} />
+            <Route path={"/dashboard/users"} component={UsersManagementPage} />
+            <Route path={"/dashboard/publishing"} component={PublishingPage} />
+            <Route path={"/dashboard/whatsapp"} component={WhatsAppPage} />
+            <Route path={"/dashboard/whatsapp/whatsapp-dashboard"} component={WhatsAppDashboard} />
+            <Route path={"/dashboard/whatsapp/templates"} component={WhatsAppTemplatesPage} />
+            <Route path={"/dashboard/whatsapp/connection"} component={WhatsAppConnectionPage} />
+            <Route path={"/dashboard/whatsapp/analytics"} component={WhatsAppAnalytics} />
+            <Route path={"/dashboard/whatsapp/broadcast"} component={WhatsAppBroadcast} />
+            <Route path={"/dashboard/whatsapp/auto-reply"} component={WhatsAppAutoReply} />
+            <Route path={"/dashboard/whatsapp/compliance"} component={WhatsAppCompliance} />
+            <Route path={"/dashboard/whatsapp/appointments"} component={WhatsAppAppointments} />
+            <Route path={"/dashboard/whatsapp/integration"} component={WhatsAppIntegration} />
+            <Route path={"/dashboard/whatsapp/account-health"} component={WhatsAppAccountHealthPage} />
+            <Route path={"/dashboard/whatsapp/phone-quality"} component={WhatsAppPhoneQualityPage} />
+            <Route path={"/dashboard/whatsapp/subscriptions"} component={WhatsAppUserSubscriptionsPage} />
+            <Route path={"/dashboard/whatsapp/webhook-inspector"} component={WhatsAppWebhookInspectorPage} />
+            <Route path={"/dashboard/messages"} component={MessagesPage} />
+            <Route path={"/dashboard/message-settings"} component={MessageSettingsPage} />
+            <Route path={"/dashboard/reports"} component={ReportsPageNew} />
+            <Route path={"/dashboard/campaigns"} component={CampaignsPage} />
+            <Route path={"/dashboard/analytics"} component={AnalyticsPage} />
+            <Route path={"/dashboard/bi"} component={BIPage} />
+            <Route path={"/dashboard/tracking-settings"} component={TrackingSettingsPage} />
+            <Route path={"/dashboard/camp-stats"} component={CampStatsPage} />
+            <Route path={"/dashboard/bookings"} component={BookingsManagementPage} />
+            <Route path={"/dashboard/bookings/leads"} component={LeadsManagementPage} />
+            <Route path={"/dashboard/bookings/appointments"} component={AppointmentsManagementPage} />
+            <Route path={"/dashboard/bookings/offer-leads"} component={OfferLeadsPage} />
+            <Route path={"/dashboard/bookings/camp-registrations"} component={CampRegistrationsPage} />
+            <Route path={"/dashboard/bookings/customers"} component={CustomersPage} />
+            <Route path={"/dashboard/bookings/tasks"} component={TasksPage} />
+            <Route path={"/dashboard/teams/digital-marketing"} component={DigitalMarketingTasksPage} />
+            <Route path={"/dashboard/teams/media"} component={MediaTeamPage} />
+            <Route path={"/dashboard/teams/field-marketing"} component={FieldMarketingTeamPage} />
+            <Route path={"/dashboard/teams/customer-service"} component={CustomerServiceTeamPage} />
+            <Route path={"/dashboard/projects"} component={CampaignsPage} />
+            <Route path={"/dashboard/review-approval"} component={ReviewApprovalPage} />
+            <Route path={"/dashboard/pwa-stats"} component={PWAStatsPage} />
+            <Route path={"/dashboard/settings"} component={SettingsPage} />
+          </Switch>
+        </DashboardShell>
+      </Route>
+
+      {/* Admin routes with persistent sidebar */}
+      <Route path="/admin/*">
+        <DashboardShell>
+          <Switch>
+            <Route path={"/admin"} component={AdminDashboard} />
+            <Route path={"/admin/"} component={AdminDashboard} />
+            <Route path={"/admin/offline"} component={OfflinePage} />
+          </Switch>
+        </DashboardShell>
+      </Route>
 
       <Route path={"/patient-portal"} component={PatientPortalLogin} />
       <Route path={"/patient-portal/dashboard"} component={PatientDashboard} />
       <Route path={"/offline"} component={OfflinePage} />
       <Route path={"/settings"} component={SettingsPage} />
-      <Route path={"/dashboard/settings"} component={SettingsPage} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

@@ -295,6 +295,90 @@
       "when": 1774317610890,
       "tag": "0041_calm_fixer",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "5",
+      "when": 1776312077476,
+      "tag": "0042_quick_justin_hammer",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "5",
+      "when": 1776468604115,
+      "tag": "0043_quick_epoch",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "5",
+      "when": 1776471435334,
+      "tag": "0044_hesitant_puck",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "5",
+      "when": 1776569726719,
+      "tag": "0045_steady_prowler",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "5",
+      "when": 1776906144486,
+      "tag": "0046_hard_pandemic",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "5",
+      "when": 1777256748215,
+      "tag": "0047_concerned_tusk",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "5",
+      "when": 1777261774970,
+      "tag": "0048_calm_drax",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "5",
+      "when": 1777353351987,
+      "tag": "0049_left_ikaris",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "5",
+      "when": 1777354166137,
+      "tag": "0050_lush_micromacro",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "5",
+      "when": 1777363492953,
+      "tag": "0051_salty_vance_astro",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "5",
+      "when": 1777497978136,
+      "tag": "0052_eminent_peter_parker",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "5",
+      "when": 1777610351628,
+      "tag": "0053_optimal_frank_castle",
+      "breakpoints": true
     }
   ]
 }

@@ -36,7 +36,7 @@ export const offersRouter = router({
   getAll: publicProcedure.query(async () => {
     return serverCache.getOrCompute(
       CacheKeys.offersList(),
-      CacheTTL.LIST,
+      CacheTTL.LONG,
       async () => {
         try {
           const dbInstance = await getDb();

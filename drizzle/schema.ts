@@ -263,6 +263,11 @@ export const camps = mysqlTable("camps", {
   discountedOffers: text("discountedOffers"), // Discounted offers (one per line)
   availableProcedures: text("availableProcedures"), // JSON array of available procedures
   galleryImages: text("galleryImages"), // JSON array of image URLs
+  // Time slots for attendance
+  morningTime: varchar("morningTime", { length: 20 }), // e.g. "08:00" - وقت الجلسة الصباحية
+  eveningTime: varchar("eveningTime", { length: 20 }), // e.g. "14:00" - وقت الجلسة المسائية
+  // Daily capacity per time slot (null = unlimited)
+  dailyCapacity: int("dailyCapacity"), // الطاقة الاستيعابية اليومية لكل وقت
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -336,6 +341,9 @@ export const campRegistrations = mysqlTable("campRegistrations", {
   status: mysqlEnum("status", ["pending", "contacted", "no_answer", "confirmed", "attended", "completed", "cancelled"]).default("pending").notNull(),
   statusNotes: text("statusNotes"),
   attendanceDate: timestamp("attendanceDate"),
+  // Preferred attendance date and time slot chosen by patient during registration
+  preferredDate: varchar("preferredDate", { length: 20 }), // YYYY-MM-DD format
+  preferredTimeSlot: mysqlEnum("preferredTimeSlot", ["morning", "evening"]), // الوقت المفضل
   contactedAt: timestamp("contactedAt"),
   confirmedAt: timestamp("confirmedAt"),
   attendedAt: timestamp("attendedAt"),
@@ -523,6 +531,7 @@ export const whatsappConversations = mysqlTable("whatsapp_conversations", {
   offerLeadId: int("offerLeadId"),
   campRegistrationId: int("campRegistrationId"),
   assignedToUserId: int("assignedToUserId"), // Assigned staff member
+  notes: text("notes"), // Notes about the conversation
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -539,15 +548,17 @@ export const whatsappMessages = mysqlTable("whatsapp_messages", {
   conversationId: int("conversationId").notNull(),
   direction: mysqlEnum("direction", ["inbound", "outbound"]).notNull(),
   content: text("content").notNull(),
-  messageType: mysqlEnum("messageType", ["text", "image", "document", "audio", "video", "location"]).default("text").notNull(),
+  messageType: mysqlEnum("messageType", ["text", "image", "document", "audio", "video", "location", "template", "interactive", "contacts", "unknown", "button_reply", "list_reply"]).default("text").notNull(),
   mediaUrl: varchar("mediaUrl", { length: 500 }),
   status: mysqlEnum("status", ["sent", "delivered", "read", "failed", "received"]).default("sent").notNull(),
   whatsappMessageId: varchar("whatsappMessageId", { length: 255 }), // WhatsApp API message ID
   sentBy: int("sentBy"), // User ID who sent (for outbound)
   isAutomated: int("isAutomated").default(0).notNull(), // 0 = manual, 1 = automated
+  replyToMessageId: int("replyToMessageId"), // ID of the message being replied to
   deliveredAt: timestamp("deliveredAt"),
   readAt: timestamp("readAt"),
   errorInfo: text("errorInfo"),
+  metadata: text("metadata"), // JSON metadata for additional message data (e.g., image URL, location coordinates)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -561,7 +572,7 @@ export type InsertWhatsAppMessage = typeof whatsappMessages.$inferInsert;
 export const whatsappTemplates = mysqlTable("whatsapp_templates", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  category: mysqlEnum("category", ["confirmation", "reminder", "thank_you", "follow_up", "cancellation", "custom"]).notNull(),
+  category: mysqlEnum("category", ["MARKETING", "UTILITY", "AUTHENTICATION"]).notNull().default("UTILITY"),
   content: text("content").notNull(),
   variables: text("variables"), // JSON array of variable names like ["name", "date", "time"]
   isActive: int("isActive").default(1).notNull(),
@@ -572,8 +583,10 @@ export const whatsappTemplates = mysqlTable("whatsapp_templates", {
   languageCode: varchar("languageCode", { length: 20 }), // e.g. "ar", "en_US"
   metaStatus: varchar("metaStatus", { length: 50 }), // APPROVED, PENDING, REJECTED
   metaCategory: varchar("metaCategory", { length: 50 }), // UTILITY, MARKETING, AUTHENTICATION
+  metaTemplateId: varchar("metaTemplateId", { length: 64 }), // Meta's internal template ID (returned after creation)
   headerText: text("headerText"), // Optional header component
   footerText: varchar("footerText", { length: 255 }), // Optional footer component
+  buttons: text("buttons"), // JSON array of buttons from template components
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -646,6 +659,67 @@ export type WhatsAppAnalytics = typeof whatsappAnalytics.$inferSelect;
 export type InsertWhatsAppAnalytics = typeof whatsappAnalytics.$inferInsert;
 
 /**
+ * Scheduled Messages table - stores messages scheduled for future sending
+ * جدول الرسائل المجدولة - يخزن الرسائل المقرر إرسالها مستقبلاً
+ */
+export const scheduledMessages = mysqlTable("scheduled_messages", {
+  id: int("id").autoincrement().primaryKey(),
+  conversationId: int("conversationId").notNull(),
+  phoneNumber: varchar("phoneNumber", { length: 20 }).notNull(),
+  content: text("content").notNull(),
+  messageType: mysqlEnum("messageType", ["text", "template"]).default("text").notNull(),
+  templateId: int("templateId"),
+  templateName: varchar("templateName", { length: 255 }),
+  languageCode: varchar("languageCode", { length: 20 }),
+  scheduledAt: timestamp("scheduledAt").notNull(),
+  status: mysqlEnum("status", ["pending", "sent", "failed", "cancelled"]).default("pending").notNull(),
+  sentAt: timestamp("sentAt"),
+  errorInfo: text("errorInfo"),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ScheduledMessage = typeof scheduledMessages.$inferSelect;
+export type InsertScheduledMessage = typeof scheduledMessages.$inferInsert;
+
+/**
+ * Quick Replies table - stores quick reply templates
+ * جدول الردود السريعة - يخزن قوالب الردود السريعة
+ */
+export const quickReplies = mysqlTable("quick_replies", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  category: varchar("category", { length: 50 }), // e.g., "greeting", "thanks", "info"
+  isActive: int("isActive").default(1).notNull(),
+  usageCount: int("usageCount").default(0).notNull(),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type QuickReply = typeof quickReplies.$inferSelect;
+export type InsertQuickReply = typeof quickReplies.$inferInsert;
+
+/**
+ * Saved Searches table - stores saved search filters for conversations
+ * جدول البحثات المحفوظة - يخزن فلاتر البحث المحفوظة للمحادثات
+ */
+export const savedSearches = mysqlTable("saved_searches", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  searchQuery: varchar("searchQuery", { length: 500 }),
+  filterType: varchar("filterType", { length: 50 }), // all, unread, important, archived, unnamed, unreplied
+  dateRange: varchar("dateRange", { length: 50 }), // today, week, month, custom
+  messageType: varchar("messageType", { length: 50 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type SavedSearch = typeof savedSearches.$inferSelect;
+export type InsertSavedSearch = typeof savedSearches.$inferInsert;
+
+/**
  * Message Settings table - stores automated message configurations
  * جدول إعدادات الرسائل - يخزن إعدادات الرسائل التلقائية
  */
@@ -667,6 +741,21 @@ export const messageSettings = mysqlTable("message_settings", {
   availableVariables: text("availableVariables"), // ["name", "date", "time", "doctor", "service"]
   // Description
   description: text("description"),
+  // Entity type: which entity this message applies to
+  entityType: mysqlEnum("entityType", ["appointment", "camp_registration", "offer_lead", "all"]).default("all"),
+  // Trigger event: which status change triggers this message
+  triggerEvent: mysqlEnum("triggerEvent", [
+    "on_create",        // عند الحجز/التسجيل
+    "on_confirmed",     // عند تحديث الحالة إلى مؤكد
+    "on_arrived",       // عند تحديث الحالة إلى حضر
+    "on_completed",     // عند تحديث الحالة إلى مكتمل
+    "on_cancelled",     // عند تحديث الحالة إلى ملغي
+    "on_reminder_24h",  // تذكير 24 ساعة
+    "on_reminder_1h",   // تذكير ساعة
+    "manual"            // يدوي
+  ]).default("manual"),
+  // WhatsApp template ID (from whatsapp_templates table) - used when deliveryChannel is whatsapp_api
+  whatsappTemplateId: int("whatsappTemplateId").references(() => whatsappTemplates.id, { onDelete: 'set null' }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -1107,3 +1196,174 @@ export const trackingEvents = mysqlTable("trackingEvents", {
 });
 export type TrackingEvent = typeof trackingEvents.$inferSelect;
 export type InsertTrackingEvent = typeof trackingEvents.$inferInsert;
+
+/**
+ * WhatsApp Notifications Table - تتبع إشعارات WhatsApp المرسلة
+ * يربط كل رسالة واتساب بالسجل المرتبط بها (موعد، تسجيل مخيم، حجز عرض)
+ */
+export const whatsappNotifications = mysqlTable("whatsapp_notifications", {
+  id: int("id").autoincrement().primaryKey(),
+
+  // نوع السجل المرتبط
+  entityType: mysqlEnum("entityType", ["appointment", "camp_registration", "offer_lead"]).notNull(),
+  entityId: int("entityId").notNull(),
+
+  // نوع الإشعار
+  notificationType: mysqlEnum("notificationType", [
+    "booking_confirmation",   // تأكيد الحجز
+    "reminder_24h",           // تذكير قبل 24 ساعة
+    "reminder_1h",            // تذكير قبل ساعة
+    "post_visit_followup",    // متابعة بعد الزيارة
+    "cancellation",           // إلغاء
+    "status_update",          // تحديث الحالة
+    "custom",                 // مخصص
+  ]).notNull(),
+
+  // بيانات الرسالة
+  phone: varchar("phone", { length: 20 }).notNull(),
+  recipientName: varchar("recipientName", { length: 255 }),
+  templateName: varchar("templateName", { length: 255 }),
+  messageContent: text("messageContent"),
+  variables: text("variables"), // JSON متغيرات القالب
+
+  // حالة الإرسال
+  status: mysqlEnum("status", ["pending", "sent", "delivered", "read", "failed"]).default("pending").notNull(),
+  metaMessageId: varchar("metaMessageId", { length: 255 }), // معرف الرسالة من Meta
+  errorMessage: text("errorMessage"),
+
+  // معلومات الإرسال
+  sentAt: timestamp("sentAt"),
+  deliveredAt: timestamp("deliveredAt"),
+  readAt: timestamp("readAt"),
+  sentBy: int("sentBy"), // معرف المستخدم الذي أرسل (null = تلقائي)
+  isAutomatic: boolean("isAutomatic").default(true).notNull(),
+
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  entityIdx: index("wn_entity_idx").on(table.entityType, table.entityId),
+  phoneIdx: index("wn_phone_idx").on(table.phone),
+  statusIdx: index("wn_status_idx").on(table.status),
+  createdAtIdx: index("wn_createdAt_idx").on(table.createdAt),
+}));
+
+export type WhatsappNotification = typeof whatsappNotifications.$inferSelect;
+export type InsertWhatsappNotification = typeof whatsappNotifications.$inferInsert;
+
+/**
+ * WhatsApp Blocked Numbers - قائمة الأرقام المحظورة (opt-out)
+ */
+export const whatsappBlockedNumbers = mysqlTable("whatsapp_blocked_numbers", {
+  id: int("id").autoincrement().primaryKey(),
+  phone: varchar("phone", { length: 20 }).notNull().unique(),
+  reason: varchar("reason", { length: 255 }),
+  blockedBy: int("blockedBy"), // null = opt-out تلقائي
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type WhatsappBlockedNumber = typeof whatsappBlockedNumbers.$inferSelect;
+export type InsertWhatsappBlockedNumber = typeof whatsappBlockedNumbers.$inferInsert;
+
+/**
+ * WhatsApp Account Alerts - تنبيهات الحساب من Meta
+ */
+export const whatsappAccountAlerts = mysqlTable("whatsapp_account_alerts", {
+  id: int("id").autoincrement().primaryKey(),
+  alertType: varchar("alertType", { length: 100 }).notNull(),
+  details: text("details"), // JSON string
+  severity: mysqlEnum("severity", ["low", "medium", "high", "critical"]).default("medium").notNull(),
+  resolved: boolean("resolved").default(false).notNull(),
+  resolvedAt: timestamp("resolvedAt"),
+  resolvedBy: int("resolvedBy"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type WhatsappAccountAlert = typeof whatsappAccountAlerts.$inferSelect;
+export type InsertWhatsappAccountAlert = typeof whatsappAccountAlerts.$inferInsert;
+
+/**
+ * WhatsApp Security Events - أحداث الأمان
+ */
+export const whatsappSecurityEvents = mysqlTable("whatsapp_security_events", {
+  id: int("id").autoincrement().primaryKey(),
+  eventType: varchar("eventType", { length: 100 }).notNull(),
+  details: text("details"), // JSON string
+  severity: mysqlEnum("severity", ["low", "medium", "high", "critical"]).default("medium").notNull(),
+  phoneNumber: varchar("phoneNumber", { length: 20 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type WhatsappSecurityEvent = typeof whatsappSecurityEvents.$inferSelect;
+export type InsertWhatsappSecurityEvent = typeof whatsappSecurityEvents.$inferInsert;
+
+/**
+ * WhatsApp Phone Number Quality - جودة رقم الهاتف
+ */
+export const whatsappPhoneQuality = mysqlTable("whatsapp_phone_quality", {
+  id: int("id").autoincrement().primaryKey(),
+  phoneNumber: varchar("phoneNumber", { length: 20 }).notNull(),
+  qualityScore: int("qualityScore"), // 0-100
+  qualityRating: mysqlEnum("qualityRating", ["unknown", "yellow", "green", "gray", "red"]).default("unknown").notNull(),
+  details: text("details"), // JSON string
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type WhatsappPhoneQuality = typeof whatsappPhoneQuality.$inferSelect;
+export type InsertWhatsappPhoneQuality = typeof whatsappPhoneQuality.$inferInsert;
+
+/**
+ * WhatsApp Conversation Quality - جودة المحادثات
+ */
+export const whatsappConversationQuality = mysqlTable("whatsapp_conversation_quality", {
+  id: int("id").autoincrement().primaryKey(),
+  phoneNumber: varchar("phoneNumber", { length: 20 }).notNull(),
+  qualityScore: int("qualityScore"), // 0-100
+  details: text("details"), // JSON string
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type WhatsappConversationQuality = typeof whatsappConversationQuality.$inferSelect;
+export type InsertWhatsappConversationQuality = typeof whatsappConversationQuality.$inferInsert;
+
+/**
+ * WhatsApp User Opt-ins - اشتراكات المستخدمين
+ */
+export const whatsappUserOptIns = mysqlTable("whatsapp_user_opt_ins", {
+  id: int("id").autoincrement().primaryKey(),
+  phoneNumber: varchar("phoneNumber", { length: 20 }).notNull(),
+  optInType: mysqlEnum("optInType", ["general", "marketing"]).default("general").notNull(),
+  status: mysqlEnum("status", ["opted_in", "opted_out"]).default("opted_in").notNull(),
+  source: varchar("source", { length: 100 }), // e.g., "web", "whatsapp", "manual"
+  details: text("details"), // JSON string
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type WhatsappUserOptIn = typeof whatsappUserOptIns.$inferSelect;
+export type InsertWhatsappUserOptIn = typeof whatsappUserOptIns.$inferInsert;
+
+/**
+ * WhatsApp Template Quality - جودة القوالب
+ */
+export const whatsappTemplateQuality = mysqlTable("whatsapp_template_quality", {
+  id: int("id").autoincrement().primaryKey(),
+  templateId: varchar("templateId", { length: 255 }).notNull(),
+  qualityScore: int("qualityScore"), // 0-100
+  details: text("details"), // JSON string
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type WhatsappTemplateQuality = typeof whatsappTemplateQuality.$inferSelect;
+export type InsertWhatsappTemplateQuality = typeof whatsappTemplateQuality.$inferInsert;
+
+/**
+ * WhatsApp Webhook Events Log - سجل جميع أحداث webhook من Meta
+ * يستخدم لاكتشاف الأحداث الجديدة والتحليل
+ */
+export const whatsappWebhookEvents = mysqlTable("whatsapp_webhook_events", {
+  id: int("id").autoincrement().primaryKey(),
+  eventId: varchar("eventId", { length: 255 }), // معرف الحدث من Meta إن وجد
+  eventType: varchar("eventType", { length: 100 }).notNull(), // نوع الحدث (field)
+  subType: varchar("subType", { length: 100 }), // النوع الفرعي إن وجد
+  phoneNumber: varchar("phoneNumber", { length: 20 }), // رقم الهاتف المرتبط
+  rawPayload: text("rawPayload").notNull(), // البيانات الخام الكاملة (JSON)
+  processed: boolean("processed").default(false).notNull(), // هل تم معالجته
+  handlerExists: boolean("handlerExists").default(false).notNull(), // هل يوجد معالج له
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  processedAt: timestamp("processedAt"),
+});
+export type WhatsappWebhookEvent = typeof whatsappWebhookEvents.$inferSelect;
+export type InsertWhatsappWebhookEvent = typeof whatsappWebhookEvents.$inferInsert;

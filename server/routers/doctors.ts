@@ -10,7 +10,7 @@ export const doctorsRouter = router({
   list: publicProcedure.query(async () => {
     return serverCache.getOrCompute(
       CacheKeys.doctorsList(),
-      CacheTTL.LIST,
+      CacheTTL.LONG,
       async () => {
         const db = await getDb();
         if (!db) return [];
